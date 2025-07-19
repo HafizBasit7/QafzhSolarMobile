@@ -78,4 +78,23 @@ export default {
     INVALID_PHONE: 'رقم هاتف غير صالح',
     MIN_IMAGES: 'يجب إضافة صورة واحدة على الأقل',
   },
+  PRODUCT_FORM: {
+    TITLE: "إضافة منتج جديد",
+    SELECT_TYPE: "اختر نوع المنتج",
+    PRODUCT_TYPE: "نوع المنتج",
+    CONDITION: "حالة المنتج",
+    PRICE: "السعر",
+    IMAGES: "الصور",
+    DESCRIPTION: "الوصف",
+    LOCATION: "الموقع",
+    PHONE: "رقم الهاتف",
+    SUBMIT: "إرسال",
+    VERIFY_AND_SUBMIT: "التحقق ثم الإرسال"
+  },
+  CONDITIONS: {
+    NEW: "جديد",
+    USED: "مستعمل",
+    NEEDS_REPAIR: "يحتاج إصلاح"
+  }
+
 };

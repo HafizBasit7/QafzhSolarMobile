@@ -7,7 +7,7 @@ export default function ShopCard({ shop }) {
   const navigation = useNavigation(); // Correctly used
 
   const handlePress = () => {
-    navigation.navigate('ShopDetail', { shop });
+    navigation.navigate('Shop', { shop });
   };
 
   const handleCall = () => {

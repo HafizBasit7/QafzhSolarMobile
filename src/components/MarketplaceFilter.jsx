@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,32 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Switch,
+  TextInput
 } from 'react-native';
+import Slider from '@react-native-community/slider';
+import { MaterialIcons } from '@expo/vector-icons';
 import ar from '../locales/ar';
+
+const productTypes = [
+  { id: 'solarPanels', name: 'ألواح شمسية' },
+  { id: 'inverters', name: 'انفرترات' },
+  { id: 'batteries', name: 'بطاريات' },
+  { id: 'accessories', name: 'ملحقات' }
+];
+
+const conditions = [
+  { id: 'new', name: 'جديد' },
+  { id: 'used', name: 'مستعمل' }
+];
+
+const governorates = [
+  { id: 'sanaa', name: 'صنعاء' },
+  { id: 'aden', name: 'عدن' },
+  { id: 'taiz', name: 'تعز' },
+  { id: 'hodeidah', name: 'الحديدة' },
+  { id: 'hadramout', name: 'حضرموت' }
+];
 
 export default function MarketplaceFilter({ visible, onClose, onApply }) {
   const [filters, setFilters] = useState({
@@ -16,29 +40,170 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
     priceRange: [0, 1000000],
     governorate: '',
     showVerified: false,
+    searchQuery: ''
   });
+
+  const handlePriceChange = (value) => {
+    setFilters({ ...filters, priceRange: value });
+  };
+
+  const toggleVerified = () => {
+    setFilters({ ...filters, showVerified: !filters.showVerified });
+  };
 
   return (
     <Modal visible={visible} animationType="slide">
       <View style={styles.modalContainer}>
+        {/* Header */}
         <View style={styles.header}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <MaterialIcons name="close" size={24} color="#6B7280" />
+          </TouchableOpacity>
           <Text style={styles.title}>{ar.COMMON.FILTERS}</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.closeText}>{ar.COMMON.CANCEL}</Text>
+          <TouchableOpacity 
+            style={styles.resetButton}
+            onPress={() => setFilters({
+              productType: '',
+              condition: '',
+              priceRange: [0, 1000000],
+              governorate: '',
+              showVerified: false,
+              searchQuery: ''
+            })}
+          >
+            <Text style={styles.resetText}>{ar.COMMON.RESET}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* You can add filter UI elements here inside ScrollView if needed */}
         <ScrollView style={styles.filterContent}>
-          {/* Place filter options here */}
-          <Text style={styles.placeholder}>Filter controls go here</Text>
+          {/* Search Input */}
+          <View style={styles.filterSection}>
+            <Text style={styles.sectionTitle}>بحث</Text>
+            <View style={styles.searchContainer}>
+              <MaterialIcons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="ابحث عن منتج..."
+                placeholderTextColor="#9CA3AF"
+                value={filters.searchQuery}
+                onChangeText={(text) => setFilters({ ...filters, searchQuery: text })}
+              />
+            </View>
+          </View>
+
+          {/* Product Type */}
+          <View style={styles.filterSection}>
+            <Text style={styles.sectionTitle}>نوع المنتج</Text>
+            <View style={styles.optionsContainer}>
+              {productTypes.map((type) => (
+                <TouchableOpacity
+                  key={type.id}
+                  style={[
+                    styles.optionButton,
+                    filters.productType === type.id && styles.selectedOption
+                  ]}
+                  onPress={() => setFilters({ ...filters, productType: type.id })}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    filters.productType === type.id && styles.selectedOptionText
+                  ]}>
+                    {type.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Condition */}
+          <View style={styles.filterSection}>
+            <Text style={styles.sectionTitle}>الحالة</Text>
+            <View style={styles.optionsContainer}>
+              {conditions.map((cond) => (
+                <TouchableOpacity
+                  key={cond.id}
+                  style={[
+                    styles.optionButton,
+                    filters.condition === cond.id && styles.selectedOption
+                  ]}
+                  onPress={() => setFilters({ ...filters, condition: cond.id })}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    filters.condition === cond.id && styles.selectedOptionText
+                  ]}>
+                    {cond.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Price Range */}
+          <View style={styles.filterSection}>
+            <Text style={styles.sectionTitle}>نطاق السعر (ريال يمني)</Text>
+            <View style={styles.sliderContainer}>
+              <Slider
+  minimumValue={0}
+  maximumValue={1000000}
+  step={50000}
+  value={filters.priceRange[0]}
+  onValueChange={(value) => setFilters({...filters, priceRange: [value, filters.priceRange[1]]})}
+  minimumTrackTintColor="#3B82F6"
+  maximumTrackTintColor="#E5E7EB"
+  thumbTintColor="#3B82F6"
+/>
+              <View style={styles.priceRangeText}>
+                <Text style={styles.priceText}>{filters.priceRange[0].toLocaleString()}</Text>
+                <Text style={styles.priceText}>{filters.priceRange[1].toLocaleString()}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Governorate */}
+          <View style={styles.filterSection}>
+            <Text style={styles.sectionTitle}>المحافظة</Text>
+            <View style={styles.optionsContainer}>
+              {governorates.map((gov) => (
+                <TouchableOpacity
+                  key={gov.id}
+                  style={[
+                    styles.optionButton,
+                    filters.governorate === gov.id && styles.selectedOption
+                  ]}
+                  onPress={() => setFilters({ ...filters, governorate: gov.id })}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    filters.governorate === gov.id && styles.selectedOptionText
+                  ]}>
+                    {gov.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Verified Only */}
+          <View style={styles.filterSection}>
+            <View style={styles.switchContainer}>
+              <Text style={styles.switchLabel}>عرض المنتجات الموثقة فقط</Text>
+              <Switch
+                trackColor={{ false: "#E5E7EB", true: "#3B82F6" }}
+                thumbColor="#FFFFFF"
+                value={filters.showVerified}
+                onValueChange={toggleVerified}
+              />
+            </View>
+          </View>
         </ScrollView>
 
+        {/* Apply Button */}
         <TouchableOpacity
           style={styles.applyButton}
           onPress={() => onApply(filters)}
         >
-          <Text style={styles.applyButtonText}>{ar.COMMON.APPLY}</Text>
+          <Text style={styles.applyButtonText}>{ar.COMMON.APPLY_FILTERS}</Text>
         </TouchableOpacity>
       </View>
     </Modal>
@@ -48,45 +213,129 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingTop: 50,
+    backgroundColor: '#F9FAFB',
+    paddingTop: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  closeButton: {
+    padding: 8,
   },
   title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#222',
+    fontSize: 18,
+    fontFamily: 'Tajawal-Bold',
+    color: '#111827',
   },
-  closeText: {
-    fontSize: 16,
-    color: '#888',
+  resetButton: {
+    padding: 8,
+  },
+  resetText: {
+    fontSize: 14,
+    fontFamily: 'Tajawal-Medium',
+    color: '#3B82F6',
   },
   filterContent: {
     flex: 1,
-    marginBottom: 20,
+    paddingHorizontal: 20,
   },
-  placeholder: {
+  filterSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
     fontSize: 16,
-    color: '#aaa',
-    textAlign: 'center',
-    marginTop: 40,
+    fontFamily: 'Tajawal-Bold',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  searchContainer: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  searchIcon: {
+    marginLeft: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Tajawal-Regular',
+    color: '#111827',
+    textAlign: 'right',
+  },
+  optionsContainer: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  optionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#E5E7EB',
+  },
+  selectedOption: {
+    backgroundColor: '#3B82F6',
+  },
+  optionText: {
+    fontSize: 14,
+    fontFamily: 'Tajawal-Medium',
+    color: '#4B5563',
+  },
+  selectedOptionText: {
+    color: '#FFFFFF',
+  },
+  sliderContainer: {
+    paddingHorizontal: 8,
+  },
+  priceRangeText: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  priceText: {
+    fontSize: 14,
+    fontFamily: 'Tajawal-Medium',
+    color: '#4B5563',
+  },
+  switchContainer: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  switchLabel: {
+    fontSize: 14,
+    fontFamily: 'Tajawal-Medium',
+    color: '#111827',
   },
   applyButton: {
-    backgroundColor: '#007bff',
-    paddingVertical: 15,
-    borderRadius: 10,
+    backgroundColor: '#3B82F6',
+    paddingVertical: 16,
+    marginHorizontal: 20,
+    marginBottom: 24,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 30,
+    elevation: 2,
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   applyButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'Tajawal-Bold',
   },
 });

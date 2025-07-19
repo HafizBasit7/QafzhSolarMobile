@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, Modal } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, Modal, Image, ScrollView } from "react-native";
 import ProductCard from "../components/ProductCard";
 import SellProductButton from "../components/SellProductButton";
 import MarketplaceFilter from "../components/MarketplaceFilter";
 import { navigate } from "../navigation/navigationHelper";
 import ar from "../locales/ar";
 import ShopCard from "../components/ShopCard";
+import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Picker } from '@react-native-picker/picker'; // Correct import
 
+// Mock data remains the same...
 // Mock data
 // Real solar product images
 const PRODUCT_IMAGES = {
@@ -144,93 +147,148 @@ export default function MarketplaceScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header with Search */}
       <View style={styles.header}>
-        <Text style={styles.title}>{ar.MARKETPLACE.TITLE}</Text>
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setShowFilters(true)}
-        >
-          <Text style={styles.filterButtonText}>{ar.COMMON.FILTERS}</Text>
-        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>{ar.MARKETPLACE.TITLE}</Text>
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={() => navigate("Search")}
+          >
+            <MaterialIcons name="search" size={24} color="#4B5563" />
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setShowFilters(true)}
+          >
+            <FontAwesome name="sliders" size={16} color="#1E40AF" />
+            <Text style={styles.filterButtonText}>{ar.COMMON.FILTERS}</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.locationTag}>
+            <Ionicons name="location-sharp" size={14} color="#1E40AF" />
+            <Text style={styles.locationText}>صنعاء</Text>
+          </View>
+        </View>
       </View>
 
-     {/* Tab Selector */}
-<View style={styles.tabs}>
-  <TouchableOpacity
-    style={[styles.tab, activeTab === "all" && styles.activeTab]}
-    onPress={() => setActiveTab("all")}
-  >
-    <Text
-      style={[
-        styles.tabText,
-        activeTab === "all" && styles.activeTabText,
-      ]}
-    >
-      الكل
-    </Text>
-  </TouchableOpacity>
+      {/* Promotional Banner */}
+      <View style={styles.bannerContainer}>
+        <Image 
+          source={{uri: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'}}
+          style={styles.bannerImage}
+          resizeMode="cover"
+        />
+        <View style={styles.bannerOverlay}>
+          <Text style={styles.bannerText}>خصم 20% على الألواح الشمسية هذا الأسبوع</Text>
+        </View>
+      </View>
 
-  <TouchableOpacity
-    style={[styles.tab, activeTab === "products" && styles.activeTab]}
-    onPress={() => setActiveTab("products")}
-  >
-    <Text
-      style={[
-        styles.tabText,
-        activeTab === "products" && styles.activeTabText,
-      ]}
-    >
-      منتجات
-    </Text>
-  </TouchableOpacity>
+      {/* Tab Selector */}
+      <View style={styles.tabsContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsScrollContent}
+        >
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "all" && styles.activeTab]}
+            onPress={() => setActiveTab("all")}
+          >
+            <Text style={[styles.tabText, activeTab === "all" && styles.activeTabText]}>
+              الكل
+            </Text>
+          </TouchableOpacity>
 
-  <TouchableOpacity
-    style={[styles.tab, activeTab === "shops" && styles.activeTab]}
-    onPress={() => setActiveTab("shops")}
-  >
-    <Text
-      style={[
-        styles.tabText,
-        activeTab === "shops" && styles.activeTabText,
-      ]}
-    >
-      متاجر
-    </Text>
-  </TouchableOpacity>
-</View>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "products" && styles.activeTab]}
+            onPress={() => setActiveTab("products")}
+          >
+            <Text style={[styles.tabText, activeTab === "products" && styles.activeTabText]}>
+              منتجات
+            </Text>
+          </TouchableOpacity>
 
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "shops" && styles.activeTab]}
+            onPress={() => setActiveTab("shops")}
+          >
+            <Text style={[styles.tabText, activeTab === "shops" && styles.activeTabText]}>
+              متاجر
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Additional category tabs */}
+          <TouchableOpacity
+            style={[styles.tab, styles.categoryTab]}
+            onPress={() => setActiveTab("solarPanels")}
+          >
+            <Text style={styles.tabText}>
+              ألواح شمسية
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.tab, styles.categoryTab]}
+            onPress={() => setActiveTab("inverters")}
+          >
+            <Text style={styles.tabText}>
+              انفرترات
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.tab, styles.categoryTab]}
+            onPress={() => setActiveTab("batteries")}
+          >
+            <Text style={styles.tabText}>
+              بطاريات
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
 
       {/* Content */}
-      {(activeTab === "all" || activeTab === "products") && (
-        <FlatList
-          data={filteredProducts}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => navigate("ProductDetail", { product: item })}
-            >
-              <ProductCard product={item} />
-            </TouchableOpacity>
-          )}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
+      <View style={styles.contentContainer}>
+        {(activeTab === "all" || activeTab === "products") && (
+          <FlatList
+            data={filteredProducts}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => navigate("ProductDetail", { product: item })}
+                style={styles.cardWrapper}
+              >
+                <ProductCard product={item} />
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            numColumns={2}
+            columnWrapperStyle={styles.columnWrapper}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
 
-      {(activeTab === "all" || activeTab === "shops") && (
-        <FlatList
-          data={filteredShops}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => navigate("ShopDetail", { shop: item })}
-            >
-              <ShopCard shop={item} />
-            </TouchableOpacity>
-          )}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
+        {(activeTab === "all" || activeTab === "shops") && (
+          <FlatList
+            data={filteredShops}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => navigate("ShopDetail", { shop: item })}
+                style={styles.cardWrapper}
+              >
+                <ShopCard shop={item} />
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </View>
 
       {/* Sell Product Button */}
       <SellProductButton onPress={handleSellProduct} />
@@ -251,69 +309,142 @@ export default function MarketplaceScreen() {
 const styles = {
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
-    paddingHorizontal: 16,
+    backgroundColor: "#F8FAFC",
     paddingTop: 16,
   },
   header: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  headerContent: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: "Tajawal-Bold",
     color: "#1E3A8A",
   },
+  searchButton: {
+    backgroundColor: "#EDF2F7",
+    padding: 8,
+    borderRadius: 12,
+  },
+  actionsRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   filterButton: {
-    backgroundColor: "#E0E7FF",
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    elevation: 1,
+    backgroundColor: "#EFF6FF",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
   },
   filterButtonText: {
-    color: "#1E3A8A",
+    color: "#1E40AF",
     fontFamily: "Tajawal-Medium",
     fontSize: 14,
   },
-  tabs: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    marginBottom: 16,
-    backgroundColor: "#FFFFFF",
+  locationTag: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EFF6FF',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  locationText: {
+    color: "#1E40AF",
+    fontFamily: "Tajawal-Medium",
+    fontSize: 13,
+  },
+  bannerContainer: {
+    height: 120,
     borderRadius: 12,
-    padding: 6,
-    elevation: 1,
+    overflow: 'hidden',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    position: 'relative',
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  bannerOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 12,
+  },
+  bannerText: {
+    color: '#FFF',
+    fontFamily: 'Tajawal-Bold',
+    fontSize: 16,
+    textAlign: 'right',
+  },
+  tabsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  tabsScrollContent: {
+    gap: 8,
   },
   tab: {
-    flex: 1,
     paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EDF2F7',
   },
- activeTab: {
-  backgroundColor: '#1E3A8A',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 2,
-},
-
+  activeTab: {
+    backgroundColor: '#1E40AF',
+    shadowColor: '#1E40AF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  categoryTab: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
   tabText: {
-    fontFamily: "Tajawal-Regular",
-    color: "#64748B",
+    fontFamily: "Tajawal-Medium",
+    color: "#4B5563",
     fontSize: 14,
   },
   activeTabText: {
     color: "#FFFFFF",
     fontFamily: "Tajawal-Bold",
   },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
   listContent: {
     paddingBottom: 100,
     gap: 12,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 12,
+  },
+  cardWrapper: {
+    flex: 1,
+    maxWidth: '48%',
   },
 };

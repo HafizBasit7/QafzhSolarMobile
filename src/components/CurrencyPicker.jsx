@@ -1,4 +1,6 @@
-// src/components/CurrencyPicker.jsx
+import React from 'react';
+import { Picker } from '@react-native-picker/picker'; // Correct import
+
 export default function CurrencyPicker({ selected, onSelect }) {
   const currencies = [
     { code: 'YER', name: 'ريال يمني' },
@@ -9,7 +11,10 @@ export default function CurrencyPicker({ selected, onSelect }) {
   return (
     <Picker
       selectedValue={selected}
-      onValueChange={onSelect}>
+      onValueChange={onSelect}
+      style={styles.picker} // Add style if needed
+      dropdownIconColor="#1E40AF" // Optional: style the dropdown icon
+    >
       {currencies.map(currency => (
         <Picker.Item 
           key={currency.code} 
@@ -20,3 +25,11 @@ export default function CurrencyPicker({ selected, onSelect }) {
     </Picker>
   );
 }
+
+// Add styles if needed
+const styles = {
+  picker: {
+    width: 120, // Adjust width as needed
+    height: 50, // Adjust height as needed
+  }
+};
