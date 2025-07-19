@@ -8,6 +8,32 @@ import ar from "../locales/ar";
 import ShopCard from "../components/ShopCard";
 
 // Mock data
+// Real solar product images
+const PRODUCT_IMAGES = {
+  solarPanels: [
+    'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    'https://images.unsplash.com/photo-1487621167305-5d248087c724?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
+  ],
+  inverters: [
+    'https://images.unsplash.com/photo-1551269901-5c5e14c25df7?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
+  ],
+  batteries: [
+    'https://images.unsplash.com/photo-1605152276897-4f618f831968?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    'https://images.unsplash.com/photo-1605152511803-b9b4d39a449a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
+  ],
+  accessories: [
+    'https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
+  ],
+  shops: [
+    'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
+  ]
+};
+
+// Enhanced mock data with real images
 const mockProducts = [
   {
     id: "1",
@@ -18,10 +44,45 @@ const mockProducts = [
     type: "ألواح شمسية",
     brand: "Jinko",
     location: "صنعاء",
-    images: ["https://example.com/solar-panel.jpg"],
+    images: [PRODUCT_IMAGES.solarPanels[0]],
     isVerified: false,
   },
-  // Add more mock products
+  {
+    id: "2",
+    title: "انفرتر 5 كيلو واط",
+    price: "350,000",
+    currency: "YER",
+    condition: "مستعمل",
+    type: "انفرتر",
+    brand: "SMA",
+    location: "عدن",
+    images: [PRODUCT_IMAGES.inverters[0]],
+    isVerified: false,
+  },
+  {
+    id: "3",
+    title: "بطارية ليثيوم 10 كيلو واط",
+    price: "450,000",
+    currency: "YER",
+    condition: "جديد",
+    type: "بطارية",
+    brand: "Tesla",
+    location: "تعز",
+    images: [PRODUCT_IMAGES.batteries[0]],
+    isVerified: false,
+  },
+  {
+    id: "4",
+    title: "شاحن شمسي متنقل",
+    price: "75,000",
+    currency: "YER",
+    condition: "جديد",
+    type: "ملحقات",
+    brand: "Anker",
+    location: "حضرموت",
+    images: [PRODUCT_IMAGES.accessories[0]],
+    isVerified: false,
+  }
 ];
 
 const mockShops = [
@@ -33,8 +94,28 @@ const mockShops = [
     phone: "+967712345678",
     services: ["بيع", "تركيب"],
     isVerified: true,
+    image: PRODUCT_IMAGES.shops[0]
   },
-  // Add more mock shops
+  {
+    id: "s2",
+    name: "مركز حلول الطاقة",
+    city: "صنعاء",
+    governorate: "صنعاء",
+    phone: "+967712345679",
+    services: ["بيع", "تركيب", "صيانة"],
+    isVerified: true,
+    image: PRODUCT_IMAGES.shops[1]
+  },
+  {
+    id: "s3",
+    name: "تكنولوجيا الطاقة الشمسية",
+    city: "تعز",
+    governorate: "تعز",
+    phone: "+967712345680",
+    services: ["بيع", "استشارات"],
+    isVerified: true,
+    image: PRODUCT_IMAGES.shops[2]
+  }
 ];
 
 export default function MarketplaceScreen() {
