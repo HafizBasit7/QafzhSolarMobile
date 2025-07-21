@@ -1,12 +1,24 @@
-import { View, Text, Image, ScrollView, Linking, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  ImageBackground,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Linking,
+  useWindowDimensions,
+  Platform,
+  SafeAreaView,
+} from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import ar from '../locales/ar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialIcons, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import ar from '../locales/ar';
 
-export default function ShopScreen() {
+export default function ShopScreen({ navigation }) {
   const route = useRoute();
   const { shop } = route.params;
+  const { width } = useWindowDimensions();
 
   const handleCall = () => Linking.openURL(`tel:${shop.phone}`);
   const handleDirections = () => {
@@ -15,119 +27,150 @@ export default function ShopScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header with Back Button */}
-      <View style={styles.header}>
-        <ImageBackground
-          source={{ uri: shop.image || 'https://via.placeholder.com/400x200' }}
-          style={styles.headerImage}
-          resizeMode="cover"
-        >
-          <LinearGradient
-            colors={['rgba(0,0,0,0.7)', 'transparent']}
-            style={styles.gradient}
-          />
-        </ImageBackground>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header with Image */}
+        <View style={[styles.headerContainer, { height: width * 0.75 }]}>
+          <ImageBackground
+            source={{ uri: shop.image || 'https://via.placeholder.com/400x200' }}
+            style={styles.headerImage}
+            resizeMode="cover"
+          >
+            <LinearGradient
+              colors={['rgba(0,0,0,0.6)', 'transparent']}
+              style={styles.gradient}
+            />
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation?.goBack?.()}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </ImageBackground>
+        </View>
 
-      <ScrollView style={styles.content}>
-        {/* Shop Info Section */}
-        <View style={styles.shopInfo}>
-          <View style={styles.nameContainer}>
-            <Text style={styles.shopName}>{shop.name}</Text>
-            {shop.isVerified && (
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                <Text style={styles.verifiedText}>متجر موثوق</Text>
+        {/* Content */}
+        <ScrollView contentContainerStyle={{ paddingBottom: 90 }}>
+          <View style={styles.card}>
+            {/* Shop Info */}
+            <View style={styles.nameRow}>
+              <Text style={styles.shopName}>{shop.name}</Text>
+              {shop.isVerified && (
+                <View style={styles.verifiedBadge}>
+                  <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                  <Text style={styles.verifiedText}>متجر موثوق</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Location */}
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={18} color="#10B981" />
+              <Text style={styles.locationText}>
+                {shop.city}, {shop.governorate}
+              </Text>
+            </View>
+
+            {/* Services */}
+            {shop.services?.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>الخدمات المقدمة</Text>
+                <View style={styles.servicesGrid}>
+                  {shop.services.map((service, index) => (
+                    <View key={index} style={styles.serviceBadge}>
+                      <Text style={styles.serviceText}>{service}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             )}
-          </View>
 
-          <View style={styles.locationContainer}>
-            <Ionicons name="location-outline" size={18} color="#3B82F6" />
-            <Text style={styles.locationText}>
-              {shop.city}, {shop.governorate}
-            </Text>
-          </View>
-
-          {/* Services */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>الخدمات المقدمة</Text>
-            <View style={styles.servicesContainer}>
-              {shop.services?.map((service, index) => (
-                <View key={index} style={styles.serviceTag}>
-                  <Text style={styles.serviceText}>{service}</Text>
-                </View>
-              ))}
+            {/* Contact */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>اتصل بالمتجر</Text>
+              <TouchableOpacity style={styles.contactRow} onPress={handleCall}>
+                <Ionicons name="call-outline" size={20} color="#10B981" />
+                <Text style={styles.contactText}>{shop.phone}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.contactRow}
+                onPress={() => Linking.openURL(`whatsapp://send?phone=${shop.phone}`)}
+              >
+                <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+                <Text style={styles.contactText}>{ar.chatOnWhatsapp}</Text>
+              </TouchableOpacity>
             </View>
           </View>
+        </ScrollView>
 
-          {/* Contact */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>اتصل بالمتجر</Text>
-            <TouchableOpacity style={styles.contactItem} onPress={handleCall}>
-              <Ionicons name="call-outline" size={24} color="#3B82F6" />
-              <Text style={styles.contactText}>{shop.phone}</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Fixed Action Bar */}
+        <View style={styles.actionBar}>
+          <TouchableOpacity style={styles.secondaryButton} onPress={handleDirections}>
+            <Ionicons name="navigate-outline" size={20} color="#10B981" />
+            <Text style={styles.secondaryButtonText}>الاتجاهات</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.primaryButton} onPress={handleCall}>
+            <Ionicons name="call-outline" size={20} color="#FFF" />
+            <Text style={styles.primaryButtonText}>اتصال</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-
-      {/* Fixed Action Buttons */}
-      <View style={styles.actionBar}>
-        <TouchableOpacity style={styles.secondaryButton} onPress={handleDirections}>
-          <Ionicons name="navigate-outline" size={20} color="#3B82F6" />
-          <Text style={styles.secondaryButtonText}>الاتجاهات</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.primaryButton} onPress={handleCall}>
-          <Ionicons name="call-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.primaryButtonText}>اتصال</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFF',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  header: {
-    height: 220,
+  headerContainer: {
+    width: '100%',
   },
   headerImage: {
     flex: 1,
-    justifyContent: 'flex-end',
   },
   gradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     height: '50%',
   },
-  content: {
-    flex: 1,
-    padding: 20,
-    marginTop: -40,
+  backButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 30,
+    left: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 8,
+    borderRadius: 20,
   },
-  shopInfo: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+  card: {
+    backgroundColor: '#FFF',
+    margin: 16,
     padding: 20,
-    marginBottom: 20,
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 2,
   },
-  nameContainer: {
+  nameRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   shopName: {
     fontSize: 22,
     fontFamily: 'Tajawal-Bold',
     color: '#1E293B',
+    flex: 1,
+    textAlign: 'right',
   },
   verifiedBadge: {
     flexDirection: 'row-reverse',
@@ -135,28 +178,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#ECFDF5',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 10,
+    borderRadius: 12,
+    marginRight: 8,
   },
   verifiedText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Tajawal-Medium',
     color: '#10B981',
     marginRight: 4,
   },
-  locationContainer: {
+  locationRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   locationText: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Tajawal-Regular',
     color: '#64748B',
-    marginRight: 8,
+    marginRight: 6,
   },
   section: {
-    marginBottom: 24,
+    marginTop: 20,
   },
   sectionTitle: {
     fontSize: 18,
@@ -165,28 +208,29 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: 'right',
   },
-  servicesContainer: {
+  servicesGrid: {
     flexDirection: 'row-reverse',
     flexWrap: 'wrap',
-    marginRight: -8,
   },
-  serviceTag: {
+  serviceBadge: {
     backgroundColor: '#EFF6FF',
-    paddingHorizontal: 12,
     paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
     marginRight: 8,
     marginBottom: 8,
   },
   serviceText: {
     fontSize: 14,
     fontFamily: 'Tajawal-Medium',
-    color: '#16A34A',
+    color: '#10B981',
   },
-  contactItem: {
+  contactRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
@@ -197,22 +241,35 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   actionBar: {
+    marginBottom: 15,
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   primaryButton: {
     flex: 1,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#10B981',
     flexDirection: 'row-reverse',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     marginLeft: 8,
+    marginRight:18
   },
   primaryButtonText: {
     color: '#FFFFFF',
@@ -226,13 +283,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#DBEAFE',
   },
   secondaryButtonText: {
-    color: '#3B82F6',
+    color: '#10B981',
     fontFamily: 'Tajawal-Bold',
     fontSize: 16,
     marginRight: 8,

@@ -22,6 +22,7 @@ import EngineerCard from "../components/EngineerCard";
 import MarketplaceFilter from "../components/MarketplaceFilter";
 import { navigate } from "../navigation/navigationHelper";
 import ar from "../locales/ar";
+
 import { MaterialIcons, FontAwesome, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 // Responsive dimensions calculation
@@ -870,6 +871,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal-Bold',
     fontSize: scaleFont(20),
     color: '#1E293B',
+    
+    
   },
   seeAllText: {
     fontFamily: 'Tajawal-Medium',

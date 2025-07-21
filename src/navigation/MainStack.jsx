@@ -10,7 +10,7 @@ import ProductDetailScreen from '../screens/ProductDetailScreen';
 import CalculatorScreen from '../screens/CalculatorScreen';
 import AdBannerScreen from '../screens/AdBannerScreen';
 import ar from '../locales/ar';
-import ScreenWrapper from '../components/ScreenWrapper'
+// import ScreenWrapper from '../components/ScreenWrapper'
 const Stack = createNativeStackNavigator();
 
 
@@ -72,8 +72,9 @@ export default function MainStack() {
         name="Shop"
         component={(ShopScreen)}
         options={({ route }) => ({ 
-          title: route.params.shop.name,
-          headerBackTitle: ar.MARKETPLACE.TITLE
+          // title: route.params.shop.name,
+          // headerBackTitle: ar.MARKETPLACE.TITLE
+          headerShown: false
         })}
       />
       <Stack.Screen
@@ -90,8 +91,9 @@ export default function MainStack() {
         name="EngineerDetail"
         component={(EngineerScreen)}
         options={({ route }) => ({ 
+          headerShown: false
           // title: route.params.engineer.name,
-        //  headerShown:false
+      
         })}
       />
 

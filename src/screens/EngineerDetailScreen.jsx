@@ -7,14 +7,15 @@ import {
   ScrollView, 
   TouchableOpacity,
   Linking,
-  Dimensions
+  Dimensions,
+  SafeAreaView,
+  Platform
 } from 'react-native';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
-import ar from '../locales/ar';
 
 const { width } = Dimensions.get('window');
 
-export default function EngineerDetailScreen({ route }) {
+export default function EngineerDetailScreen({ route, navigation }) {
   const { engineer } = route.params;
 
   const handleCall = () => {
@@ -27,121 +28,129 @@ export default function EngineerDetailScreen({ route }) {
   };
 
   return (
-    
-    <ScrollView style={styles.container}>
-      {/* Engineer Header */}
-      <View style={styles.header}>
-        <Image 
-          source={{ uri: engineer.image }} 
-          style={styles.engineerImage}
-        />
-        <View style={styles.headerContent}>
-          <View style={styles.nameContainer}>
-            <Text style={styles.name}>{engineer.name}</Text>
-            {engineer.isVerified && (
-              <View style={styles.verifiedBadge}>
-                <MaterialIcons name="verified" size={16} color="#10B981" />
-                <Text style={styles.verifiedText}>مهندس موثوق</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.specialization}>{engineer.specialization}</Text>
-          {/* <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={16} color="#F59E0B" />
-            <Text style={styles.ratingText}>{engineer.rating} ({engineer.reviews} تقييم)</Text>
-          </View> */}
-        </View>
-      </View>
-
-      {/* Contact Buttons */}
-      <View style={styles.contactButtons}>
-        <TouchableOpacity style={styles.callButton} onPress={handleCall}>
-          <Ionicons name="call-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.callButtonText}>اتصال</Text>
-        </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         
-        <TouchableOpacity style={styles.whatsappButton} onPress={handleWhatsApp}>
-          <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" />
-          <Text style={styles.whatsappButtonText}>واتساب</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Details Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>معلومات المهندس</Text>
-        
-        <View style={styles.detailRow}>
-          <MaterialCommunityIcons name="certificate-outline" size={20} color="#3B82F6" />
-          <Text style={styles.detailText}>الشهادات: {engineer.certifications.join('، ')}</Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <MaterialIcons name="work-outline" size={20} color="#3B82F6" />
-          <Text style={styles.detailText}>الخبرة: {engineer.experience}</Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <MaterialIcons name="location-on" size={20} color="#3B82F6" />
-          <Text style={styles.detailText}>المحافظة: {engineer.location}</Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <MaterialIcons name="phone" size={20} color="#3B82F6" />
-          <Text style={styles.detailText}>الهاتف: {engineer.phone}</Text>
-        </View>
-        
-        <View style={styles.detailRow}>
-          <MaterialIcons name="email" size={20} color="#3B82F6" />
-          <Text style={styles.detailText}>البريد الإلكتروني: {engineer.email}</Text>
-        </View>
-      </View>
-
-      {/* Services Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>الخدمات المقدمة</Text>
-        <View style={styles.servicesContainer}>
-          {engineer.services.map((service, index) => (
-            <View key={index} style={styles.serviceBadge}>
-              <Text style={styles.serviceText}>{service}</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <Image 
+            source={{ uri: engineer.image ?? '' }} 
+            style={styles.engineerImage}
+            resizeMode="cover"
+          />
+          <View style={styles.headerContent}>
+            <View style={styles.nameContainer}>
+              <Text style={styles.name}>{engineer.name}</Text>
+              {engineer.isVerified && (
+                <View style={styles.verifiedBadge}>
+                  <MaterialIcons name="verified" size={16} color="#10B981" />
+                  <Text style={styles.verifiedText}>مهندس موثوق</Text>
+                </View>
+              )}
             </View>
-          ))}
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation?.goBack?.()}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <Text style={styles.specialization}>{engineer.specialization}</Text>
+          </View>
         </View>
-      </View>
 
-      {/* Projects Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>المشاريع المنفذة</Text>
-        <Text style={styles.projectsText}>
-          قام المهندس بتنفيذ {engineer.completedProjects} مشروع في مجال الطاقة الشمسية
-        </Text>
-      </View>
+        {/* Contact Buttons */}
+        <View style={styles.contactButtons}>
+          <TouchableOpacity style={styles.callButton} onPress={handleCall}>
+            <Ionicons name="call-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.callButtonText}>اتصال</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.whatsappButton} onPress={handleWhatsApp}>
+            <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" />
+            <Text style={styles.whatsappButtonText}>واتساب</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Request Button */}
-      <TouchableOpacity style={styles.requestButton}>
-        <Text style={styles.requestButtonText}>طلب خدمة</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* Info Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>معلومات المهندس</Text>
+          
+          <View style={styles.detailRow}>
+            <MaterialCommunityIcons name="certificate-outline" size={20} color="#16A34A" />
+            <Text style={styles.detailText}>الشهادات: {engineer.certifications?.join('، ')}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <MaterialIcons name="work-outline" size={20} color="#16A34A" />
+            <Text style={styles.detailText}>الخبرة: {engineer.experience}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <MaterialIcons name="location-on" size={20} color="#16A34A" />
+            <Text style={styles.detailText}>المحافظة: {engineer.location}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <MaterialIcons name="phone" size={20} color="#16A34A" />
+            <Text style={styles.detailText}>الهاتف: {engineer.phone}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <MaterialIcons name="email" size={20} color="#16A34A" />
+            <Text style={styles.detailText}>البريد الإلكتروني: {engineer.email}</Text>
+          </View>
+        </View>
+
+        {/* Services */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>الخدمات المقدمة</Text>
+          <View style={styles.servicesContainer}>
+            {engineer.services?.map((service, index) => (
+              <View key={index} style={styles.serviceBadge}>
+                <Text style={styles.serviceText}>{service}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Projects */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>المشاريع المنفذة</Text>
+          <Text style={styles.projectsText}>
+            قام المهندس بتنفيذ {engineer.completedProjects} مشروع في مجال الطاقة الشمسية
+          </Text>
+        </View>
+
+        {/* Request Button */}
+        <TouchableOpacity style={styles.requestButton}  onPress={handleCall}>
+          <Text style={styles.requestButtonText}>طلب خدمة</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  container: {
+    paddingTop: 10,
     paddingBottom: 20,
   },
   header: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    padding: 20,
+    padding: width * 0.05,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
   engineerImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: width * 0.25,
+    height: width * 0.25,
+    borderRadius: width * 0.125,
     marginLeft: 16,
     borderWidth: 2,
     borderColor: '#16A34A',
@@ -149,15 +158,15 @@ const styles = StyleSheet.create({
   headerContent: {
     flex: 1,
     alignItems: 'flex-end',
-    paddingLeft:40
   },
   nameContainer: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
     marginBottom: 6,
+    flexWrap: 'wrap',
   },
   name: {
-    fontSize: 22,
+    fontSize: 20,
     fontFamily: 'Tajawal-Bold',
     color: '#1E293B',
   },
@@ -170,6 +179,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 8,
   },
+  backButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 20 : 5,
+    left: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 2,
+    borderRadius: 20,
+  },
   verifiedText: {
     fontSize: 12,
     fontFamily: 'Tajawal-Medium',
@@ -179,23 +196,13 @@ const styles = StyleSheet.create({
   specialization: {
     fontSize: 16,
     fontFamily: 'Tajawal-Medium',
-    color: '#3B82F6',
+    color: '#16A34A',
     marginBottom: 8,
-  },
-  ratingContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-  },
-  ratingText: {
-    fontSize: 14,
-    fontFamily: 'Tajawal-Regular',
-    color: '#64748B',
-    marginRight: 4,
   },
   contactButtons: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-around',
-    padding: 16,
+    paddingVertical: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
@@ -205,9 +212,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#16A34A',
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    width: width * 0.4,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    width: width * 0.42,
     justifyContent: 'center',
   },
   callButtonText: {
@@ -221,9 +228,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#25D366',
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    width: width * 0.4,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    width: width * 0.42,
     justifyContent: 'center',
   },
   whatsappButtonText: {
@@ -238,11 +245,17 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginHorizontal: 16,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   sectionTitle: {
     fontSize: 18,
@@ -256,7 +269,7 @@ const styles = StyleSheet.create({
   detailRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    marginVertical: 8,
+    marginVertical: 6,
   },
   detailText: {
     fontSize: 15,
@@ -264,6 +277,8 @@ const styles = StyleSheet.create({
     color: '#334155',
     marginRight: 8,
     flex: 1,
+    flexWrap: 'wrap',
+    textAlign: 'right',
   },
   servicesContainer: {
     flexDirection: 'row-reverse',
@@ -283,7 +298,8 @@ const styles = StyleSheet.create({
   serviceText: {
     fontSize: 14,
     fontFamily: 'Tajawal-Medium',
-    color: '#1E40AF',
+    color: '#16A34A',
+    
   },
   projectsText: {
     fontSize: 15,
@@ -296,14 +312,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#16A34A',
     paddingVertical: 16,
     marginHorizontal: 16,
-    marginTop: 20,
+    marginTop: 24,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   requestButtonText: {
     color: '#FFFFFF',
