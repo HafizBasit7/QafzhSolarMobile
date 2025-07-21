@@ -13,7 +13,7 @@ export default function CurrencyPicker({ selected, onSelect }) {
       selectedValue={selected}
       onValueChange={onSelect}
       style={styles.picker} // Add style if needed
-      dropdownIconColor="#1E40AF" // Optional: style the dropdown icon
+      dropdownIconColor="#16A34A" // Optional: style the dropdown icon
     >
       {currencies.map(currency => (
         <Picker.Item 

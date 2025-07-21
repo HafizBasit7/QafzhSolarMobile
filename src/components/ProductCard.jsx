@@ -60,10 +60,10 @@ export default function ProductCard({ product }) {
             )}
           </View>
           
-          <View style={styles.ratingContainer}>
+          {/* <View style={styles.ratingContainer}>
             <Ionicons name="star" size={14} color="#F59E0B" />
             <Text style={styles.ratingText}>4.8</Text>
-          </View>
+          </View> */}
         </View>
 
         {/* Footer with Location and Condition */}
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   price: {
     fontFamily: 'Tajawal-Bold',
     fontSize: 17,
-    color: '#1E3A8A',
+    color: '#1E293B',
   },
   originalPrice: {
     fontFamily: 'Tajawal-Regular',

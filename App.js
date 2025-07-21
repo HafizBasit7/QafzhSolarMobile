@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from './src/navigation/RootNavigator';
 import ar from './src/locales/ar';
+import { StatusBar } from 'react-native';
 
 // Force RTL for Arabic
 I18nManager.forceRTL(true);
@@ -25,7 +26,9 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
+      
       <RootNavigator />
+      
     </SafeAreaProvider>
   );
 }

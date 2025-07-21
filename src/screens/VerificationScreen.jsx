@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal-Bold'
   },
   verifyButton: {
-    backgroundColor: '#1E40AF',
+    backgroundColor: '#16A34A',
     padding: 15,
     borderRadius: 8,
     width: '100%',

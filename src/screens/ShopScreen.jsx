@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   serviceText: {
     fontSize: 14,
     fontFamily: 'Tajawal-Medium',
-    color: '#1E40AF',
+    color: '#16A34A',
   },
   contactItem: {
     flexDirection: 'row-reverse',

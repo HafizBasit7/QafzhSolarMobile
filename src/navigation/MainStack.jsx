@@ -14,13 +14,13 @@ import ScreenWrapper from '../components/ScreenWrapper'
 const Stack = createNativeStackNavigator();
 
 
-function withScreenWrapper(Component) {
-  return (props) => (
-    <ScreenWrapper>
-      <Component {...props} />
-    </ScreenWrapper>
-  );
-}
+// function withScreenWrapper(Component) {
+//   return (props) => (
+//     <ScreenWrapper>
+//       <Component {...props} />
+//     </ScreenWrapper>
+//   );
+// }
 
 export default function MainStack() {
   return (
@@ -39,14 +39,14 @@ export default function MainStack() {
       {/* Main Tabs */}
       <Stack.Screen
         name="MainTabs"
-        component={withScreenWrapper(TabNavigator)}
+        component={(TabNavigator)}
         options={{ headerShown: false }}
       />
 
       {/* Marketplace Flow */}
       <Stack.Screen
         name="ProductDetail"
-         component={withScreenWrapper(ProductDetailScreen)}
+         component={(ProductDetailScreen)}
         options={({ route }) => ({ 
           title: route.params.product.title,
           headerBackTitle: ar.MARKETPLACE.TITLE
@@ -54,7 +54,7 @@ export default function MainStack() {
       />
       <Stack.Screen
         name="ProductSubmission"
-        component={withScreenWrapper(ProductSubmissionScreen)}
+        component={(ProductSubmissionScreen)}
         options={{ 
           title: 'إضافة منتج جديد',
           headerBackTitle: ar.MARKETPLACE.TITLE
@@ -62,7 +62,7 @@ export default function MainStack() {
       />
       <Stack.Screen
         name="Verification"
-        component={withScreenWrapper(VerificationScreen)}
+        component={(VerificationScreen)}
         options={{ 
           title: 'تأكيد رقم الهاتف',
           headerBackTitle: 'إضافة منتج'
@@ -70,7 +70,7 @@ export default function MainStack() {
       />
       <Stack.Screen
         name="Shop"
-        component={withScreenWrapper(ShopScreen)}
+        component={(ShopScreen)}
         options={({ route }) => ({ 
           title: route.params.shop.name,
           headerBackTitle: ar.MARKETPLACE.TITLE
@@ -78,7 +78,7 @@ export default function MainStack() {
       />
       <Stack.Screen
         name="Filters"
-        component={withScreenWrapper(FilterScreen)}
+        component={(FilterScreen)}
         options={{ 
           title: 'تصفية النتائج',
           headerBackTitle: ar.MARKETPLACE.TITLE
@@ -88,17 +88,17 @@ export default function MainStack() {
       {/* Engineers Flow */}
       <Stack.Screen
         name="EngineerDetail"
-        component={withScreenWrapper(EngineerScreen)}
+        component={(EngineerScreen)}
         options={({ route }) => ({ 
-          title: route.params.engineer.name,
-          headerBackTitle: ar.ENGINEERS.TITLE
+          // title: route.params.engineer.name,
+        //  headerShown:false
         })}
       />
 
       {/* Calculator Flow */}
       <Stack.Screen
         name="Calculator"
-        component={withScreenWrapper(CalculatorScreen)}
+        component={(CalculatorScreen)}
         options={{ 
           title: ar.CALCULATOR.TITLE,
           headerBackTitle: 'الرئيسية'
@@ -106,7 +106,7 @@ export default function MainStack() {
       />
       <Stack.Screen
         name="CalculatorResults"
-        component={withScreenWrapper(CalculatorResultsScreen)}
+        component={(CalculatorResultsScreen)}
         options={{ 
           title: 'نتائج الحساب',
           headerBackTitle: ar.CALCULATOR.TITLE
@@ -116,7 +116,7 @@ export default function MainStack() {
       {/* Ads Flow */}
       <Stack.Screen
         name="AdBanner"
-        component={withScreenWrapper(AdBannerScreen)}
+        component={(AdBannerScreen)}
         options={({ route }) => ({ 
           title: route.params.ad?.title || 'عرض إعلاني',
           headerBackTitle: 'رجوع'

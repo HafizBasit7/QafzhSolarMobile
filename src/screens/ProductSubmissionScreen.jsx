@@ -137,7 +137,7 @@ export default function ProductSubmissionScreen({ route }) {
           <Picker
             selectedValue={product.type}
             onValueChange={(value) => setProduct({ ...product, type: value })}
-            dropdownIconColor="#1E40AF"
+            dropdownIconColor="#16A34A"
             mode="dropdown"
             style={styles.picker}
           >
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   submitButton: {
-    backgroundColor: "#1E40AF",
+    backgroundColor: "#16A34A",
     padding: 16,
     borderRadius: 8,
     alignItems: "center",

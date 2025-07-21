@@ -1,8 +1,6 @@
-import { Dimensions ,View, Text, ScrollView, Image, TouchableOpacity, Linking, StyleSheet } from 'react-native';
+import { Dimensions, View, Text, ScrollView, Image, TouchableOpacity, Linking, StyleSheet } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { MaterialIcons, Ionicons, FontAwesome } from '@expo/vector-icons';
-import ar from '../locales/ar';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ProductDetailScreen() {
   const route = useRoute();
@@ -15,32 +13,36 @@ export default function ProductDetailScreen() {
   const currencySymbol = product.currency === 'YER' ? '﷼' : '$';
 
   return (
-    <View style={styles.container}>
-      {/* Image Gallery with Indicator */}
-      <ScrollView 
-        horizontal 
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        style={styles.imageGallery}
-      >
-        {product.images.map((img, index) => (
-          <Image 
-            key={index}
-            source={{ uri: img || 'https://via.placeholder.com/400' }}
-            style={styles.productImage}
-            resizeMode="cover"
-          />
-        ))}
-      </ScrollView>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
+      
+      {/* Image Gallery */}
+<View style={styles.imageWrapper}>
+  <ScrollView
+    horizontal
+    pagingEnabled
+    showsHorizontalScrollIndicator={false}
+    style={styles.imageGallery}
+  >
+    {(Array.isArray(product.images) && product.images.length > 0 ? product.images : [product.image]).map((img, index) => (
+      <Image
+        key={index}
+        source={{ uri: img || 'https://via.placeholder.com/400' }}
+        style={styles.productImage}
+        resizeMode="cover"
+      />
+    ))}
+  </ScrollView>
 
-      {/* Image Indicator */}
-      <View style={styles.imageIndicator}>
-        {product.images.map((_, index) => (
-          <View key={index} style={styles.indicatorDot} />
-        ))}
-      </View>
+  {/* Image Indicators */}
+  <View style={styles.imageIndicator}>
+    {(Array.isArray(product.images) && product.images.length > 0 ? product.images : [product.image]).map((_, index) => (
+      <View key={index} style={styles.indicatorDot} />
+    ))}
+  </View>
+</View>
 
-      {/* Product Info Card */}
+
+      {/* Info Card */}
       <View style={styles.infoCard}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>{product.title}</Text>
@@ -56,7 +58,6 @@ export default function ProductDetailScreen() {
           {product.price} {currencySymbol}
         </Text>
 
-        {/* Details Grid */}
         <View style={styles.detailsGrid}>
           <View style={styles.detailItem}>
             <MaterialIcons name="category" size={20} color="#64748B" />
@@ -93,7 +94,6 @@ export default function ProductDetailScreen() {
           </View>
         </View>
 
-        {/* Description */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>تفاصيل المنتج</Text>
           <Text style={styles.description}>
@@ -101,7 +101,6 @@ export default function ProductDetailScreen() {
           </Text>
         </View>
 
-        {/* Seller Info */}
         <View style={styles.sellerSection}>
           <Text style={styles.sectionTitle}>معلومات البائع</Text>
           <View style={styles.sellerInfo}>
@@ -112,32 +111,26 @@ export default function ProductDetailScreen() {
                 {' '}{product.city}, {product.governorate}
               </Text>
             </View>
-            <View style={styles.ratingContainer}>
+            {/* <View style={styles.ratingContainer}>
               <FontAwesome name="star" size={16} color="#F59E0B" />
               <Text style={styles.ratingText}>4.8 (24)</Text>
-            </View>
+            </View> */}
           </View>
         </View>
       </View>
 
-      {/* Fixed Action Buttons */}
+      {/* Fixed Action Bar */}
       <View style={styles.actionBar}>
-        <TouchableOpacity 
-          style={styles.saveButton}
-          onPress={() => {/* Implement save functionality */}}
-        >
+        <TouchableOpacity style={styles.saveButton}>
           <Ionicons name="bookmark-outline" size={24} color="#3B82F6" />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.primaryButton}
-          onPress={handleCallSeller}
-        >
+
+        <TouchableOpacity style={styles.primaryButton} onPress={handleCallSeller}>
           <Ionicons name="call-outline" size={20} color="#FFFFFF" />
           <Text style={styles.primaryButtonText}>اتصال بالبائع</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -145,6 +138,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  imageWrapper: {
+    height: 300,
+    width: '100%',
+    position: 'relative',
+    zIndex: 1,
   },
   imageGallery: {
     height: 300,
@@ -157,7 +156,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row-reverse',
     justifyContent: 'center',
     position: 'absolute',
-    top: 280,
+    bottom: 10,
     left: 0,
     right: 0,
   },
@@ -165,16 +164,16 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     marginHorizontal: 4,
   },
   infoCard: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    marginTop: -24,
     padding: 24,
     paddingBottom: 100,
+    zIndex: 0,
   },
   headerRow: {
     flexDirection: 'row-reverse',
@@ -207,7 +206,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 24,
     fontFamily: 'Tajawal-Bold',
-    color: '#1E40AF',
+    color: '#16A34A',
     textAlign: 'right',
     marginBottom: 16,
   },
@@ -332,26 +331,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal-Bold',
     fontSize: 16,
     marginRight: 8,
-  },
-  callButton: {
-    backgroundColor: '#10B981', // Green for high visibility
-    flexDirection: 'row-reverse',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20
-  },
-  callButtonText: {
-    color: 'white',
-    fontFamily: 'Tajawal-Bold',
-    fontSize: 18,
-    marginRight: 10
-  },
-  warningText: {
-    color: '#EF4444',
-    fontFamily: 'Tajawal-Regular',
-    textAlign: 'right',
-    marginTop: 10
   }
 });
