@@ -49,7 +49,8 @@ export default function MainStack() {
          component={(ProductDetailScreen)}
         options={({ route }) => ({ 
           title: route.params.product.title,
-          headerBackTitle: ar.MARKETPLACE.TITLE
+          headerBackTitle: ar.MARKETPLACE.TITLE,
+          headerShown: false
         })}
       />
       <Stack.Screen

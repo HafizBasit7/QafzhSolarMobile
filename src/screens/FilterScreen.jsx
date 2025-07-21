@@ -109,9 +109,9 @@ export default function FilterScreen() {
   minimumValue={0}
   maximumValue={10000000}
   step={50000}
-  minimumTrackTintColor="#1E3A8A"
+  minimumTrackTintColor="#16A34A"
   maximumTrackTintColor="#E2E8F0"
-  thumbTintColor="#1E3A8A"
+  thumbTintColor="#16A34A"
   value={filters.priceRange[1]}
   onValueChange={(value) => setFilters({...filters, priceRange: [filters.priceRange[0], value]})}
   onSlidingComplete={(value) => setFilters({...filters, priceRange: [filters.priceRange[0], value]})}
@@ -153,7 +153,7 @@ export default function FilterScreen() {
             <Switch
               value={filters.showVerified}
               onValueChange={(value) => setFilters({...filters, showVerified: value})}
-              trackColor={{ false: '#E2E8F0', true: '#1E3A8A' }}
+              trackColor={{ false: '#E2E8F0', true: '#16A34A' }}
               thumbColor="#ffffff"
             />
           </View>
@@ -162,7 +162,7 @@ export default function FilterScreen() {
             <Switch
               value={filters.showUserListings}
               onValueChange={(value) => setFilters({...filters, showUserListings: value})}
-              trackColor={{ false: '#E2E8F0', true: '#1E3A8A' }}
+              trackColor={{ false: '#E2E8F0', true: '#16A34A' }}
               thumbColor="#ffffff"
             />
           </View>
@@ -272,7 +272,7 @@ const styles = {
     bottom: 20,
     left: 16,
     right: 16,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#16A34A',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',

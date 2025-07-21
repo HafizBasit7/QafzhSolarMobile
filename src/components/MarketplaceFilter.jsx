@@ -149,9 +149,9 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
   step={50000}
   value={filters.priceRange[0]}
   onValueChange={(value) => setFilters({...filters, priceRange: [value, filters.priceRange[1]]})}
-  minimumTrackTintColor="#3B82F6"
+  minimumTrackTintColor="#16A34A"
   maximumTrackTintColor="#E5E7EB"
-  thumbTintColor="#3B82F6"
+  thumbTintColor="#16A34A"
 />
               <View style={styles.priceRangeText}>
                 <Text style={styles.priceText}>{filters.priceRange[0].toLocaleString()}</Text>
@@ -189,7 +189,7 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
             <View style={styles.switchContainer}>
               <Text style={styles.switchLabel}>عرض المنتجات الموثقة فقط</Text>
               <Switch
-                trackColor={{ false: "#E5E7EB", true: "#3B82F6" }}
+                trackColor={{ false: "#E5E7EB", true: "#16A34A" }}
                 thumbColor="#FFFFFF"
                 value={filters.showVerified}
                 onValueChange={toggleVerified}
@@ -203,7 +203,7 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
           style={styles.applyButton}
           onPress={() => onApply(filters)}
         >
-          <Text style={styles.applyButtonText}>{ar.COMMON.APPLY_FILTERS}</Text>
+          <Text style={styles.applyButtonText}>{ar.COMMON.APPLY_FILTERS}الفلاتر</Text>
         </TouchableOpacity>
       </View>
     </Modal>
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   resetText: {
     fontSize: 14,
     fontFamily: 'Tajawal-Medium',
-    color: '#3B82F6',
+    color: '#16A34A',
   },
   filterContent: {
     flex: 1,
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
   },
   selectedOption: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#16A34A',
   },
   optionText: {
     fontSize: 14,
@@ -321,14 +321,14 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   applyButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#16A34A',
     paddingVertical: 16,
     marginHorizontal: 20,
     marginBottom: 24,
     borderRadius: 12,
     alignItems: 'center',
     elevation: 2,
-    shadowColor: '#3B82F6',
+    shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
