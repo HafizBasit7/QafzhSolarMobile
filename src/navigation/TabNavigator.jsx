@@ -1,16 +1,17 @@
+import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons, MaterialIcons, AntDesign, FontAwesome } from '@expo/vector-icons';
+import { Ionicons, AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, StyleSheet, Dimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
+
 import MarketplaceScreen from '../screens/MarketplaceScreen';
 import CalculatorScreen from '../screens/CalculatorScreen';
 import ProductSubmissionScreen from '../screens/ProductSubmissionScreen';
-import ar from '../locales/ar';
 import AdsScreen from '../screens/AdsScreen';
 import ProfileStack from './ProfileStack';
 
-// Responsive scaling functions
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const isSmallDevice = width < 375;
 const isTablet = width >= 768;
 
@@ -28,6 +29,7 @@ const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation(); // ✅ Use i18n hook
 
   return (
     <Tab.Navigator
@@ -48,7 +50,6 @@ export default function TabNavigator() {
           elevation: 0,
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E2E8F0',
-          // paddingBottom: insets.bottom > 0 ? insets.bottom - scaleSize(5) : scaleSize(5),
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.05,
@@ -67,10 +68,10 @@ export default function TabNavigator() {
         name="MarketplaceTab"
         component={MarketplaceScreen}
         options={{
-          title: ar.MARKETPLACE.TITLE,
+          title: t('MARKETPLACE.TITLE'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? "home" : "home-outline"}
+              name={focused ? 'home' : 'home-outline'}
               size={scaleSize(size)}
               color={color}
             />
@@ -82,10 +83,10 @@ export default function TabNavigator() {
         name="CalculatorTab"
         component={CalculatorScreen}
         options={{
-          title: ar.CALCULATOR.TITLE,
+          title: t('CALCULATOR.TITLE'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? "calculator" : "calculator-outline"}
+              name={focused ? 'calculator' : 'calculator-outline'}
               size={scaleSize(size)}
               color={color}
             />
@@ -99,30 +100,23 @@ export default function TabNavigator() {
         options={{
           title: '',
           tabBarIcon: ({ focused }) => (
-            <View style={[
-              styles.addButton,
-              focused && styles.addButtonFocused
-            ]}>
-              <AntDesign
-                name="plus"
-                size={scaleSize(24)}
-                color="#FFFFFF"
-              />
+            <View style={[styles.addButton, focused && styles.addButtonFocused]}>
+              <AntDesign name="plus" size={scaleSize(24)} color="#FFFFFF" />
             </View>
           ),
           tabBarLabel: () => null,
         }}
       />
 
-<Tab.Screen
+      <Tab.Screen
         name="OffersTab"
         component={AdsScreen}
         options={{
-          title: 'العروض',
-          tabBarIcon: ({ color, size, focused }) => (
+          title: t('OFFERS.TITLE'),
+          tabBarIcon: ({ color, size }) => (
             <FontAwesome
-              name={focused ? "tag" : "tag"}
-              size={24} // Fixed size (or use scaleSize if needed)
+              name="tag"
+              size={scaleSize(24)}
               color={color}
             />
           ),
@@ -131,36 +125,18 @@ export default function TabNavigator() {
 
       <Tab.Screen
         name="ProfileTab"
-        component={ProfileStack} // Replace with your Profile screen
+        component={ProfileStack}
         options={{
-          title: 'الملف الشخصي',
+          title: t('PROFILE.TITLE'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? "person" : "person-outline"}
+              name={focused ? 'person' : 'person-outline'}
               size={scaleSize(size)}
               color={color}
             />
           ),
         }}
       />
-
-
-
-
-      {/* <Tab.Screen
-        name="ProfileTab"
-        component={MarketplaceScreen} // Replace with your Profile screen
-        options={{
-          title: 'الملف الشخصي',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons 
-              name={focused ? "person" : "person-outline"} 
-              size={scaleSize(size)} 
-              color={color} 
-            />
-          ),
-        }}
-      /> */}
     </Tab.Navigator>
   );
 }

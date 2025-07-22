@@ -1,28 +1,21 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
+
 import TabNavigator from './TabNavigator';
 import ProductSubmissionScreen from '../screens/ProductSubmissionScreen';
 import VerificationScreen from '../screens/VerificationScreen';
 import ShopScreen from '../screens/ShopScreen';
 import EngineerScreen from '../screens/EngineerDetailScreen';
 import CalculatorResultsScreen from '../screens/CalculatorResultsScreen';
-import FilterScreen from '../screens/FilterScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import CalculatorScreen from '../screens/CalculatorScreen';
 import AdBannerScreen from '../screens/AdBannerScreen';
-import ar from '../locales/ar';
-// import ScreenWrapper from '../components/ScreenWrapper'
+
 const Stack = createNativeStackNavigator();
 
-
-// function withScreenWrapper(Component) {
-//   return (props) => (
-//     <ScreenWrapper>
-//       <Component {...props} />
-//     </ScreenWrapper>
-//   );
-// }
-
 export default function MainStack() {
+  const { t } = useTranslation();
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -31,98 +24,81 @@ export default function MainStack() {
           fontFamily: 'Tajawal-Bold',
           fontSize: 18,
         },
-        headerBackButtonTitle: 'رجوع',
+        headerBackButtonTitle: t('COMMON.BACK'),
         contentStyle: { backgroundColor: '#f5f5f5' },
         animation: 'slide_from_right',
       }}
     >
-      {/* Main Tabs */}
       <Stack.Screen
         name="MainTabs"
-        component={(TabNavigator)}
+        component={TabNavigator}
         options={{ headerShown: false }}
       />
 
-      {/* Marketplace Flow */}
       <Stack.Screen
         name="ProductDetail"
-         component={(ProductDetailScreen)}
-        options={({ route }) => ({ 
-          title: route.params.product.title,
-          headerBackTitle: ar.MARKETPLACE.TITLE,
-          headerShown: false
+        component={ProductDetailScreen}
+        options={({ route }) => ({
+          title: route.params?.product?.title || t('MARKETPLACE.PRODUCT_DETAIL'),
+          headerBackTitle: t('MARKETPLACE.TITLE'),
+          headerShown: false,
         })}
       />
       <Stack.Screen
         name="ProductSubmission"
-        component={(ProductSubmissionScreen)}
-        options={{ 
-          title: 'إضافة منتج جديد',
-          headerBackTitle: ar.MARKETPLACE.TITLE
+        component={ProductSubmissionScreen}
+        options={{
+          title: t('MARKETPLACE.ADD_PRODUCT'),
+          headerBackTitle: t('MARKETPLACE.TITLE'),
         }}
       />
       <Stack.Screen
         name="Verification"
-        component={(VerificationScreen)}
-        options={{ 
-          title: 'تأكيد رقم الهاتف',
-          headerBackTitle: 'إضافة منتج'
+        component={VerificationScreen}
+        options={{
+          title: t('AUTH.VERIFY_PHONE'),
+          headerBackTitle: t('MARKETPLACE.ADD_PRODUCT'),
         }}
       />
       <Stack.Screen
         name="Shop"
-        component={(ShopScreen)}
-        options={({ route }) => ({ 
-          // title: route.params.shop.name,
-          // headerBackTitle: ar.MARKETPLACE.TITLE
-          headerShown: false
-        })}
-      />
-      <Stack.Screen
-        name="Filters"
-        component={(FilterScreen)}
-        options={{ 
-          title: 'تصفية النتائج',
-          headerBackTitle: ar.MARKETPLACE.TITLE
+        component={ShopScreen}
+        options={{
+          headerShown: false,
         }}
       />
 
-      {/* Engineers Flow */}
       <Stack.Screen
         name="EngineerDetail"
-        component={(EngineerScreen)}
-        options={({ route }) => ({ 
-          headerShown: false
-          // title: route.params.engineer.name,
-      
-        })}
+        component={EngineerScreen}
+        options={{
+          headerShown: false,
+        }}
       />
 
-      {/* Calculator Flow */}
       <Stack.Screen
         name="Calculator"
-        component={(CalculatorScreen)}
-        options={{ 
-          title: ar.CALCULATOR.TITLE,
-          headerBackTitle: 'الرئيسية'
+        component={CalculatorScreen}
+        options={{
+          title: t('CALCULATOR.TITLE'),
+          headerBackTitle: t('HOME.TITLE'),
         }}
       />
       <Stack.Screen
         name="CalculatorResults"
-        component={(CalculatorResultsScreen)}
-        options={{ 
-          title: 'نتائج الحساب',
-          headerBackTitle: ar.CALCULATOR.TITLE
+        component={CalculatorResultsScreen}
+        options={{
+          title: t('CALCULATOR.RESULTS'),
+          headerBackTitle: t('CALCULATOR.TITLE'),
         }}
       />
 
-      {/* Ads Flow */}
       <Stack.Screen
         name="AdBanner"
-        component={(AdBannerScreen)}
-        options={({ route }) => ({ 
-          title: route.params.ad?.title || 'عرض إعلاني',
-          headerBackTitle: 'رجوع'
+        component={AdBannerScreen}
+        options={({ route }) => ({
+          title: route.params?.ad?.title || t('ADS.VIEW_AD'),
+          headerBackTitle: t('COMMON.BACK'),
         })}
       />
     </Stack.Navigator>

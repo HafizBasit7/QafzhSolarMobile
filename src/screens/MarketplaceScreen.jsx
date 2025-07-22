@@ -21,9 +21,10 @@ import ShopCard from "../components/ShopCard";
 import EngineerCard from "../components/EngineerCard";
 import MarketplaceFilter from "../components/MarketplaceFilter";
 import { navigate } from "../navigation/navigationHelper";
-import ar from "../locales/ar";
+import { useTranslation } from "react-i18next";
 
 import { MaterialIcons, FontAwesome, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+
 
 // Responsive dimensions calculation
 const { width, height } = Dimensions.get('window');
@@ -40,7 +41,24 @@ const scaleFont = (size) => {
   const scaleFactor = isTablet ? 1.15 : isSmallDevice ? 0.95 : 1;
   return size * scaleFactor;
 };
-// Enhanced product images with better quality
+
+
+export default function MarketplaceScreen() {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const scrollViewRef = useRef(null);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  const [filters, setFilters] = useState({
+    productType: "",
+    condition: "",
+    priceRange: [0, 1000000],
+    governorate: "",
+  });
+
+  // Enhanced product images with better quality
 const PRODUCT_IMAGES = {
   solarPanels: [
     'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
@@ -82,10 +100,10 @@ const mockProducts = [
     title: "لوح شمسي 300 واط - Jinko Solar",
     price: "150,000",
     currency: "YER",
-    condition: "جديد",
-    type: "ألواح شمسية",
-    brand: "Jinko",
-    location: "صنعاء",
+    condition: t('CONDITIONS.NEW'),
+    type: t('PRODUCT_TYPES.PANEL'),
+    brand: t('BRANDS.JINKO'),
+    location: t('GOVERNORATES.SANAA'),
     images: PRODUCT_IMAGES.solarPanels,
     isVerified: true,
     rating: 4.8,
@@ -173,10 +191,13 @@ const mockShops = [
   {
     id: "s1",
     name: "متجر الطاقة الخضراء",
-    city: "عدن",
-    governorate: "عدن",
+    city: t('CITIES.NEW'),
+      governorate: t('GOVERNORATES.ADEN'),
     phone: "+967712345678",
-    services: ["بيع", "تركيب"],
+    services: [
+      t('SERVICES.SELL'), 
+      t('SERVICES.INSTALL')
+    ],
     isVerified: true,
     image: PRODUCT_IMAGES.shops[0],
     rating: 4.8,
@@ -217,7 +238,7 @@ const mockEngineers = [
     name: "م. أحمد محمد الصالحي",
     specialization: "مهندس أنظمة الطاقة الشمسية",
     experience: "8 سنوات",
-    location: "صنعاء",
+    location: t('GOVERNORATES.SANAA'),
     phone: "+967771234567",
     email: "ahmed.solar@email.com",
     isVerified: true,
@@ -225,7 +246,12 @@ const mockEngineers = [
     rating: 4.9,
     reviews: 47,
     completedProjects: 125,
-    services: ["تصميم الأنظمة", "التركيب", "الصيانة", "الاستشارات"],
+    // services: ["تصميم الأنظمة", "التركيب", "الصيانة", "الاستشارات"],
+    services: [
+      t('SERVICES.INSTALL'),
+      t('SERVICES.MAINTENANCE'),
+      t('SERVICES.CONSULTING'),
+    ],
     certifications: ["معتمد من الطاقة المتجددة", "مهندس محترف"]
   },
   {
@@ -280,28 +306,14 @@ const mockEngineers = [
 
 // Category configuration
 const categories = [
-  { id: 'all', name: 'الكل', icon: 'view-grid', count: mockProducts.length + mockShops.length + mockEngineers.length },
-  { id: 'products', name: 'منتجات', icon: 'solar-panel-large', count: mockProducts.length },
-  { id: 'shops', name: 'متاجر', icon: 'store', count: mockShops.length },
-  { id: 'engineers', name: 'مهندسون', icon: 'account-hard-hat', count: mockEngineers.length },
-  { id: 'solarPanels', name: 'ألواح شمسية', icon: 'solar-panel', count: mockProducts.filter(p => p.type === 'ألواح شمسية').length },
-  { id: 'inverters', name: 'انفرترات', icon: 'sine-wave', count: mockProducts.filter(p => p.type === 'انفرتر').length },
-  { id: 'batteries', name: 'بطاريات', icon: 'battery', count: mockProducts.filter(p => p.type === 'بطارية').length }
+  { id: 'all',  name: t('COMMON.ALL'), icon: 'view-grid', count: mockProducts.length + mockShops.length + mockEngineers.length },
+  { id: 'products', name: t('MARKETPLACE.LISTINGS'),  icon: 'solar-panel-large', count: mockProducts.length },
+  { id: 'shops', name: t('SHOP.TITLE'), icon: 'store', count: mockShops.length },
+  { id: 'engineers', name: t('ENGINEERS.TITLE'), icon: 'account-hard-hat', count: mockEngineers.length },
+  { id: 'solarPanels', name: t('PRODUCT_TYPES.PANEL'), icon: 'solar-panel', count: mockProducts.filter(p => p.type === 'ألواح شمسية').length },
+  { id: 'inverters',  name: t('PRODUCT_TYPES.INVERTER'), icon: 'sine-wave', count: mockProducts.filter(p => p.type === 'انفرتر').length },
+  { id: 'batteries', name: t('PRODUCT_TYPES.BATTERY'), icon: 'battery', count: mockProducts.filter(p => p.type === 'بطارية').length }
 ];
-
-export default function MarketplaceScreen() {
-  const [activeTab, setActiveTab] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const scrollViewRef = useRef(null);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-
-  const [filters, setFilters] = useState({
-    productType: "",
-    condition: "",
-    priceRange: [0, 1000000],
-    governorate: "",
-  });
 
   
 
@@ -364,13 +376,13 @@ const onRefresh = useCallback(() => {
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <View style={styles.headerLeft}>
-                <Text style={styles.title}>سوق الطاقة الشمسية</Text>
-                <Text style={styles.subtitle}>اكتشف أفضل المنتجات والخدمات</Text>
+              <Text style={styles.title}>{t('MARKETPLACE.TITLE')}</Text>
+              <Text style={styles.subtitle}>اكتشف أفضل المنتجات والخدمات</Text>
               </View>
               <TouchableOpacity
                 style={styles.searchButton}
                 onPress={() => navigate("Search")}
-                accessibilityLabel="بحث"
+                accessibilityLabel={t('COMMON.SEARCH')}
                 accessibilityRole="button"
               >
                 <MaterialIcons name="search" size={24} color="#16A34A" />
@@ -381,16 +393,19 @@ const onRefresh = useCallback(() => {
               <TouchableOpacity
                 style={styles.filterButton}
                 onPress={() => setShowFilters(true)}
-                accessibilityLabel="فلترة النتائج"
+                accessibilityLabel={t('COMMON.FILTERS')}
                 accessibilityRole="button"
               >
                 <FontAwesome name="sliders" size={16} color="#FFFFFF" />
-                <Text style={styles.filterButtonText}>فلترة</Text>
+                <Text style={styles.filterButtonText}>{t('COMMON.FILTERS')}</Text>
               </TouchableOpacity>
               
               <View style={styles.locationTag}>
                 <Ionicons name="location-sharp" size={14} color="#FFFFFF" />
-                <Text style={styles.locationText}>صنعاء، اليمن</Text>
+                <Text style={styles.locationText}>
+                  {t('GOVERNORATES.SANAA')}, {t('CITIES.NEW')}
+                </Text>
+                    
               </View>
               
               {/* <TouchableOpacity style={styles.notificationButton}>
@@ -426,7 +441,7 @@ const onRefresh = useCallback(() => {
             <Text style={styles.bannerTitle}>خصم حتى 25%</Text>
             <Text style={styles.bannerSubtitle}>على جميع الألواح الشمسية</Text>
             <View style={styles.bannerCTA}>
-              <Text style={styles.bannerCTAText}>تسوق الآن</Text>
+            <Text style={styles.bannerCTAText}>{t('MARKETPLACE.SELL_ITEM')}</Text>
               <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
             </View>
           </View>
@@ -491,11 +506,13 @@ const onRefresh = useCallback(() => {
         <View style={styles.section}>
           {activeTab === 'all' && (
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>المنتجات المميزة</Text>
+               <View style={styles.titleContainer}>
+              <Text style={styles.sectionTitle}>{t('MARKETPLACE.LISTINGS')}</Text>
+              </View>
               <TouchableOpacity onPress={() => setActiveTab('products')}
-              accessibilityLabel="عرض جميع المنتجات"
+             accessibilityLabel={t('COMMON.ALL') + ' ' + t('MARKETPLACE.LISTINGS')}
                 >
-                <Text style={styles.seeAllText}>عرض الكل</Text>
+                {/* <Text style={styles.seeAllText}>{t('COMMON.ALL')}</Text> */}
               </TouchableOpacity>
             </View>
           )}
@@ -526,9 +543,11 @@ const onRefresh = useCallback(() => {
         <View style={styles.section}>
           {activeTab === 'all' && (
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>مهندسون خبراء</Text>
+               <View style={styles.titleContainer}>
+             <Text style={styles.sectionTitle}>{t('ENGINEERS.TITLE')}</Text>
+             </View>
               <TouchableOpacity onPress={() => setActiveTab('engineers')}>
-                <Text style={styles.seeAllText}>عرض الكل</Text>
+              {/* <Text style={styles.seeAllText}>{t('COMMON.ALL')}</Text> */}
               </TouchableOpacity>
             </View>
           )}
@@ -556,11 +575,13 @@ const onRefresh = useCallback(() => {
         <View style={styles.section}>
           {activeTab === 'all' && (
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>متاجر موثوقة</Text>
+               <View style={styles.titleContainer}>
+              <Text style={styles.sectionTitle}>{t('SHOP.TITLE')}</Text>
+              </View>
               <TouchableOpacity onPress={() => setActiveTab('shops')}
-                accessibilityLabel="عرض جميع المتاجر"
+                accessibilityLabel={t('COMMON.ALL') + ' ' + t('SHOP.TITLE')}
                 >
-                <Text style={styles.seeAllText}>عرض الكل</Text>
+               {/* <Text style={styles.seeAllText}>{t('COMMON.ALL')}</Text> */}
               </TouchableOpacity>
             </View>
           )}
@@ -634,6 +655,7 @@ const onRefresh = useCallback(() => {
 
 
 const styles = StyleSheet.create({
+  
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -861,19 +883,31 @@ const styles = StyleSheet.create({
     marginBottom: scaleSize(24),
   },
   sectionHeader: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: scaleSize(16),
     paddingHorizontal: scaleSize(4),
+    position: 'relative', // Add this
+    paddingTop:40,
+  paddingBottom:10
   },
+
   sectionTitle: {
-    fontFamily: 'Tajawal-Bold',
-    fontSize: scaleFont(20),
-    color: '#1E293B',
-    
-    
-  },
+  fontFamily: 'Tajawal-Bold',
+  fontSize: scaleFont(30),
+  color: '#1E293B',
+  textAlign: 'center', // Add this
+},
+titleContainer: {
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingTop:10,
+  paddingBottom:10
+},
   seeAllText: {
     fontFamily: 'Tajawal-Medium',
     fontSize: scaleFont(14),

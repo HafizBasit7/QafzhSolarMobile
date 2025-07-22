@@ -12,29 +12,20 @@ import { Picker } from "@react-native-picker/picker";
 import ImageUploader from "../utils/imageUpload";
 import CurrencyPicker from "../components/CurrencyPicker";
 import { navigate } from "../navigation/navigationHelper";
-import ar from "../locales/ar";
+import { useTranslation } from "react-i18next";
 
-// Sample data
-const brands = [
-  { label: "Jinko Solar", value: "jinko" },
-  { label: "Longi", value: "longi" },
-  { label: "Huawei", value: "huawei" },
-  { label: "Tesla", value: "tesla" }
-];
 
-const productTypes = [
-  { label: ar.PRODUCT_TYPES?.PANEL || "ألواح شمسية", value: "panel" },
-  { label: ar.PRODUCT_TYPES?.INVERTER || "انفرتر", value: "inverter" },
-  { label: ar.PRODUCT_TYPES?.BATTERY || "بطارية", value: "battery" },
-  { label: ar.PRODUCT_TYPES?.ACCESSORY || "ملحقات", value: "accessory" },
-];
-
-const governorates = [
-  { label: "صنعاء", value: "sanaa", cities: ["القديمة", "الجديدة"] },
-  { label: "عدن", value: "aden", cities: ["كريتر", "خور مكسر"] }
-];
 
 export default function ProductSubmissionScreen({ route }) {
+  const { t } = useTranslation();
+
+  const brands = [
+    { label: t('BRANDS.JINKO'), value: 'jinko' },
+    { label: t('BRANDS.LONGI'), value: 'longi' },
+    { label: t('BRANDS.HUAWEI'), value: 'huawei' },
+    { label: t('BRANDS.TESLA'), value: 'tesla' }
+  ];
+
   const [product, setProduct] = useState({
     type: "",
     condition: "new",
@@ -48,6 +39,18 @@ export default function ProductSubmissionScreen({ route }) {
     phone: route.params?.prefillPhone || "",
     images: [],
   });
+
+  const governorates = [
+    { label: t("GOVERNORATES.SANAA"), value: "sanaa", cities: [t("CITIES.OLD"), t("CITIES.NEW")] },
+    { label: t("GOVERNORATES.ADEN"), value: "aden", cities: [t("CITIES.CRATER"), t("CITIES.KHORMAKSAR")] }
+  ];
+
+  const productTypes = [
+    { label: t("PRODUCT_TYPES.PANEL"), value: "panel" },
+    { label: t("PRODUCT_TYPES.INVERTER"), value: "inverter" },
+    { label: t("PRODUCT_TYPES.BATTERY"), value: "battery" },
+    { label: t("PRODUCT_TYPES.ACCESSORY"), value: "accessory" },
+  ];
 
   const [cities, setCities] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,29 +66,27 @@ export default function ProductSubmissionScreen({ route }) {
   };
 
   const validateForm = () => {
-    if (!product.type) return "نوع المنتج مطلوب";
-    if (!product.title) return "عنوان المنتج مطلوب";
-    if (!product.price) return "السعر مطلوب";
-    if (!product.brand) return "العلامة التجارية مطلوبة";
-    if (!product.governorate) return "المحافظة مطلوبة";
-    // if (!product.city) return "المدينة مطلوبة";
-    // if (product.images.length === 0) return "صورة المنتج مطلوبة";
+    if (!product.type) return t("VALIDATION.PRODUCT_TYPE_REQUIRED");
+    if (!product.title) return t("VALIDATION.TITLE_REQUIRED");
+    if (!product.price) return t("VALIDATION.PRICE_REQUIRED");
+    if (!product.brand) return t("VALIDATION.BRAND_REQUIRED");
+    if (!product.governorate) return t("VALIDATION.GOVERNORATE_REQUIRED");
     return null;
   };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    
+
     const error = validateForm();
     if (error) {
-      Alert.alert("خطأ", error);
+      Alert.alert(t("COMMON.ERROR"), error);
       return;
     }
 
     setIsSubmitting(true);
     try {
       if (!product.phone) {
-        navigate("Verification", { 
+        navigate("Verification", {
           productData: product,
           onSuccess: () => submitProduct()
         });
@@ -106,15 +107,15 @@ export default function ProductSubmissionScreen({ route }) {
       };
 
       console.log("Submitting:", submissionData);
-      
+
       Alert.alert(
-        "تم الإرسال",
-        "تم إرسال المنتج بنجاح وسيظهر بعد الموافقة عليه",
-        [{ text: "حسناً", onPress: () => navigate("Marketplace") }]
+        t("PRODUCT_FORM.SUCCESS_TITLE"),
+        t("PRODUCT_FORM.SUCCESS_MESSAGE"),
+        [{ text: t("COMMON.OK"), onPress: () => navigate("Marketplace") }]
       );
     } catch (error) {
       console.error("Submission error:", error);
-      Alert.alert("خطأ", "حدث خطأ أثناء إرسال المنتج");
+      Alert.alert(t("COMMON.ERROR"), t("PRODUCT_FORM.SUBMIT_ERROR"));
     }
   };
 
@@ -124,15 +125,11 @@ export default function ProductSubmissionScreen({ route }) {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.sectionTitle}>
-        {ar.PRODUCT_FORM?.TITLE || "إضافة منتج جديد"}
-      </Text>
+      <Text style={styles.sectionTitle}>{t("PRODUCT_FORM.TITLE")}</Text>
 
       {/* Product Type */}
       <View style={styles.formGroup}>
-        <Text style={styles.label}>
-          {ar.PRODUCT_FORM?.PRODUCT_TYPE || "نوع المنتج"}
-        </Text>
+        <Text style={styles.label}>{t("PRODUCT_FORM.PRODUCT_TYPE")}</Text>
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={product.type}
@@ -141,16 +138,9 @@ export default function ProductSubmissionScreen({ route }) {
             mode="dropdown"
             style={styles.picker}
           >
-            <Picker.Item 
-              label={ar.PRODUCT_FORM?.SELECT_TYPE || "اختر نوع المنتج"} 
-              value="" 
-            />
+            <Picker.Item label={t("PRODUCT_FORM.SELECT_TYPE")} value="" />
             {productTypes.map((item) => (
-              <Picker.Item
-                key={item.value}
-                label={item.label}
-                value={item.value}
-              />
+              <Picker.Item key={item.value} label={item.label} value={item.value} />
             ))}
           </Picker>
         </View>
@@ -158,9 +148,7 @@ export default function ProductSubmissionScreen({ route }) {
 
       {/* Condition */}
       <View style={styles.formGroup}>
-        <Text style={styles.label}>
-          {ar.PRODUCT_FORM?.CONDITION || "حالة المنتج"}
-        </Text>
+        <Text style={styles.label}>{t("PRODUCT_FORM.CONDITION")}</Text>
         <View style={styles.conditionOptions}>
           {["new", "used", "needs_repair"].map((cond) => (
             <TouchableOpacity
@@ -172,11 +160,7 @@ export default function ProductSubmissionScreen({ route }) {
               onPress={() => setProduct({ ...product, condition: cond })}
             >
               <Text style={styles.conditionText}>
-                {cond === "new"
-                  ? "جديد"
-                  : cond === "used"
-                  ? "مستعمل"
-                  : "يحتاج إصلاح"}
+                {t(`CONDITIONS.${cond.toUpperCase()}`)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -185,43 +169,37 @@ export default function ProductSubmissionScreen({ route }) {
 
       {/* Title */}
       <View style={styles.formGroup}>
-        <Text style={styles.label}>
-          {ar.PRODUCT_FORM?.TITLE || "عنوان المنتج"}
-        </Text>
+        <Text style={styles.label}>{t("PRODUCT_FORM.TITLE")}</Text>
         <TextInput
           style={styles.input}
           value={product.title}
           onChangeText={(text) => setProduct({ ...product, title: text })}
-          placeholder={ar.PRODUCT_FORM?.TITLE_PLACEHOLDER || "أدخل عنوان المنتج"}
+          placeholder={t("PRODUCT_FORM.TITLE_PLACEHOLDER")}
         />
       </View>
 
       {/* Description */}
       <View style={styles.formGroup}>
-        <Text style={styles.label}>
-          {ar.PRODUCT_FORM?.DESCRIPTION || "وصف المنتج"}
-        </Text>
+        <Text style={styles.label}>{t("PRODUCT_FORM.DESCRIPTION")}</Text>
         <TextInput
           style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
           multiline
           value={product.description}
           onChangeText={(text) => setProduct({ ...product, description: text })}
-          placeholder={ar.PRODUCT_FORM?.DESCRIPTION_PLACEHOLDER || "أدخل وصف المنتج"}
+          placeholder={t("PRODUCT_FORM.DESCRIPTION_PLACEHOLDER")}
         />
       </View>
 
       {/* Price */}
       <View style={styles.formGroup}>
-        <Text style={styles.label}>
-          {ar.PRODUCT_FORM?.PRICE || "السعر"}
-        </Text>
+        <Text style={styles.label}>{t("PRODUCT_FORM.PRICE")}</Text>
         <View style={styles.priceInputContainer}>
           <TextInput
             style={styles.priceInput}
             keyboardType="numeric"
             value={product.price}
             onChangeText={(text) => setProduct({ ...product, price: text })}
-            placeholder={ar.PRODUCT_FORM?.PRICE_PLACEHOLDER || "أدخل السعر"}
+            placeholder={t("PRODUCT_FORM.PRICE_PLACEHOLDER")}
           />
           <CurrencyPicker
             selected={product.currency}
@@ -232,15 +210,13 @@ export default function ProductSubmissionScreen({ route }) {
 
       {/* Brand */}
       <View style={styles.formGroup}>
-        <Text style={styles.label}>
-          {ar.PRODUCT_FORM?.BRAND || "العلامة التجارية"}
-        </Text>
+        <Text style={styles.label}>{t("PRODUCT_FORM.BRAND")}</Text>
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={product.brand}
             onValueChange={(value) => setProduct({ ...product, brand: value })}
           >
-            <Picker.Item label="اختر العلامة التجارية" value="" />
+            <Picker.Item label={t("PRODUCT_FORM.BRAND")} value="" />
             {brands.map((brand) => (
               <Picker.Item key={brand.value} label={brand.label} value={brand.value} />
             ))}
@@ -250,15 +226,13 @@ export default function ProductSubmissionScreen({ route }) {
 
       {/* Governorate */}
       <View style={styles.formGroup}>
-        <Text style={styles.label}>
-          {ar.PRODUCT_FORM?.GOVERNORATE || "المحافظة"}
-        </Text>
+        <Text style={styles.label}>{t("PRODUCT_FORM.GOVERNORATE")}</Text>
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={product.governorate}
             onValueChange={handleGovernorateChange}
           >
-            <Picker.Item label="اختر المحافظة" value="" />
+            <Picker.Item label={t("PRODUCT_FORM.GOVERNORATE")} value="" />
             {governorates.map((gov) => (
               <Picker.Item key={gov.value} label={gov.label} value={gov.value} />
             ))}
@@ -267,48 +241,47 @@ export default function ProductSubmissionScreen({ route }) {
       </View>
 
       {/* City */}
-      {/* {product.governorate && (
+      {product.governorate && (
         <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            {ar.PRODUCT_FORM?.CITY || "المدينة"}
-          </Text>
+          <Text style={styles.label}>{t("PRODUCT_FORM.CITY")}</Text>
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={product.city}
               onValueChange={(value) => setProduct({ ...product, city: value })}
             >
-              <Picker.Item label="اختر المدينة" value="" />
+              <Picker.Item label={t("PRODUCT_FORM.SELECT_CITY")} value="" />
               {cities.map((city) => (
                 <Picker.Item key={city} label={city} value={city} />
               ))}
             </Picker>
           </View>
         </View>
-      )} */}
+      )}
 
-      {/* Image Uploader */}
+      {/* Image Uploader (optional) */}
       {/* <ImageUploader
         images={product.images}
         onImagesChange={(images) => setProduct({ ...product, images })}
       /> */}
 
       {/* Submit Button */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.submitButton, isSubmitting && styles.disabledButton]}
         onPress={handleSubmit}
         disabled={isSubmitting}
       >
         <Text style={styles.submitButtonText}>
-          {isSubmitting 
-            ? "جاري الإرسال..." 
-            : product.phone 
-              ? ar.COMMON?.SUBMIT || "إرسال" 
-              : ar.COMMON?.VERIFY_AND_SUBMIT || "التحقق ثم الإرسال"}
+          {isSubmitting
+            ? t("COMMON.SUBMITTING")
+            : product.phone
+              ? t("COMMON.SUBMIT")
+              : t("COMMON.VERIFY_AND_SUBMIT")}
         </Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

@@ -12,18 +12,20 @@ import {
   Platform
 } from 'react-native';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 
 export default function EngineerDetailScreen({ route, navigation }) {
   const { engineer } = route.params;
+  const { t } = useTranslation();
 
   const handleCall = () => {
     Linking.openURL(`tel:${engineer.phone}`);
   };
 
   const handleWhatsApp = () => {
-    const message = `مرحباً ${engineer.name}، أنا مهتم بخدماتك في مجال الطاقة الشمسية`;
+    const message = t('ENGINEER.whatsappMessage', { name: engineer.name });
     Linking.openURL(`whatsapp://send?phone=${engineer.phone}&text=${encodeURIComponent(message)}`);
   };
 
@@ -44,7 +46,7 @@ export default function EngineerDetailScreen({ route, navigation }) {
               {engineer.isVerified && (
                 <View style={styles.verifiedBadge}>
                   <MaterialIcons name="verified" size={16} color="#10B981" />
-                  <Text style={styles.verifiedText}>مهندس موثوق</Text>
+                  <Text style={styles.verifiedText}>{t('ENGINEER.verified')}</Text>
                 </View>
               )}
             </View>
@@ -62,48 +64,48 @@ export default function EngineerDetailScreen({ route, navigation }) {
         <View style={styles.contactButtons}>
           <TouchableOpacity style={styles.callButton} onPress={handleCall}>
             <Ionicons name="call-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.callButtonText}>اتصال</Text>
+            <Text style={styles.callButtonText}>{t('ENGINEER.call')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.whatsappButton} onPress={handleWhatsApp}>
             <Ionicons name="logo-whatsapp" size={20} color="#FFFFFF" />
-            <Text style={styles.whatsappButtonText}>واتساب</Text>
+            <Text style={styles.whatsappButtonText}>{t('ENGINEER.whatsapp')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Info Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>معلومات المهندس</Text>
+          <Text style={styles.sectionTitle}>{t('ENGINEER.info')}</Text>
           
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="certificate-outline" size={20} color="#16A34A" />
-            <Text style={styles.detailText}>الشهادات: {engineer.certifications?.join('، ')}</Text>
+            <Text style={styles.detailText}>{t('ENGINEER.certifications')}: {engineer.certifications?.join('، ')}</Text>
           </View>
 
           <View style={styles.detailRow}>
             <MaterialIcons name="work-outline" size={20} color="#16A34A" />
-            <Text style={styles.detailText}>الخبرة: {engineer.experience}</Text>
+            <Text style={styles.detailText}>{t('ENGINEER.experience')}: {engineer.experience}</Text>
           </View>
 
           <View style={styles.detailRow}>
             <MaterialIcons name="location-on" size={20} color="#16A34A" />
-            <Text style={styles.detailText}>المحافظة: {engineer.location}</Text>
+            <Text style={styles.detailText}>{t('ENGINEER.location')}: {engineer.location}</Text>
           </View>
 
           <View style={styles.detailRow}>
             <MaterialIcons name="phone" size={20} color="#16A34A" />
-            <Text style={styles.detailText}>الهاتف: {engineer.phone}</Text>
+            <Text style={styles.detailText}>{t('ENGINEER.phone')}: {engineer.phone}</Text>
           </View>
 
           <View style={styles.detailRow}>
             <MaterialIcons name="email" size={20} color="#16A34A" />
-            <Text style={styles.detailText}>البريد الإلكتروني: {engineer.email}</Text>
+            <Text style={styles.detailText}>{t('ENGINEER.email')}: {engineer.email}</Text>
           </View>
         </View>
 
         {/* Services */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>الخدمات المقدمة</Text>
+          <Text style={styles.sectionTitle}>{t('ENGINEER.services')}</Text>
           <View style={styles.servicesContainer}>
             {engineer.services?.map((service, index) => (
               <View key={index} style={styles.serviceBadge}>
@@ -115,20 +117,21 @@ export default function EngineerDetailScreen({ route, navigation }) {
 
         {/* Projects */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>المشاريع المنفذة</Text>
+          <Text style={styles.sectionTitle}>{t('ENGINEER.projects')}</Text>
           <Text style={styles.projectsText}>
-            قام المهندس بتنفيذ {engineer.completedProjects} مشروع في مجال الطاقة الشمسية
+            {t('ENGINEER.completedProjects', { count: engineer.completedProjects })}
           </Text>
         </View>
 
         {/* Request Button */}
         <TouchableOpacity style={styles.requestButton}  onPress={handleCall}>
-          <Text style={styles.requestButtonText}>طلب خدمة</Text>
+          <Text style={styles.requestButtonText}>{t('ENGINEER.requestService')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   safeArea: {

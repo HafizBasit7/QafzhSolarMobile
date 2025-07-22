@@ -1,9 +1,9 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
-
-// import UpdateProfileScreen from '../screens/profile/UpdateProfileScreen';
+import UpdateProfileScreen from '../screens/Profile/UpdateProfileScreen';
 import LikedPostsScreen from '../screens/Profile/LikedPostsScreen';
 import MyProductsScreen from '../screens/Profile/MyProductsScreen';
+import i18n from '../config/i18n';
 
 const Stack = createNativeStackNavigator();
 
@@ -12,6 +12,7 @@ const ProfileStack = () => {
     <Stack.Navigator
       initialRouteName="Profile"
       screenOptions={{
+        headerShown: false,
         headerTitleAlign: 'right',
         headerTitleStyle: {
           fontFamily: 'Tajawal-Bold',
@@ -22,22 +23,23 @@ const ProfileStack = () => {
       <Stack.Screen 
         name="Profile" 
         component={ProfileScreen} 
-        options={{ title: 'الملف الشخصي' }} 
+        options={{ title: i18n.t('PROFILE.TITLE') }}
+
       />
-      {/* <Stack.Screen 
+      <Stack.Screen 
         name="UpdateProfile" 
         component={UpdateProfileScreen} 
-        options={{ title: 'تعديل الملف' }} 
-      /> */}
+        options={{ title: i18n.t('PROFILE.UPDATE_PROFILE') }} 
+      />
       <Stack.Screen 
         name="LikedPosts" 
         component={LikedPostsScreen} 
-        options={{ title: 'المحفوظات' }} 
+        options={{ title: i18n.t('PROFILE.LIKED_PRODUCTS') }} 
       />
- <Stack.Screen 
+      <Stack.Screen 
         name="MyProducts" 
         component={MyProductsScreen} 
-        options={{ title: 'منتجاتي' }} 
+        options={{ title: i18n.t('PROFILE.MY_PRODUCTS') }} 
       />
     </Stack.Navigator>
   );

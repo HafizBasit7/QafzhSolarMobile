@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Button } from 'react-native';
+import { View, TextInput, Button, StyleSheet, I18nManager } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import ar from '../locales/ar';
+import { useTranslation } from 'react-i18next';
 
 export default function SellProductForm() {
+  const { t } = useTranslation();
   const [product, setProduct] = useState({
     title: '',
     price: '',
     currency: 'YER',
-    // other fields
+    // Add other fields as needed
   });
+
   const [images, setImages] = useState([]);
 
   const pickImage = async () => {
@@ -25,21 +27,33 @@ export default function SellProductForm() {
   };
 
   return (
-    <View style={{ padding: 16 }}>
+    <View style={styles.container}>
       <TextInput
-        placeholder="اسم المنتج"
+        placeholder={t('SELL_FORM.PRODUCT_NAME')}
         value={product.title}
-        onChangeText={(text) => setProduct({...product, title: text})}
-        style={{ 
-          fontFamily: 'Tajawal-Regular',
-          textAlign: 'right'
-        }}
+        onChangeText={(text) => setProduct({ ...product, title: text })}
+        style={styles.input}
       />
-      
+
+      {/* Add more form fields here using t('SELL_FORM.FIELD_KEY') as needed */}
+
       <Button 
-        title={ar.COMMON.SUBMIT}
-        onPress={() => console.log('Submit')}
+        title={t('COMMON.SUBMIT')} 
+        onPress={() => console.log('Submit')} 
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+  },
+  input: {
+    fontFamily: 'Tajawal-Regular',
+    textAlign: I18nManager.isRTL ? 'right' : 'left',
+    borderBottomWidth: 1,
+    paddingVertical: 8,
+    marginBottom: 16,
+  },
+});

@@ -11,29 +11,32 @@ import {
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { MaterialIcons } from '@expo/vector-icons';
-import ar from '../locales/ar';
+import { useTranslation } from 'react-i18next';
 
 const productTypes = [
-  { id: 'solarPanels', name: 'ألواح شمسية' },
-  { id: 'inverters', name: 'انفرترات' },
-  { id: 'batteries', name: 'بطاريات' },
-  { id: 'accessories', name: 'ملحقات' }
+  { id: 'panel', i18nKey: 'PRODUCT_TYPES.PANEL' },
+  { id: 'inverter', i18nKey: 'PRODUCT_TYPES.INVERTER' },
+  { id: 'battery', i18nKey: 'PRODUCT_TYPES.BATTERY' },
+  { id: 'accessory', i18nKey: 'PRODUCT_TYPES.ACCESSORY' }
 ];
 
 const conditions = [
-  { id: 'new', name: 'جديد' },
-  { id: 'used', name: 'مستعمل' }
+  { id: 'new', i18nKey: 'CONDITIONS.NEW' },
+  { id: 'used', i18nKey: 'CONDITIONS.USED' },
+  { id: 'needsRepair', i18nKey: 'CONDITIONS.NEEDS_REPAIR' }
 ];
 
 const governorates = [
-  { id: 'sanaa', name: 'صنعاء' },
-  { id: 'aden', name: 'عدن' },
-  { id: 'taiz', name: 'تعز' },
-  { id: 'hodeidah', name: 'الحديدة' },
-  { id: 'hadramout', name: 'حضرموت' }
+  { id: 'sanaa', i18nKey: 'GOVERNORATES.SANAA' },
+  { id: 'aden', i18nKey: 'GOVERNORATES.ADEN' },
+  { id: 'taiz', i18nKey: 'GOVERNORATES.TAIZ' },
+  { id: 'hodeidah', i18nKey: 'GOVERNORATES.HODEIDAH' },
+  { id: 'hadramout', i18nKey: 'GOVERNORATES.HADRAMOUT' }
 ];
 
+
 export default function MarketplaceFilter({ visible, onClose, onApply }) {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({
     productType: '',
     condition: '',
@@ -43,13 +46,8 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
     searchQuery: ''
   });
 
-  const handlePriceChange = (value) => {
-    setFilters({ ...filters, priceRange: value });
-  };
-
-  const toggleVerified = () => {
+  const toggleVerified = () =>
     setFilters({ ...filters, showVerified: !filters.showVerified });
-  };
 
   return (
     <Modal visible={visible} animationType="slide">
@@ -59,31 +57,33 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <MaterialIcons name="close" size={24} color="#6B7280" />
           </TouchableOpacity>
-          <Text style={styles.title}>{ar.COMMON.FILTERS}</Text>
-          <TouchableOpacity 
+          <Text style={styles.title}>{t('COMMON.FILTERS')}</Text>
+          <TouchableOpacity
             style={styles.resetButton}
-            onPress={() => setFilters({
-              productType: '',
-              condition: '',
-              priceRange: [0, 1000000],
-              governorate: '',
-              showVerified: false,
-              searchQuery: ''
-            })}
+            onPress={() =>
+              setFilters({
+                productType: '',
+                condition: '',
+                priceRange: [0, 1000000],
+                governorate: '',
+                showVerified: false,
+                searchQuery: ''
+              })
+            }
           >
-            <Text style={styles.resetText}>{ar.COMMON.RESET}</Text>
+            <Text style={styles.resetText}>{t('COMMON.RESET')}</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.filterContent}>
           {/* Search Input */}
           <View style={styles.filterSection}>
-            <Text style={styles.sectionTitle}>بحث</Text>
+            <Text style={styles.sectionTitle}>{t('COMMON.SEARCH')}</Text>
             <View style={styles.searchContainer}>
               <MaterialIcons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="ابحث عن منتج..."
+                placeholder={t('MARKETPLACE.SEARCH_PLACEHOLDER')}
                 placeholderTextColor="#9CA3AF"
                 value={filters.searchQuery}
                 onChangeText={(text) => setFilters({ ...filters, searchQuery: text })}
@@ -93,7 +93,7 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
 
           {/* Product Type */}
           <View style={styles.filterSection}>
-            <Text style={styles.sectionTitle}>نوع المنتج</Text>
+            <Text style={styles.sectionTitle}>{t('MARKETPLACE.PRODUCT_TYPE')}</Text>
             <View style={styles.optionsContainer}>
               {productTypes.map((type) => (
                 <TouchableOpacity
@@ -108,7 +108,7 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
                     styles.optionText,
                     filters.productType === type.id && styles.selectedOptionText
                   ]}>
-                    {type.name}
+                    {t(type.i18nKey)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -117,7 +117,7 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
 
           {/* Condition */}
           <View style={styles.filterSection}>
-            <Text style={styles.sectionTitle}>الحالة</Text>
+            <Text style={styles.sectionTitle}>{t('MARKETPLACE.CONDITION')}</Text>
             <View style={styles.optionsContainer}>
               {conditions.map((cond) => (
                 <TouchableOpacity
@@ -132,7 +132,7 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
                     styles.optionText,
                     filters.condition === cond.id && styles.selectedOptionText
                   ]}>
-                    {cond.name}
+                    {t(cond.i18nKey)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -141,18 +141,20 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
 
           {/* Price Range */}
           <View style={styles.filterSection}>
-            <Text style={styles.sectionTitle}>نطاق السعر (ريال يمني)</Text>
+            <Text style={styles.sectionTitle}>{t('MARKETPLACE.PRICE_RANGE')}</Text>
             <View style={styles.sliderContainer}>
               <Slider
-  minimumValue={0}
-  maximumValue={1000000}
-  step={50000}
-  value={filters.priceRange[0]}
-  onValueChange={(value) => setFilters({...filters, priceRange: [value, filters.priceRange[1]]})}
-  minimumTrackTintColor="#16A34A"
-  maximumTrackTintColor="#E5E7EB"
-  thumbTintColor="#16A34A"
-/>
+                minimumValue={0}
+                maximumValue={1000000}
+                step={50000}
+                value={filters.priceRange[0]}
+                onValueChange={(value) =>
+                  setFilters({ ...filters, priceRange: [value, filters.priceRange[1]] })
+                }
+                minimumTrackTintColor="#16A34A"
+                maximumTrackTintColor="#E5E7EB"
+                thumbTintColor="#16A34A"
+              />
               <View style={styles.priceRangeText}>
                 <Text style={styles.priceText}>{filters.priceRange[0].toLocaleString()}</Text>
                 <Text style={styles.priceText}>{filters.priceRange[1].toLocaleString()}</Text>
@@ -162,7 +164,7 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
 
           {/* Governorate */}
           <View style={styles.filterSection}>
-            <Text style={styles.sectionTitle}>المحافظة</Text>
+            <Text style={styles.sectionTitle}>{t('MARKETPLACE.GOVERNORATE')}</Text>
             <View style={styles.optionsContainer}>
               {governorates.map((gov) => (
                 <TouchableOpacity
@@ -177,7 +179,7 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
                     styles.optionText,
                     filters.governorate === gov.id && styles.selectedOptionText
                   ]}>
-                    {gov.name}
+                    {t(gov.i18nKey)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -187,7 +189,7 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
           {/* Verified Only */}
           <View style={styles.filterSection}>
             <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>عرض المنتجات الموثقة فقط</Text>
+              <Text style={styles.switchLabel}>{t('MARKETPLACE.SHOW_VERIFIED')}</Text>
               <Switch
                 trackColor={{ false: "#E5E7EB", true: "#16A34A" }}
                 thumbColor="#FFFFFF"
@@ -203,12 +205,13 @@ export default function MarketplaceFilter({ visible, onClose, onApply }) {
           style={styles.applyButton}
           onPress={() => onApply(filters)}
         >
-          <Text style={styles.applyButtonText}>{ar.COMMON.APPLY_FILTERS}الفلاتر</Text>
+          <Text style={styles.applyButtonText}>{t('COMMON.APPLY_FILTERS')}</Text>
         </TouchableOpacity>
       </View>
     </Modal>
   );
 }
+
 
 const styles = StyleSheet.create({
   modalContainer: {

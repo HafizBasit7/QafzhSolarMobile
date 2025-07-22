@@ -1,10 +1,11 @@
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import ar from '../locales/ar';
+import { useTranslation } from 'react-i18next';
 
 export default function ProductCard({ product }) {
   const navigation = useNavigation();
+  const { t } = useTranslation();
 
   const handlePress = () => {
     navigation.navigate('ProductDetail', { product });
@@ -19,23 +20,23 @@ export default function ProductCard({ product }) {
       {/* Image with Badge and Favorite */}
       <View style={styles.imageContainer}>
         <Image 
-          source={{ uri: product.images[0] || 'https://via.placeholder.com/300' }} 
+          source={{ uri: product?.images?.[0] || 'https://via.placeholder.com/300' }} 
           style={styles.image} 
           resizeMode="cover"
         />
         
         <View style={styles.imageOverlay}>
-          {product.condition === 'new' && (
+          {product?.condition === 'new' && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>جديد</Text>
+              <Text style={styles.badgeText}>{t(`CONDITIONS.new`)}</Text>
             </View>
           )}
           
           <TouchableOpacity style={styles.favoriteButton}>
             <Ionicons 
-              name={product.isFavorite ? "heart" : "heart-outline"} 
+              name={product?.isFavorite ? "heart" : "heart-outline"} 
               size={20} 
-              color={product.isFavorite ? "#EF4444" : "rgba(255,255,255,0.8)"} 
+              color={product?.isFavorite ? "#EF4444" : "rgba(255,255,255,0.8)"} 
             />
           </TouchableOpacity>
         </View>
@@ -44,26 +45,21 @@ export default function ProductCard({ product }) {
       {/* Product Details */}
       <View style={styles.details}>
         <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
-          {product.title}
+          {product?.title}
         </Text>
         
         {/* Price and Rating */}
         <View style={styles.priceRatingContainer}>
           <View style={styles.priceContainer}>
             <Text style={styles.price}>
-              {product.price} {ar.CURRENCIES[product.currency]}
+              {product?.price} {t(`CURRENCIES.${product?.currency}`)}
             </Text>
-            {product.originalPrice && (
+            {product?.originalPrice && (
               <Text style={styles.originalPrice}>
-                {product.originalPrice} {ar.CURRENCIES[product.currency]}
+                {product.originalPrice} {t(`CURRENCIES.${product?.currency}`)}
               </Text>
             )}
           </View>
-          
-          {/* <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={14} color="#F59E0B" />
-            <Text style={styles.ratingText}>4.8</Text>
-          </View> */}
         </View>
 
         {/* Footer with Location and Condition */}
@@ -71,18 +67,17 @@ export default function ProductCard({ product }) {
           <View style={styles.locationContainer}>
             <Ionicons name="location-outline" size={14} color="#64748B" />
             <Text style={styles.location} numberOfLines={1}>
-              {product.location}
+              {product?.location}
             </Text>
           </View>
           
           <View style={[
             styles.conditionTag,
-            product.condition === 'used' && styles.usedTag,
-            product.condition === 'needs_repair' && styles.repairTag
+            product?.condition === 'used' && styles.usedTag,
+            product?.condition === 'needs_repair' && styles.repairTag
           ]}>
             <Text style={styles.conditionText}>
-              {product.condition === 'new' ? 'جديد' : 
-               product.condition === 'used' ? 'مستعمل' : 'إصلاح'}
+              {t(`${product?.condition}`)}
             </Text>
           </View>
         </View>
@@ -90,6 +85,7 @@ export default function ProductCard({ product }) {
     </TouchableOpacity>
   );
 }
+
 
 const styles = StyleSheet.create({
   card: {

@@ -1,9 +1,12 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import ar from '../locales/ar';
+import { useTranslation } from 'react-i18next';
+
 
 export default function EngineerCard({ engineer }) {
+  const { t } = useTranslation();
+
   const navigation = useNavigation();
 
   const handlePress = () => {
@@ -33,7 +36,8 @@ export default function EngineerCard({ engineer }) {
             {engineer.isVerified && (
               <View style={styles.verificationBadge}>
                 <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                <Text style={styles.verifiedText}>موثوق</Text>
+                <Text style={styles.verifiedText}>{t('COMMON.VERIFIED')}</Text>
+
               </View>
             )}
           </View>
@@ -75,15 +79,11 @@ export default function EngineerCard({ engineer }) {
           onPress={handleCall}
         >
           <Ionicons name="call-outline" size={16} color="#FFFFFF" />
-          <Text style={styles.callButtonText}>{ar.COMMON.CALL}</Text>
+          <Text style={styles.callButtonText}>{t('COMMON.CALL')}</Text>
+
         </TouchableOpacity>
         
-        {/* <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={14} color="#F59E0B" />
-          <Text style={styles.ratingText}>
-            {engineer.rating} ({engineer.reviews})
-          </Text>
-        </View> */}
+       
       </View>
     </TouchableOpacity>
   );

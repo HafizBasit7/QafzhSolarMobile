@@ -1,11 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Linking } from 'react-native'; // Added for phone calls
-import ar from '../locales/ar';
+import { useTranslation } from 'react-i18next';
 
-// Responsive scaling functions
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const isSmallDevice = width < 375;
 const isTablet = width >= 768;
 
@@ -21,6 +19,7 @@ const scaleFont = (size) => {
 
 export default function ShopCard({ shop }) {
   const navigation = useNavigation();
+  const { t } = useTranslation();
 
   const handlePress = () => {
     navigation.navigate('Shop', { shop });
@@ -32,96 +31,84 @@ export default function ShopCard({ shop }) {
     }
   };
 
+  const getServiceLabel = (service) => {
+    switch (service) {
+      case 'بيع':
+        return t('SERVICES.SELL');
+      case 'تركيب':
+        return t('SERVICES.INSTALL');
+      case 'إصلاح':
+        return t('SERVICES.REPAIR');
+      case 'صيانة':
+        return t('SERVICES.MAINTENANCE');
+      case 'استشارات':
+        return t('SERVICES.CONSULTING');
+      default:
+        return service;
+    }
+  };
+
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.card}
       onPress={handlePress}
       activeOpacity={0.9}
-      accessibilityLabel={`متجر ${shop.name} في ${shop.city}`}
+      accessibilityLabel={`${t('ACCESS.SHOP')} ${shop.name} ${t('ACCESS.IN')} ${shop.city}`}
       accessibilityRole="button"
     >
-      {/* Shop Header */}
       <View style={styles.header}>
-        <Image 
-          source={{ uri: shop.image || 'https://via.placeholder.com/60' }} 
+        <Image
+          source={{ uri: shop.image || 'https://via.placeholder.com/60' }}
           style={styles.shopLogo}
           accessibilityIgnoresInvertColors
         />
         <View style={styles.shopInfo}>
           <View style={styles.nameContainer}>
-            <Text 
-              style={styles.shopName}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
+            <Text style={styles.shopName} numberOfLines={1} ellipsizeMode="tail">
               {shop.name}
             </Text>
             {shop.isVerified && (
-              <View 
-                style={styles.verificationBadge}
-                accessibilityLabel="متجر موثوق"
-              >
+              <View style={styles.verificationBadge} accessibilityLabel={t('COMMON.VERIFIED')}>
                 <Ionicons name="checkmark-circle" size={scaleSize(14)} color="#10B981" />
-                <Text style={styles.verifiedText}>موثوق</Text>
+                <Text style={styles.verifiedText}>{t('COMMON.VERIFIED')}</Text>
               </View>
             )}
           </View>
           <View style={styles.locationContainer}>
             <Ionicons name="location-outline" size={scaleSize(14)} color="#64748B" />
-            <Text 
-              style={styles.location}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
+            <Text style={styles.location} numberOfLines={1} ellipsizeMode="tail">
               {shop.city}, {shop.governorate}
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Services */}
       {shop.services?.length > 0 && (
         <View style={styles.servicesContainer}>
           {shop.services.map((service, index) => (
-            <View 
-              key={`${service}-${index}`} 
-              style={styles.serviceTag}
-              accessibilityLabel={`يقدم خدمة ${service}`}
-            >
-              <Text style={styles.serviceText}>
-                {service === 'بيع' && 'بيع'}
-                {service === 'تركيب' && 'تركيب'}
-                {service === 'إصلاح' && 'إصلاح'}
-                {service === 'صيانة' && 'صيانة'}
-                {service === 'استشارات' && 'استشارات'}
-              </Text>
+            <View key={`${service}-${index}`} style={styles.serviceTag}>
+              <Text style={styles.serviceText}>{getServiceLabel(service)}</Text>
             </View>
           ))}
         </View>
       )}
 
-      {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.callButton}
           onPress={handleCall}
-          accessibilityLabel={`اتصال بالمتجر ${shop.phone}`}
+          accessibilityLabel={`${t('COMMON.CALL')} ${shop.phone}`}
           accessibilityRole="button"
         >
           <Ionicons name="call-outline" size={scaleSize(16)} color="#FFFFFF" />
-          <Text style={styles.callButtonText}>{ar.COMMON.CALL}</Text>
+          <Text style={styles.callButtonText}>{t('COMMON.CALL')}</Text>
         </TouchableOpacity>
-        
-        {/* <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={scaleSize(14)} color="#F59E0B" />
-          <Text style={styles.ratingText}>
-            {shop.rating?.toFixed(1) || '4.8'} ({shop.reviews || '24'})
-          </Text>
-        </View> */}
       </View>
     </TouchableOpacity>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   card: {

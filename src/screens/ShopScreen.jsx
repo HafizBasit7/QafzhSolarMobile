@@ -13,12 +13,13 @@ import {
 import { useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from "@expo/vector-icons";
-import ar from '../locales/ar';
+import { useTranslation } from 'react-i18next';
 
 export default function ShopScreen({ navigation }) {
   const route = useRoute();
   const { shop } = route.params;
   const { width } = useWindowDimensions();
+  const { t } = useTranslation();
 
   const handleCall = () => Linking.openURL(`tel:${shop.phone}`);
   const handleDirections = () => {
@@ -58,7 +59,7 @@ export default function ShopScreen({ navigation }) {
               {shop.isVerified && (
                 <View style={styles.verifiedBadge}>
                   <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                  <Text style={styles.verifiedText}>متجر موثوق</Text>
+                  <Text style={styles.verifiedText}>{t('SHOP.verifiedShop')}</Text>
                 </View>
               )}
             </View>
@@ -74,7 +75,7 @@ export default function ShopScreen({ navigation }) {
             {/* Services */}
             {shop.services?.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>الخدمات المقدمة</Text>
+                <Text style={styles.sectionTitle}>{t('SHOP.servicesProvided')}</Text>
                 <View style={styles.servicesGrid}>
                   {shop.services.map((service, index) => (
                     <View key={index} style={styles.serviceBadge}>
@@ -87,7 +88,7 @@ export default function ShopScreen({ navigation }) {
 
             {/* Contact */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>اتصل بالمتجر</Text>
+              <Text style={styles.sectionTitle}>{t('SHOP.contactShop')}</Text>
               <TouchableOpacity style={styles.contactRow} onPress={handleCall}>
                 <Ionicons name="call-outline" size={20} color="#10B981" />
                 <Text style={styles.contactText}>{shop.phone}</Text>
@@ -97,7 +98,7 @@ export default function ShopScreen({ navigation }) {
                 onPress={() => Linking.openURL(`whatsapp://send?phone=${shop.phone}`)}
               >
                 <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
-                <Text style={styles.contactText}>{ar.chatOnWhatsapp}</Text>
+                <Text style={styles.contactText}>{t('SHOP.chatOnWhatsapp')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -107,17 +108,18 @@ export default function ShopScreen({ navigation }) {
         <View style={styles.actionBar}>
           <TouchableOpacity style={styles.secondaryButton} onPress={handleDirections}>
             <Ionicons name="navigate-outline" size={20} color="#10B981" />
-            <Text style={styles.secondaryButtonText}>الاتجاهات</Text>
+            <Text style={styles.secondaryButtonText}>{t('SHOP.directions')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.primaryButton} onPress={handleCall}>
             <Ionicons name="call-outline" size={20} color="#FFF" />
-            <Text style={styles.primaryButtonText}>اتصال</Text>
+            <Text style={styles.primaryButtonText}>{t('SHOP.call')}</Text>
           </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   safeArea: {

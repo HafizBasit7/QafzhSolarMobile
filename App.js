@@ -3,12 +3,17 @@ import { I18nManager, View, ActivityIndicator } from 'react-native';
 import { useFonts } from 'expo-font';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from './src/navigation/RootNavigator';
-import ar from './src/locales/ar';
+import './src/config/i18n'; // ✅ i18n setup
 import { StatusBar } from 'react-native';
+import { I18nextProvider } from 'react-i18next';
+import i18n from './src/config/i18n';
 
 // Force RTL for Arabic
-I18nManager.forceRTL(true);
-I18nManager.allowRTL(true);
+if (!I18nManager.isRTL) {
+  I18nManager.allowRTL(true);
+  I18nManager.forceRTL(true);
+  // Reload might be needed if switching directions mid-app
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -26,9 +31,10 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      
-      <RootNavigator />
-      
+      <I18nextProvider i18n={i18n}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <RootNavigator />
+      </I18nextProvider>
     </SafeAreaProvider>
   );
 }
