@@ -20,19 +20,29 @@ const AuthScreen = ({ navigation, route }) => {
   const [phone, setPhone] = useState('');
   const returnData = route.params?.returnData;
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!phone.trim()) {
       showToast('error', 'Error', 'Please enter your phone number');
       return;
     }
 
-    try {
-      await register(phone);
-      navigation.navigate('OTPVerification', { phone, returnData });
-    } catch (error) {
-      showToast('error', 'Error', error.message || 'Failed to send OTP');
-    }
-  };
+    // Ensure phone is in international format
+   
+  let formattedPhone = phone.trim();
+  if (!formattedPhone.startsWith('+')) {
+    formattedPhone = '+967' + formattedPhone.replace(/^0+/, '');
+  }
+
+ // Send OTP
+ register(formattedPhone, {
+  onSuccess: () => {
+    navigation.navigate('OTPVerification', { phone: formattedPhone, returnData });
+  },
+  onError: (error) => {
+    showToast('error', 'Error', error.response?.data?.message || 'Failed to send OTP');
+  },
+});
+};
 
   return (
     <KeyboardAvoidingView

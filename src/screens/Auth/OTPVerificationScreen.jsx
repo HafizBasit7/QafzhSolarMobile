@@ -44,40 +44,42 @@ const OTPVerificationScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleResendOTP = async () => {
+  const handleResendOTP = () => {
     if (timer > 0) return;
-
-    try {
-      await register(phone);
-      setTimer(60);
-      showToast('success', 'Success', 'OTP sent successfully');
-    } catch (error) {
-      showToast('error', 'Error', error.message || 'Failed to resend OTP');
-    }
+  
+    register(phone, {
+      onSuccess: () => {
+        setTimer(60);
+      },
+      onError: (error) => {
+        showToast('error', 'Error', error.response?.data?.message || 'Failed to resend OTP');
+      },
+    });
   };
 
-  const handleVerify = async () => {
+  
+  const handleVerify = () => {
     const otpString = otp.join('');
     if (otpString.length !== 6) {
       showToast('error', 'Error', 'Please enter complete OTP');
       return;
     }
 
-    try {
-      await verifyOTP(phone, otpString);
-      if (returnData) {
-        // If we have return data, go back to the previous screen
-        navigation.goBack();
-      } else {
-        // Otherwise, go to the main app
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainApp' }],
-        });
-      }
-    } catch (error) {
-      showToast('error', 'Error', error.message || 'Invalid OTP');
-    }
+    verifyOTP({ phone, otp: otpString }, {
+      onSuccess: () => {
+        if (returnData) {
+          navigation.goBack();
+        } else {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainStack' }],
+          });
+        }
+      },
+      onError: (error) => {
+        showToast('error', 'Error', error.response?.data?.message || 'Invalid OTP');
+      },
+    });
   };
 
   return (

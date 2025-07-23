@@ -17,11 +17,26 @@ import { useProducts } from "../hooks/useProducts";
 import { useAuth } from "../hooks/useAuth";
 // import AuthGuard from "../components/common/AuthGuard";
 import { showToast } from "../components/common/Toast";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 
-export default function ProductSubmissionScreen({ route }) {
+export default function ProductSubmissionScreen({ route, navigation }) {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isLoadingUser } = useAuth();
   const { createProduct, isCreating } = useProducts();
+
+  // If loading user state, show spinner
+  if (isLoadingUser) {
+    return <LoadingSpinner />;
+  }
+
+  // If not logged in, redirect to Auth/OTPVerificationScreen
+  if (!user) {
+    navigation.replace('AuthStack', {
+      screen: 'Auth',
+      params: { returnData: { screen: 'ProductSubmission' } },
+    });
+    return null;
+  }
 
   const brands = [
     { label: t('BRANDS.JINKO'), value: 'jinko' },

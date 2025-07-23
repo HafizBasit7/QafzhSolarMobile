@@ -2,6 +2,8 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { shopsAPI } from '../services/api';
 
 export const useShops = (filters = {}) => {
+  const shouldUseFilters = !!filters?.search_keyword?.trim();
+
   const {
     data,
     fetchNextPage,
@@ -13,7 +15,10 @@ export const useShops = (filters = {}) => {
     refetch
   } = useInfiniteQuery({
     queryKey: ['shops', filters],
-    queryFn: ({ pageParam = 1 }) => shopsAPI.getShops({ page: pageParam, limit: 10, ...filters }),
+    queryFn: ({ pageParam = 1 }) =>
+      shouldUseFilters
+        ? shopsAPI.filterShops({ page: pageParam, limit: 10, ...filters })
+        : shopsAPI.getShops({ page: pageParam, limit: 10 }),
     getNextPageParam: (lastPage) => {
       if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
       return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
@@ -30,7 +35,7 @@ export const useShops = (filters = {}) => {
     });
   };
 
-  // Helper function to get all shops from all pages
+  // Helper: flatten all pages
   const getAllShops = () => {
     return data?.pages?.flatMap((page) => Array.isArray(page.data) ? page.data : []) || [];
   };
@@ -46,4 +51,4 @@ export const useShops = (filters = {}) => {
     refetch,
     useShop,
   };
-}; 
+};

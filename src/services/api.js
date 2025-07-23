@@ -2,8 +2,9 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showToast } from '../components/common/Toast';
 
-const BASE_URL = 'http://192.168.1.3:5005/api/v1'; // ✅ correct base path
+const BASE_URL = 'http://192.168.1.3:5005/api/v1'; // ✅ Correct base path
 
+// Create Axios instance
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -12,7 +13,19 @@ export const api = axios.create({
   timeout: 10000,
 });
 
-// Handle API errors globally
+// ✅ Attach token dynamically if available
+api.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// ✅ Global error handling
 api.interceptors.response.use(
   (response) => {
     if (response.data?.data) {
@@ -23,6 +36,7 @@ api.interceptors.response.use(
   async (error) => {
     const message = error.response?.data?.message || 'Something went wrong';
     const hadAuthHeader = error.config?.headers?.Authorization;
+
     if (error.response?.status === 401 && hadAuthHeader) {
       await AsyncStorage.removeItem('token');
       showToast('error', 'Session Expired', 'Please login again');
@@ -31,18 +45,18 @@ api.interceptors.response.use(
     } else {
       showToast('error', 'Error', message);
     }
+
     return Promise.reject(error);
   }
 );
-
 // ----------------------------
 // Auth API
 // ----------------------------
 export const authAPI = {
   register: (phone) => api.post('/auth/register', { phone }),
-  verifyOTP: (phone, otp) => api.post('/auth/verify', { phone, otp }),
+  verifyOTP: (phone, otp) => api.post('/auth/verify-otp', { phone, otp }),
   updateProfile: (data) => api.patch('/auth/profile', data),
-  getProfile: () => api.get('/auth/profile'),
+  getProfile: () => api.get('/auth/profile'), 
 };
 
 // ----------------------------

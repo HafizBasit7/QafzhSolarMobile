@@ -20,7 +20,7 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.loginText}>Please login to view your profile</Text>
           <TouchableOpacity
             style={styles.loginButton}
-            onPress={() => navigation.navigate('Auth')}
+            onPress={() => navigation.navigate('AuthStack', { screen: 'Auth' })}
           >
             <Text style={styles.loginButtonText}>Login</Text>
           </TouchableOpacity>

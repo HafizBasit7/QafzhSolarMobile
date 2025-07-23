@@ -1,103 +1,259 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsAPI, engineersAPI, shopsAPI } from '../services/api';
 import { showToast } from '../components/common/Toast';
+import React, {useState} from 'react'
 
 export const useMarketplace = (filters = {}, type = 'all') => {
   const queryClient = useQueryClient();
   const limit = 10;
+  const [activeTab, setActiveTab] = useState('all');
 
-  // Helper to extract .data from each page (userRoutes.js returns {data: [...]})
-  const processData = (query) => {
-    if (!query.data || !query.data.pages) return [];
-    return query.data.pages.flatMap(page => Array.isArray(page.data) ? page.data : []);
+  console.log('[useMarketplace] Initializing with:', { filters, type });
+
+  const processData = (query, dataType) => {
+    if (!query.data || !query.data.pages) {
+      console.log(`[processData] No data or pages in ${dataType} query:`, query);
+      return [];
+    }
+    
+    const data = query.data.pages.flatMap(page => {
+      if (!page) {
+        console.log(`[processData] Empty page in ${dataType} response`);
+        return [];
+      }
+
+      // Handle both direct array responses and { data: [...] } responses
+      const items = Array.isArray(page) ? page : (page.data || []);
+      
+      if (!Array.isArray(items)) {
+        console.error(`[processData] Invalid ${dataType} data format:`, page);
+        return [];
+      }
+
+      console.log(`[processData] Processed ${items.length} ${dataType} items`);
+      return items;
+    });
+
+    console.log(`[processData] Total ${dataType} processed:`, data.length);
+    return data;
   };
 
-  // Products Query
+  // 🔹 Products Query
   const productsQuery = useInfiniteQuery({
-    queryKey: ['marketplace', 'products', filters],
-    queryFn: ({ pageParam = 1 }) => productsAPI.getProducts({ page: pageParam, limit, ...filters }),
-    getNextPageParam: (lastPage) => {
-      if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
-      return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
+    queryKey: ['marketplace', 'products', activeTab, filters],
+    queryFn: async ({ pageParam = 1 }) => {
+      // Validate activeTab first
+      const validTabs = ['all', 'solarPanels', 'inverters', 'batteries'];
+      const currentTab = validTabs.includes(activeTab) ? activeTab : 'all';
+  
+      const params = {
+        page: pageParam,
+        limit: 10,
+        status: 'approved'
+      };
+  
+      // Apply filters
+      if (filters) {
+        if (filters.search_keyword?.trim()) {
+          params.search = filters.search_keyword.trim();
+        }
+        if (filters.priceRange?.length === 2) {
+          params.minPrice = filters.priceRange[0];
+          params.maxPrice = filters.priceRange[1];
+        }
+        if (filters.condition?.trim()) {
+          params.condition = filters.condition.trim();
+        }
+        if (filters.governorate?.trim()) {
+          params.governorate = filters.governorate.trim();
+        }
+      }
+  
+      // Apply product type filter if not 'all' tab
+      if (currentTab !== 'all') {
+        const productTypeMap = {
+          solarPanels: 'panel',
+          inverters: 'inverter',
+          batteries: 'battery'
+        };
+        if (productTypeMap[currentTab]) {
+          params.productType = productTypeMap[currentTab];
+        }
+      }
+  
+      try {
+        const response = await productsAPI.getProducts(params);
+        return {
+          data: response.data?.data || [],
+          currentPage: response.data?.currentPage || pageParam,
+          totalPages: response.data?.totalPages || 1,
+          total: response.data?.total || 0,
+        };
+      } catch (error) {
+        console.error('Products query error:', error);
+        return {
+          data: [],
+          currentPage: pageParam,
+          totalPages: 1,
+          total: 0
+        };
+      }
     },
-    enabled: type === 'all' || type === 'products' || ['solarPanels', 'inverters', 'batteries'].includes(type)
+    getNextPageParam: (lastPage) => {
+      return lastPage.currentPage < lastPage.totalPages 
+        ? lastPage.currentPage + 1 
+        : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 5 * 60 * 1000,
+    enabled: Boolean(activeTab) // Ensure activeTab exists before enabling query
   });
 
-  // Engineers Query
+  
+  // 🔹 Engineers Query
   const engineersQuery = useInfiniteQuery({
-    queryKey: ['marketplace', 'engineers', filters],
-    queryFn: ({ pageParam = 1 }) => engineersAPI.getEngineers({ page: pageParam, limit, ...filters }),
+    queryKey: ['marketplace', 'engineers', filters, type],
+    queryFn: async ({ pageParam = 1 }) => {
+      console.log('[engineersQuery] Fetching with page:', pageParam);
+      
+      try {
+        const response = await engineersAPI.getEngineers({ 
+          page: pageParam, 
+          limit,
+          ...filters
+        });
+        console.log('[engineersQuery] API response:', response);
+        return response;
+      } catch (error) {
+        console.error('[engineersQuery] API error:', error);
+        throw error;
+      }
+    },
     getNextPageParam: (lastPage) => {
-      if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
-      return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
+      const nextPage = lastPage?.currentPage < lastPage?.totalPages 
+        ? lastPage.currentPage + 1 
+        : undefined;
+      console.log('[engineersQuery] Next page param:', nextPage);
+      return nextPage;
     },
     enabled: type === 'all' || type === 'engineers',
-    staleTime: 5 * 60 * 1000
+    initialPageParam: 1,
+    staleTime: 5 * 60 * 1000,
+    onError: (error) => {
+      console.error('[engineersQuery] Query error:', error);
+    }
   });
 
-  // Shops Query
+  // 🔹 Shops Query
   const shopsQuery = useInfiniteQuery({
-    queryKey: ['marketplace', 'shops', filters],
-    queryFn: ({ pageParam = 1 }) => shopsAPI.getShops({ page: pageParam, limit, ...filters }),
-    getNextPageParam: (lastPage) => {
-      if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
-      return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
+    queryKey: ['marketplace', 'shops', filters, type],
+    queryFn: async ({ pageParam = 1 }) => {
+      console.log('[shopsQuery] Fetching with page:', pageParam);
+      
+      try {
+        const response = await shopsAPI.getShops({ 
+          page: pageParam, 
+          limit,
+          ...filters
+        });
+        console.log('[shopsQuery] API response:', response);
+        return response;
+      } catch (error) {
+        console.error('[shopsQuery] API error:', error);
+        throw error;
+      }
     },
-    enabled: type === 'all' || type === 'shops'
+    getNextPageParam: (lastPage) => {
+      const nextPage = lastPage?.currentPage < lastPage?.totalPages 
+        ? lastPage.currentPage + 1 
+        : undefined;
+      console.log('[shopsQuery] Next page param:', nextPage);
+      return nextPage;
+    },
+    enabled: type === 'all' || type === 'shops',
+    initialPageParam: 1,
+    onError: (error) => {
+      console.error('[shopsQuery] Query error:', error);
+    }
   });
 
-  // Like/Unlike Product Mutations
+  // 🔹 Like Product Mutation
   const likeMutation = useMutation({
-    mutationFn: (productId) => productsAPI.likeProduct(productId),
-    onSuccess: (_, productId) => {
+    mutationFn: (productId) => {
+      console.log('[likeMutation] Liking product:', productId);
+      return productsAPI.likeProduct(productId);
+    },
+    onSuccess: () => {
+      console.log('[likeMutation] Successfully liked product');
       queryClient.invalidateQueries(['marketplace', 'products']);
       showToast('success', 'Success', 'Product added to favorites');
     },
     onError: (error) => {
+      console.error('[likeMutation] Error:', error);
       showToast('error', 'Error', error.message || 'Failed to like product');
-    }
+    },
   });
 
+  // 🔹 Unlike Product Mutation
   const unlikeMutation = useMutation({
-    mutationFn: (productId) => productsAPI.unlikeProduct(productId),
-    onSuccess: (_, productId) => {
+    mutationFn: (productId) => {
+      console.log('[unlikeMutation] Unliking product:', productId);
+      return productsAPI.unlikeProduct(productId);
+    },
+    onSuccess: () => {
+      console.log('[unlikeMutation] Successfully unliked product');
       queryClient.invalidateQueries(['marketplace', 'products']);
       showToast('success', 'Success', 'Product removed from favorites');
     },
     onError: (error) => {
+      console.error('[unlikeMutation] Error:', error);
       showToast('error', 'Error', error.message || 'Failed to unlike product');
-    }
+    },
+  });
+
+  // Calculate loading states
+  const isLoading = productsQuery.isLoading || engineersQuery.isLoading || shopsQuery.isLoading;
+  const isError = productsQuery.isError || engineersQuery.isError || shopsQuery.isError;
+  const error = productsQuery.error || engineersQuery.error || shopsQuery.error;
+  const isFetching = productsQuery.isFetching || engineersQuery.isFetching || shopsQuery.isFetching;
+
+  console.log('[useMarketplace] Loading states:', {
+    isLoading,
+    isFetching,
+    isError,
+    error: error?.message
   });
 
   return {
-    products: processData(productsQuery),
-    engineers: processData(engineersQuery),
-    shops: processData(shopsQuery),
-    isLoading: productsQuery.isLoading || engineersQuery.isLoading || shopsQuery.isLoading,
-    isFetching: productsQuery.isFetching || engineersQuery.isFetching || shopsQuery.isFetching,
-    isError: productsQuery.isError || engineersQuery.isError || shopsQuery.isError,
-    error: productsQuery.error || engineersQuery.error || shopsQuery.error,
+    products: processData(productsQuery, 'products'),
+    engineers: processData(engineersQuery, 'engineers'),
+    shops: processData(shopsQuery, 'shops'),
+    isLoading,
+    isFetching,
+    isError,
+    error,
     hasNextPage: {
       products: productsQuery.hasNextPage,
       engineers: engineersQuery.hasNextPage,
-      shops: shopsQuery.hasNextPage
+      shops: shopsQuery.hasNextPage,
     },
     fetchNextPage: {
       products: productsQuery.fetchNextPage,
       engineers: engineersQuery.fetchNextPage,
-      shops: shopsQuery.fetchNextPage
+      shops: shopsQuery.fetchNextPage,
     },
     isFetchingNextPage: {
       products: productsQuery.isFetchingNextPage,
       engineers: engineersQuery.isFetchingNextPage,
-      shops: shopsQuery.isFetchingNextPage
+      shops: shopsQuery.isFetchingNextPage,
     },
     likeProduct: likeMutation.mutate,
     unlikeProduct: unlikeMutation.mutate,
     refetch: () => {
+      console.log('[useMarketplace] Refetching all data');
       productsQuery.refetch();
       engineersQuery.refetch();
       shopsQuery.refetch();
-    }
+    },
   };
-}; 
+};

@@ -4,8 +4,8 @@ import { showToast } from '../components/common/Toast';
 
 export const useProducts = (filters = {}) => {
   const queryClient = useQueryClient();
+  const shouldUseFilters = !!filters?.search_keyword?.trim();
 
-  // Get products with infinite scroll
   const {
     data,
     fetchNextPage,
@@ -17,7 +17,10 @@ export const useProducts = (filters = {}) => {
     refetch
   } = useInfiniteQuery({
     queryKey: ['products', filters],
-    queryFn: ({ pageParam = 1 }) => productsAPI.getProducts({ page: pageParam, limit: 10, ...filters }),
+    queryFn: ({ pageParam = 1 }) =>
+      shouldUseFilters
+        ? productsAPI.filterProducts({ page: pageParam, limit: 10, ...filters })
+        : productsAPI.getProducts({ page: pageParam, limit: 10 }),
     getNextPageParam: (lastPage) => {
       if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
       return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
@@ -26,18 +29,17 @@ export const useProducts = (filters = {}) => {
   });
 
   // Get single product
-  const useProduct = (id) => {
-    return useQuery({
+  const useProduct = (id) =>
+    useQuery({
       queryKey: ['product', id],
       queryFn: () => productsAPI.getProduct(id),
       enabled: !!id,
     });
-  };
 
-  // Create product mutation
+  // Create product
   const createProductMutation = useMutation({
     mutationFn: productsAPI.createProduct,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['products']);
       showToast('success', 'Success', 'Product created successfully');
     },
@@ -46,12 +48,12 @@ export const useProducts = (filters = {}) => {
     },
   });
 
-  // Update product mutation
+  // Update product
   const updateProductMutation = useMutation({
     mutationFn: ({ id, data }) => productsAPI.updateProduct(id, data),
-    onSuccess: (data) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries(['products']);
-      queryClient.invalidateQueries(['product', data.id]);
+      queryClient.invalidateQueries(['product', variables.id]);
       showToast('success', 'Success', 'Product updated successfully');
     },
     onError: (error) => {
@@ -59,7 +61,7 @@ export const useProducts = (filters = {}) => {
     },
   });
 
-  // Delete product mutation
+  // Delete product
   const deleteProductMutation = useMutation({
     mutationFn: productsAPI.deleteProduct,
     onSuccess: () => {
@@ -71,25 +73,25 @@ export const useProducts = (filters = {}) => {
     },
   });
 
-  // Like/Unlike product mutations
+  // Like product
   const likeProductMutation = useMutation({
     mutationFn: productsAPI.likeProduct,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['product', data.id]);
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries(['product', id]);
     },
   });
 
+  // Unlike product
   const unlikeProductMutation = useMutation({
     mutationFn: productsAPI.unlikeProduct,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['product', data.id]);
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries(['product', id]);
     },
   });
 
-  // Helper function to get all products from all pages
-  const getAllProducts = () => {
-    return data?.pages?.flatMap((page) => Array.isArray(page.data) ? page.data : []) || [];
-  };
+  // Flatten pages
+  const getAllProducts = () =>
+    data?.pages?.flatMap((page) => (Array.isArray(page.data) ? page.data : [])) || [];
 
   return {
     products: getAllProducts(),
@@ -112,4 +114,4 @@ export const useProducts = (filters = {}) => {
     unlikeProduct: unlikeProductMutation.mutate,
     isUnliking: unlikeProductMutation.isLoading,
   };
-}; 
+};

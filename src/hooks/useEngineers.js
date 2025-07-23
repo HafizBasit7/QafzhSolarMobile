@@ -2,6 +2,8 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { engineersAPI } from '../services/api';
 
 export const useEngineers = (filters = {}) => {
+  const shouldUseFilters = !!filters?.search_keyword?.trim();
+
   const {
     data,
     fetchNextPage,
@@ -10,10 +12,13 @@ export const useEngineers = (filters = {}) => {
     isLoading,
     isError,
     error,
-    refetch
+    refetch,
   } = useInfiniteQuery({
     queryKey: ['engineers', filters],
-    queryFn: ({ pageParam = 1 }) => engineersAPI.getEngineers({ page: pageParam, limit: 10, ...filters }),
+    queryFn: ({ pageParam = 1 }) =>
+      shouldUseFilters
+        ? engineersAPI.filterEngineers({ page: pageParam, limit: 10, ...filters })
+        : engineersAPI.getEngineers({ page: pageParam, limit: 10 }),
     getNextPageParam: (lastPage) => {
       if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
       return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
@@ -21,19 +26,15 @@ export const useEngineers = (filters = {}) => {
     keepPreviousData: true,
   });
 
-  // Get single engineer
-  const useEngineer = (id) => {
-    return useQuery({
+  const useEngineer = (id) =>
+    useQuery({
       queryKey: ['engineer', id],
       queryFn: () => engineersAPI.getEngineer(id),
       enabled: !!id,
     });
-  };
 
-  // Helper function to get all engineers from all pages
-  const getAllEngineers = () => {
-    return data?.pages?.flatMap((page) => Array.isArray(page.data) ? page.data : []) || [];
-  };
+  const getAllEngineers = () =>
+    data?.pages?.flatMap((page) => (Array.isArray(page.data) ? page.data : [])) || [];
 
   return {
     engineers: getAllEngineers(),
@@ -46,4 +47,4 @@ export const useEngineers = (filters = {}) => {
     refetch,
     useEngineer,
   };
-}; 
+};

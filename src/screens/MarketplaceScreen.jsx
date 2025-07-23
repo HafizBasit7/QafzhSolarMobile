@@ -4,13 +4,11 @@ import {
   Text, 
   FlatList, 
   TouchableOpacity, 
-  ScrollView,
   Dimensions,
   StatusBar,
   SafeAreaView,
   Animated,
   StyleSheet,
-  Platform,
   RefreshControl,
   ActivityIndicator
 } from "react-native";
@@ -26,28 +24,19 @@ import { useAuth } from "../hooks/useAuth";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import { MaterialIcons, FontAwesome, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
-// Responsive dimensions calculation
-const { width, height } = Dimensions.get('window');
+// Responsive dimensions
+const { width } = Dimensions.get('window');
 const isSmallDevice = width < 375;
 const isTablet = width >= 768;
 
-// Enhanced responsive scaling functions
-const scaleSize = (size) => {
-  const scaleFactor = isTablet ? 1.2 : isSmallDevice ? 0.9 : 1;
-  return size * scaleFactor;
-};
-
-const scaleFont = (size) => {
-  const scaleFactor = isTablet ? 1.15 : isSmallDevice ? 0.95 : 1;
-  return size * scaleFactor;
-};
+const scaleSize = (size) => isTablet ? size * 1.2 : isSmallDevice ? size * 0.9 : size;
+const scaleFont = (size) => isTablet ? size * 1.15 : isSmallDevice ? size * 0.95 : size;
 
 export default function MarketplaceScreen() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
-  const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const [filters, setFilters] = useState({
@@ -57,7 +46,6 @@ export default function MarketplaceScreen() {
     governorate: "",
   });
 
-  // Use the marketplace hook
   const {
     products,
     engineers,
@@ -71,7 +59,14 @@ export default function MarketplaceScreen() {
     refetch,
     likeProduct,
     unlikeProduct
-  } = useMarketplace(filters, activeTab);
+  } = useMarketplace({
+    productType: activeTab === 'solarPanels' ? 'panel' : 
+               activeTab === 'inverters' ? 'inverter' : 
+               activeTab === 'batteries' ? 'battery' : '',
+    governorate: filters.governorate,
+    condition: filters.condition,
+    priceRange: filters.priceRange
+  }, activeTab);
 
   const handleTabChange = (tabId) => {
     Animated.sequence([
@@ -85,10 +80,7 @@ export default function MarketplaceScreen() {
         duration: 150,
         useNativeDriver: true,
       })
-    ]).start(() => {
-      setActiveTab(tabId);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    });
+    ]).start(() => setActiveTab(tabId));
   };
 
   const handleLoadMore = (type) => {
@@ -130,9 +122,7 @@ export default function MarketplaceScreen() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyText}>
-        {t('MARKETPLACE.NO_RESULTS')}
-      </Text>
+      <Text style={styles.emptyText}>{t('MARKETPLACE.NO_RESULTS')}</Text>
     </View>
   );
 
@@ -141,19 +131,14 @@ export default function MarketplaceScreen() {
       <Text style={styles.errorText}>
         {error?.message || t('COMMON.SOMETHING_WENT_WRONG')}
       </Text>
-      <TouchableOpacity
-        style={styles.retryButton}
-        onPress={() => refetch()}
-      >
+      <TouchableOpacity style={styles.retryButton} onPress={refetch}>
         <Text style={styles.retryButtonText}>{t('COMMON.RETRY')}</Text>
       </TouchableOpacity>
     </View>
   );
 
-  // Helper to get ID (supports both id and _id)
   const getId = (item) => item.id || item._id;
 
-  // Category configuration
   const categories = [
     { id: 'all', name: t('COMMON.ALL'), icon: 'view-grid', count: products.length + shops.length + engineers.length },
     { id: 'products', name: t('MARKETPLACE.LISTINGS'), icon: 'solar-panel-large', count: products.length },
@@ -183,7 +168,6 @@ export default function MarketplaceScreen() {
                 style={styles.searchButton}
                 onPress={() => navigate("Search")}
                 accessibilityLabel={t('COMMON.SEARCH')}
-                accessibilityRole="button"
               >
                 <MaterialIcons name="search" size={24} color="#16A34A" />
               </TouchableOpacity>
@@ -194,7 +178,6 @@ export default function MarketplaceScreen() {
                 style={styles.filterButton}
                 onPress={() => setShowFilters(true)}
                 accessibilityLabel={t('COMMON.FILTERS')}
-                accessibilityRole="button"
               >
                 <FontAwesome name="sliders" size={16} color="#FFFFFF" />
                 <Text style={styles.filterButtonText}>{t('COMMON.FILTERS')}</Text>
@@ -215,52 +198,141 @@ export default function MarketplaceScreen() {
 
   const renderCategoryTabs = () => (
     <View style={styles.tabsContainer}>
-      <ScrollView 
-        ref={scrollViewRef}
-        horizontal 
+      <FlatList
+        horizontal
+        data={categories}
+        keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tabsScrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {categories.map((category) => (
+        renderItem={({ item }) => (
           <TouchableOpacity
-            key={category.id}
             style={[
               styles.categoryTab, 
-              activeTab === category.id && styles.activeCategoryTab
+              activeTab === item.id && styles.activeCategoryTab
             ]}
-            onPress={() => handleTabChange(category.id)}
-            accessibilityLabel={`تصفية حسب ${category.name}`}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: activeTab === category.id }}
+            onPress={() => handleTabChange(item.id)}
           >
             <MaterialCommunityIcons 
-              name={category.icon} 
+              name={item.icon} 
               size={20} 
-              color={activeTab === category.id ? '#FFFFFF' : '#16A34A'} 
+              color={activeTab === item.id ? '#FFFFFF' : '#16A34A'} 
             />
             <Text style={[
               styles.categoryTabText, 
-              activeTab === category.id && styles.activeCategoryTabText
+              activeTab === item.id && styles.activeCategoryTabText
             ]}>
-              {category.name}
+              {item.name}
             </Text>
             <View style={[
               styles.categoryBadge,
-              activeTab === category.id && styles.activeCategoryBadge
+              activeTab === item.id && styles.activeCategoryBadge
             ]}>
               <Text style={[
                 styles.categoryBadgeText,
-                activeTab === category.id && styles.activeCategoryBadgeText
+                activeTab === item.id && styles.activeCategoryBadgeText
               ]}>
-                {category.count}
+                {item.count}
               </Text>
             </View>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+        )}
+      />
     </View>
   );
+
+  const renderSection = (type, data = [], titleKey, detailScreen, CardComponent) => {
+    // Determine if section should be visible based on active tab
+    const shouldRender = activeTab === 'all' || activeTab === type;
+    if (!shouldRender) return null;
+  
+    // Safely handle data
+    const sectionData = Array.isArray(data) ? data : [];
+    const showEmptyState = !isLoading && sectionData.length === 0;
+    const showHeader = activeTab === 'all' && sectionData.length > 0;
+    const isProducts = type === 'products';
+    const isShops = type === 'shops';
+    const isEngineers = type === 'engineers';
+  
+    // Configuration for different types
+    const typeConfig = {
+      products: {
+        numColumns: isTablet ? 3 : 2,
+        cardStyle: styles.productCard,
+        detailKey: 'product',
+      },
+      shops: {
+        numColumns: isTablet ? 2 : 1,
+        cardStyle: isTablet ? styles.tabletCard : styles.fullWidthCard,
+        detailKey: 'shop',
+      },
+      engineers: {
+        numColumns: 1,
+        cardStyle: styles.fullWidthCard,
+        detailKey: 'engineer',
+      }
+    };
+  
+    return (
+      <View style={styles.section}>
+        {/* Section Header - Only shown in 'all' tab */}
+        {showHeader && (
+          <View style={styles.sectionHeader}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.sectionTitle}>{t(titleKey)}</Text>
+            </View>
+            <TouchableOpacity onPress={() => setActiveTab(type)}>
+              <Text style={styles.seeAllText}>{t('COMMON.SEE_ALL')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+  
+        {/* Empty State */}
+        {showEmptyState ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>
+              {t(`MARKETPLACE.NO_${type.toUpperCase()}`)}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={sectionData}
+            renderItem={({ item }) => {
+              if (!item) return null;
+              
+              return (
+                <TouchableOpacity
+                  onPress={() => navigate(detailScreen, { [typeConfig[type].detailKey]: item })}
+                  style={typeConfig[type].cardStyle}
+                >
+                  <CardComponent 
+                    {...{ [typeConfig[type].detailKey]: item }}
+                    {...(isProducts && {
+                      onLike: () => handleLikeProduct(getId(item)),
+                      onUnlike: () => handleUnlikeProduct(getId(item)),
+                      isLiked: user?.likedProducts?.includes(getId(item))
+                    })}
+                  />
+                </TouchableOpacity>
+              );
+            }}
+            keyExtractor={(item) => item?.id || item?._id || Math.random().toString()}
+            numColumns={typeConfig[type].numColumns}
+            columnWrapperStyle={typeConfig[type].numColumns > 1 ? styles.columnWrapper : null}
+            scrollEnabled={false}
+            onEndReached={() => handleLoadMore(type)}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
+              isFetchingNextPage[type] ? (
+                <ActivityIndicator size="small" style={styles.loader} />
+              ) : null
+            }
+          />
+        )}
+      </View>
+    );
+  };
+  
+
 
   const renderContent = () => {
     if (isLoading && !products.length && !engineers.length && !shops.length) {
@@ -272,113 +344,10 @@ export default function MarketplaceScreen() {
     }
 
     return (
-      <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}> 
-        {/* Products Section */}
-        {products.length > 0 && (
-          <View style={styles.section}>
-            {activeTab === 'all' && (
-              <View style={styles.sectionHeader}>
-                <View style={styles.titleContainer}>
-                  <Text style={styles.sectionTitle}>{t('MARKETPLACE.LISTINGS')}</Text>
-                </View>
-                <TouchableOpacity onPress={() => setActiveTab('products')}>
-                  <Text style={styles.seeAllText}>{t('COMMON.SEE_ALL')}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            <FlatList
-              data={products}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => navigate("ProductDetail", { product: item })}
-                  style={styles.productCard}
-                >
-                  <ProductCard 
-                    product={item}
-                    onLike={() => handleLikeProduct(getId(item))}
-                    onUnlike={() => handleUnlikeProduct(getId(item))}
-                    isLiked={user?.likedProducts?.includes(getId(item))}
-                  />
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item) => getId(item)?.toString()}
-              numColumns={isTablet ? 3 : 2}
-              columnWrapperStyle={styles.columnWrapper}
-              onEndReached={() => handleLoadMore('products')}
-              onEndReachedThreshold={0.5}
-              ListFooterComponent={() => (
-                isFetchingNextPage.products ? renderFooter('products') : null
-              )}
-              ListEmptyComponent={!isLoading ? renderEmptyState : null}
-            />
-          </View>
-        )}
-
-        {/* Engineers Section */}
-        {engineers.length > 0 && (
-          <View style={styles.section}>
-            {activeTab === 'all' && (
-              <View style={styles.sectionHeader}>
-                <View style={styles.titleContainer}>
-                  <Text style={styles.sectionTitle}>{t('ENGINEERS.TITLE')}</Text>
-                </View>
-                <TouchableOpacity onPress={() => setActiveTab('engineers')}>
-                  <Text style={styles.seeAllText}>{t('COMMON.SEE_ALL')}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            <FlatList
-              data={engineers}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => navigate("EngineerDetail", { engineer: item })}
-                  style={styles.fullWidthCard}
-                >
-                  <EngineerCard engineer={item} />
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item) => getId(item)?.toString()}
-              onEndReached={() => handleLoadMore('engineers')}
-              onEndReachedThreshold={0.5}
-              ListFooterComponent={() => renderFooter('engineers')}
-              ListEmptyComponent={!isLoading ? renderEmptyState : null}
-            />
-          </View>
-        )}
-
-        {/* Shops Section */}
-        {shops.length > 0 && (
-          <View style={styles.section}>
-            {activeTab === 'all' && (
-              <View style={styles.sectionHeader}>
-                <View style={styles.titleContainer}>
-                  <Text style={styles.sectionTitle}>{t('SHOP.TITLE')}</Text>
-                </View>
-                <TouchableOpacity onPress={() => setActiveTab('shops')}>
-                  <Text style={styles.seeAllText}>{t('COMMON.SEE_ALL')}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            <FlatList
-              data={shops}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => navigate("Shop", { shop: item })}
-                  style={[styles.fullWidthCard, isTablet && styles.tabletCard]}
-                >
-                  <ShopCard shop={item} />
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item) => getId(item)?.toString()}
-              numColumns={isTablet ? 2 : 1}
-              columnWrapperStyle={isTablet ? styles.columnWrapper : null}
-              onEndReached={() => handleLoadMore('shops')}
-              onEndReachedThreshold={0.5}
-              ListFooterComponent={() => renderFooter('shops')}
-              ListEmptyComponent={!isLoading ? renderEmptyState : null}
-            />
-          </View>
-        )}
+      <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}>
+        {products.length > 0 && renderSection('products', products, 'MARKETPLACE.LISTINGS', 'ProductDetailScreen', ProductCard)}
+        {engineers.length > 0 && renderSection('engineers', engineers, 'ENGINEERS.TITLE', 'EngineerDetailScreens', EngineerCard)}
+        {shops.length > 0 && renderSection('shops', shops, 'SHOP.TITLE', 'ShopScreen', ShopCard)}
       </Animated.View>
     );
   };
@@ -387,9 +356,15 @@ export default function MarketplaceScreen() {
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor="#16A34A" />
       <View style={styles.container}>
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
+        <FlatList
+          data={[]}
+          ListHeaderComponent={
+            <>
+              {renderHeader()}
+              {renderCategoryTabs()}
+            </>
+          }
+          ListFooterComponent={renderContent()}
           refreshControl={
             <RefreshControl
               refreshing={isLoading}
@@ -398,13 +373,9 @@ export default function MarketplaceScreen() {
               tintColor="#16A34A"
             />
           }
-          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-        >
-          {renderHeader()}
-          {renderCategoryTabs()}
-          {renderContent()}
-        </ScrollView>
+        />
 
         <MarketplaceFilter
           visible={showFilters}
@@ -420,323 +391,193 @@ export default function MarketplaceScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
-  
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF'
   },
   container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-    maxWidth: 768, // Maximum width for tablet
-    width: '100%',
-    alignSelf: 'center',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: scaleSize(80),
+    flex: 1
   },
   headerContainer: {
-    elevation: 8,
-    shadowColor: '#16A34A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    zIndex: 10,
+    marginBottom: scaleSize(10)
   },
   headerGradient: {
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingBottom: scaleSize(15)
   },
   header: {
-    paddingHorizontal: scaleSize(16),
-    paddingVertical: scaleSize(12),
+    paddingHorizontal: scaleSize(15)
   },
   headerTop: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: scaleSize(16),
+    alignItems: 'center',
+    marginBottom: scaleSize(15)
   },
   headerLeft: {
-    flex: 1,
-    marginRight: scaleSize(12),
+    flex: 1
   },
   title: {
-    fontSize: scaleFont(28),
-    fontFamily: "Tajawal-Bold",
-    color: "#FFFFFF",
-    marginBottom: scaleSize(4),
-    textAlign: 'right',
+    fontSize: scaleFont(24),
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: scaleSize(2)
   },
   subtitle: {
-    fontSize: scaleFont(16),
-    fontFamily: "Tajawal-Regular",
-    color: "#E5F3E5",
-    textAlign: 'right',
+    fontSize: scaleFont(14),
+    color: 'rgba(255,255,255,0.8)'
   },
   searchButton: {
-    backgroundColor: "#FFFFFF",
-    padding: scaleSize(12),
-    borderRadius: scaleSize(12),
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    minWidth: scaleSize(48),
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    width: scaleSize(40),
+    height: scaleSize(40),
+    borderRadius: scaleSize(20),
     justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: scaleSize(10)
   },
   actionsRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   filterButton: {
+    flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingVertical: scaleSize(8),
-    paddingHorizontal: scaleSize(16),
+    paddingVertical: scaleSize(6),
+    paddingHorizontal: scaleSize(12),
     borderRadius: scaleSize(20),
-    flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: scaleSize(8),
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    marginRight: scaleSize(10)
   },
   filterButtonText: {
-    color: "#FFFFFF",
-    fontFamily: "Tajawal-Medium",
-    fontSize: scaleFont(14),
+    color: '#FFFFFF',
+    fontSize: scaleFont(12),
+    marginLeft: scaleSize(5)
   },
   locationTag: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: scaleSize(4),
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingVertical: scaleSize(6),
-    paddingHorizontal: scaleSize(12),
-    borderRadius: scaleSize(20),
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   locationText: {
-    color: "#FFFFFF",
-    fontFamily: "Tajawal-Medium",
-    fontSize: scaleFont(13),
-  },
-  bannerContainer: {
-    width: width - scaleSize(40),
-    height: width * (isTablet ? 0.3 : 0.4),
-    alignSelf: 'center',
-    borderRadius: scaleSize(16),
-    overflow: 'hidden',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    marginTop: scaleSize(20),
-    marginBottom: scaleSize(24),
-  },
-  bannerTouchable: {
-    flex: 1,
-    position: 'relative',
-  },
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  bannerGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '70%',
-    justifyContent: 'flex-end',
-  },
-  bannerContent: {
-    padding: scaleSize(20),
-  },
-  bannerTitle: {
-    color: '#FFF',
-    fontFamily: 'Tajawal-Bold',
-    fontSize: scaleFont(24),
-    marginBottom: scaleSize(4),
-    textAlign: 'right',
-  },
-  bannerSubtitle: {
-    color: '#E5E5E5',
-    fontFamily: 'Tajawal-Medium',
-    fontSize: scaleFont(16),
-    marginBottom: scaleSize(12),
-    textAlign: 'right',
-  },
-  bannerCTA: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingVertical: scaleSize(6),
-    paddingHorizontal: scaleSize(12),
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: scaleSize(20),
-  },
-  bannerCTAText: {
-    color: '#FFF',
-    fontFamily: 'Tajawal-Medium',
-    fontSize: scaleFont(14),
-    marginLeft: scaleSize(4),
+    color: '#FFFFFF',
+    fontSize: scaleFont(12),
+    marginLeft: scaleSize(3)
   },
   tabsContainer: {
-    marginHorizontal: scaleSize(20),
-    marginBottom: scaleSize(16),
+    paddingVertical: scaleSize(10),
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB'
   },
   tabsScrollContent: {
-    paddingHorizontal: scaleSize(4),
-    gap: scaleSize(8),
+    paddingHorizontal: scaleSize(15)
   },
   categoryTab: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: scaleSize(10),
-    paddingHorizontal: scaleSize(16),
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: scaleSize(12),
+    paddingVertical: scaleSize(8),
     borderRadius: scaleSize(20),
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginHorizontal: scaleSize(4),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    marginRight: scaleSize(8)
   },
   activeCategoryTab: {
-    backgroundColor: '#16A34A',
-    borderColor: '#16A34A',
+    backgroundColor: '#16A34A'
   },
   categoryTabText: {
-    fontFamily: 'Tajawal-Medium',
-    fontSize: scaleFont(14),
-    color: '#16A34A',
-    marginHorizontal: scaleSize(6),
-  },
-  activeCategoryTabText: {
-    color: '#FFFFFF',
-  },
-  categoryBadge: {
-    backgroundColor: '#F0FDF4',
-    borderRadius: scaleSize(10),
-    paddingHorizontal: scaleSize(6),
-    paddingVertical: scaleSize(2),
-  },
-  activeCategoryBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  categoryBadgeText: {
-    fontFamily: 'Tajawal-Bold',
     fontSize: scaleFont(12),
     color: '#16A34A',
+    marginHorizontal: scaleSize(5)
+  },
+  activeCategoryTabText: {
+    color: '#FFFFFF'
+  },
+  categoryBadge: {
+    backgroundColor: '#DCFCE7',
+    borderRadius: scaleSize(10),
+    paddingHorizontal: scaleSize(6),
+    paddingVertical: scaleSize(2)
+  },
+  activeCategoryBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)'
+  },
+  categoryBadgeText: {
+    fontSize: scaleFont(10),
+    color: '#166534',
+    fontWeight: 'bold'
   },
   activeCategoryBadgeText: {
-    color: '#FFFFFF',
+    color: '#FFFFFF'
   },
   contentContainer: {
-    paddingHorizontal: scaleSize(16),
-    paddingBottom: scaleSize(40),
+    padding: scaleSize(15)
   },
   section: {
-    marginBottom: scaleSize(24),
+    marginBottom: scaleSize(20)
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: scaleSize(16),
-    paddingHorizontal: scaleSize(4),
-    position: 'relative', // Add this
-    paddingTop:40,
-  paddingBottom:10
+    marginBottom: scaleSize(15)
   },
-
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
   sectionTitle: {
-  fontFamily: 'Tajawal-Bold',
-  fontSize: scaleFont(30),
-  color: '#1E293B',
-  textAlign: 'center', // Add this
-},
-titleContainer: {
-  position: 'absolute',
-  left: 0,
-  right: 0,
-  alignItems: 'center',
-  justifyContent: 'center',
-  paddingTop:10,
-  paddingBottom:10
-},
+    fontSize: scaleFont(18),
+    fontWeight: 'bold',
+    color: '#1F2937'
+  },
   seeAllText: {
-    fontFamily: 'Tajawal-Medium',
-    fontSize: scaleFont(14),
+    fontSize: scaleFont(12),
     color: '#16A34A',
+    fontWeight: '500'
   },
-  productsList: {
-    paddingBottom: scaleSize(8),
-  },
-  columnWrapper: {
-    justifyContent: 'space-between',
-    marginBottom: scaleSize(16),
-    gap: scaleSize(12),
-  },
-  cardWrapper: {
-    width: isTablet ? 
-      (width - scaleSize(64)) / 3 : // 3 columns for tablet
-      (width - scaleSize(48)) / 2,  // 2 columns for phone
-    marginBottom: scaleSize(16),
+  productCard: {
+    flex: 1,
+    margin: scaleSize(5),
+    maxWidth: isTablet ? '33.33%' : '50%'
   },
   fullWidthCard: {
-    marginBottom: scaleSize(16),
+    marginBottom: scaleSize(10)
   },
   tabletCard: {
-    width: (width - scaleSize(64)) / 2,
-  },
-  emptyState: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: scaleSize(40),
-    minHeight: height * 0.4,
+    marginHorizontal: scaleSize(5)
   },
-  emptyText: {
-    fontFamily: 'Tajawal-Medium',
-    fontSize: scaleFont(16),
-    color: '#64748B',
-    marginTop: scaleSize(16),
-    textAlign: 'center',
+  columnWrapper: {
+    justifyContent: 'space-between'
   },
   footerLoader: {
-    paddingVertical: scaleSize(20),
-    alignItems: 'center',
+    paddingVertical: scaleSize(10)
+  },
+  emptyState: {
+    paddingVertical: scaleSize(40),
+    alignItems: 'center'
+  },
+  emptyText: {
+    fontSize: scaleFont(16),
+    color: '#6B7280'
   },
   errorContainer: {
-    paddingVertical: scaleSize(20),
-    alignItems: 'center',
+    paddingVertical: scaleSize(40),
+    alignItems: 'center'
   },
   errorText: {
-    fontFamily: 'Tajawal-Medium',
     fontSize: scaleFont(16),
     color: '#EF4444',
-    marginBottom: scaleSize(10),
+    marginBottom: scaleSize(15),
+    textAlign: 'center'
   },
   retryButton: {
     backgroundColor: '#16A34A',
-    paddingVertical: scaleSize(10),
     paddingHorizontal: scaleSize(20),
-    borderRadius: scaleSize(10),
+    paddingVertical: scaleSize(10),
+    borderRadius: scaleSize(5)
   },
   retryButtonText: {
     color: '#FFFFFF',
-    fontFamily: 'Tajawal-Medium',
-    fontSize: scaleFont(16),
-  },
+    fontWeight: 'bold'
+  }
 });
