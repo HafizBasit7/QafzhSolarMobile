@@ -96,6 +96,7 @@ export const productsAPI = {
 // ----------------------------
 export const engineersAPI = {
   getEngineers: (params) => api.get('/marketplace/getAllEngineer', { params }),
+  getEngineer: (id) => api.get(`/marketplace/engineer/${id}`), // Add this
   filterEngineers: (params) => api.get('/marketplace/filters-engineer', { params }),
 };
 
@@ -104,6 +105,7 @@ export const engineersAPI = {
 // ----------------------------
 export const shopsAPI = {
   getShops: (params) => api.get('/marketplace/getAllShops', { params }),
+  getShop: (id) => api.get(`/marketplace/shop/${id}`), // Add this
   filterShops: (params) => api.get('/marketplace/filters-shop', { params }),
 };
 

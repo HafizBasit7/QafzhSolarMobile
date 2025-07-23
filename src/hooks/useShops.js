@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { shopsAPI } from '../services/api';
 
+
 export const useShops = (filters = {}) => {
   const shouldUseFilters = !!filters?.search_keyword?.trim();
 
@@ -12,7 +13,7 @@ export const useShops = (filters = {}) => {
     isLoading,
     isError,
     error,
-    refetch
+    refetch,
   } = useInfiniteQuery({
     queryKey: ['shops', filters],
     queryFn: ({ pageParam = 1 }) =>
@@ -26,19 +27,15 @@ export const useShops = (filters = {}) => {
     keepPreviousData: true,
   });
 
-  // Get single shop
-  const useShop = (id) => {
-    return useQuery({
+  const useShop = (id) =>
+    useQuery({
       queryKey: ['shop', id],
       queryFn: () => shopsAPI.getShop(id),
       enabled: !!id,
     });
-  };
 
-  // Helper: flatten all pages
-  const getAllShops = () => {
-    return data?.pages?.flatMap((page) => Array.isArray(page.data) ? page.data : []) || [];
-  };
+  const getAllShops = () =>
+    data?.pages?.flatMap((page) => (Array.isArray(page.data) ? page.data : [])) || [];
 
   return {
     shops: getAllShops(),

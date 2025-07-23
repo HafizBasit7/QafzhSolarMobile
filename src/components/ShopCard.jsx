@@ -22,7 +22,7 @@ export default function ShopCard({ shop }) {
   const { t } = useTranslation();
 
   const handlePress = () => {
-    navigation.navigate('Shop', { shop });
+    navigation.navigate('Shop', { shopId: shop._id });
   };
 
   const handleCall = () => {

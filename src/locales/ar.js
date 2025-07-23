@@ -1,5 +1,12 @@
 export default {
   COMMON: {
+    SEE_ALL: 'عرض الكل',
+    RETRY: 'إعادة المحاولة',
+    SOMETHING_WENT_WRONG: 'حدث خطأ ما',
+    NO_PRODUCTS: 'لا توجد منتجات',
+    NO_SHOPS: 'لا توجد متاجر',
+    NO_ENGINEERS: 'لا توجد مهندسين',
+    NO_LISTINGS: 'لا توجد قوائم',
     LOADING: 'جاري التحميل...',
     SUBMIT: 'إرسال',
     SUBMITTING: 'جاري الإرسال...',
@@ -33,6 +40,10 @@ export default {
     RESEND_CODE: 'إعادة إرسال الرمز'
   },
   MARKETPLACE: {
+    NO_PRODUCTS: 'لا توجد منتجات متاحة',
+    NO_SHOPS: 'لا توجد متاجر متاحة', 
+    NO_ENGINEERS: 'لا توجد مهندسين متاحين',
+    SUBTITLE: 'اكتشف أفضل منتجات ومتاجر الطاقة الشمسية',
     TITLE: 'سوق الطاقة الشمسية',
     SELL_ITEM: 'بيع منتج',
     PRODUCT_TYPE: 'نوع المنتج',
@@ -58,7 +69,10 @@ export default {
     "PRODUCTS_SUBTITLE": "تصفح أحدث المنتجات",
     "SHOPS_SUBTITLE": "اكتشف المتاجر القريبة",
     "ENGINEERS_SUBTITLE": "ابحث عن مهندسين معتمدين",
-    "CALCULATOR_SUBTITLE": "احسب احتياجاتك من الطاقة"
+    "CALCULATOR_SUBTITLE": "احسب احتياجاتك من الطاقة",
+    BANNER_TITLE: 'خصومات تصل إلى 30% على الأنظمة الشمسية',
+  BANNER_SUBTITLE: 'احصل على أفضل العروض من موردينا المعتمدين',
+  BANNER_BUTTON: 'اكتشف العروض'
   },
   CALCULATOR: {
     TITLE: 'حاسبة الطاقة الشمسية',
@@ -78,7 +92,9 @@ export default {
     SERVICES: 'الخدمات',
     CONTACT: 'اتصل',
     REQUEST: 'طلب خدمة',
-    GOVERNORATE: 'المحافظة'
+    GOVERNORATE: 'المحافظة',
+    NO_ENGINEERS: 'لا توجد مهندسين متاحين حالياً'
+
   },
   SHOP: {
     TITLE: 'المتاجر الموثقة',
@@ -93,7 +109,8 @@ export default {
     "contactShop": "اتصل بالمتجر",
     "chatOnWhatsapp": "الدردشة على واتساب",
     "directions": "الاتجاهات",
-    "call": "اتصال"
+    "call": "اتصال",
+    NO_SHOPS: 'لا توجد متاجر متاحة حالياً'
   },
   PRODUCT_TYPES: {
     PANEL: 'ألواح شمسية',
@@ -101,6 +118,14 @@ export default {
     BATTERY: 'بطارية',
     CHARGER: 'شاحن',
     ACCESSORY: 'ملحقات'
+  },
+  PRODUCT_DETAIL: {
+    TITLE: 'تفاصيل المنتج',
+    DESCRIPTION: 'الوصف',
+    SPECIFICATIONS: 'المواصفات',
+    SELLER_INFO: 'معلومات البائع',
+    CONTACT_SELLER: 'اتصل بالبائع',
+    SIMILAR_PRODUCTS: 'منتجات مشابهة'
   },
   CURRENCIES: {
     YER: 'ريال يمني',
@@ -221,5 +246,22 @@ export default {
     "sellerInfo": "معلومات البائع",
     "unknown": "غير معروف",
     "callSeller": "اتصال بالبائع"
+  },
+  LOADING: {
+    FETCHING_PRODUCTS: 'جاري تحميل المنتجات...',
+    FETCHING_SHOPS: 'جاري تحميل المتاجر...',
+    FETCHING_ENGINEERS: 'جاري تحميل المهندسين...'
+  },
+  NAVIGATION: {
+    PRODUCT_DETAIL: 'تفاصيل المنتج',
+    SHOP_DETAIL: 'تفاصيل المتجر',
+    ENGINEER_DETAIL: 'تفاصيل المهندس'
+  },
+  ACTIONS: {
+    LIKE: 'إعجاب',
+    UNLIKE: 'إزالة الإعجاب',
+    SHARE: 'مشاركة',
+    REPORT: 'الإبلاغ'
   }
+
 };

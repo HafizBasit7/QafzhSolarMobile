@@ -10,7 +10,7 @@ export default function EngineerCard({ engineer }) {
   const navigation = useNavigation();
 
   const handlePress = () => {
-    navigation.navigate('EngineerDetail', { engineer });
+    navigation.navigate('EngineerDetail', { engineerId: engineer._id });
   };
 
   const handleCall = () => {
