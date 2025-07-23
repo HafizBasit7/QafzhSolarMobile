@@ -3,65 +3,71 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import i18n from '../../config/i18n';
 import { MaterialIcons, Feather, AntDesign } from '@expo/vector-icons';
-
-// Mock user data
-const mockUser = {
-  name: 'Sarah Johnson',
-  // email: 'sarah.johnson@example.com',
-  // bio: 'Digital designer & photography enthusiast. Love collecting vintage items.',
-  location: 'Riyadh, Saudi Arabia',
-  joinedDate: 'Member since June 2020',
-  avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-  stats: {
-    products: 24,
-    liked: 156,
-    followers: 842,
-    following: 129
-  }
-};
+import { useAuth } from '../../hooks/useAuth';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const ProfileScreen = ({ navigation }) => {
+  const { user, isLoadingUser, logout } = useAuth();
+
+  if (isLoadingUser) {
+    return <LoadingSpinner />;
+  }
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loginPrompt}>
+          <Text style={styles.loginText}>Please login to view your profile</Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => navigation.navigate('Auth')}
+          >
+            <Text style={styles.loginButtonText}>Login</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       {/* Profile Header */}
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
-          <Image source={{ uri: mockUser.avatar }} style={styles.avatar} />
-          <TouchableOpacity style={styles.editIcon}>
+          <Image 
+            source={{ uri: user.profileImageUrl || 'https://via.placeholder.com/100' }} 
+            style={styles.avatar} 
+          />
+          <TouchableOpacity 
+            style={styles.editIcon}
+            onPress={() => navigation.navigate('UpdateProfile')}
+          >
             <Feather name="edit-2" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
         
-        <Text style={styles.userName}>{mockUser.name}</Text>
-        {/* <Text style={styles.userEmail}>{mockUser.email}</Text> */}
-        {/* <Text style={styles.userBio}>{mockUser.bio}</Text> */}
+        <Text style={styles.userName}>{user.name || 'Update your profile'}</Text>
         
         <View style={styles.locationContainer}>
-          <MaterialIcons name="location-on" size={16} color="#6e6e6e" />
-          <Text style={styles.userLocation}>{mockUser.location}</Text>
+          <MaterialIcons name="phone" size={16} color="#6e6e6e" />
+          <Text style={styles.userLocation}>{user.phone}</Text>
         </View>
         
-        <Text style={styles.joinedDate}>{mockUser.joinedDate}</Text>
+        <Text style={styles.joinedDate}>
+          Member since {new Date(user.createdAt).toLocaleDateString()}
+        </Text>
       </View>
 
       {/* Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{mockUser.stats.products}</Text>
+          <Text style={styles.statNumber}>{user.products?.length || 0}</Text>
           <Text style={styles.statLabel}>Products</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{mockUser.stats.liked}</Text>
+          <Text style={styles.statNumber}>{user.likedProducts?.length || 0}</Text>
           <Text style={styles.statLabel}>Liked</Text>
         </View>
-        {/* <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{mockUser.stats.followers}</Text>
-          <Text style={styles.statLabel}>Followers</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{mockUser.stats.following}</Text>
-          <Text style={styles.statLabel}>Following</Text>
-        </View> */}
       </View>
 
       {/* Action Buttons */}
@@ -90,7 +96,10 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.actionButtonText}>{i18n.t('PROFILE.UPDATE_PROFILE')}</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={[styles.actionButton, styles.settingsButton]}>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.settingsButton]}
+          onPress={logout}
+        >
           <Feather name="log-out" size={20} color="#fff" />
           <Text style={[styles.actionButtonText, styles.settingsButtonText]}>Logout</Text>
         </TouchableOpacity>
@@ -103,6 +112,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  loginPrompt: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loginText: {
+    fontSize: 16,
+    fontFamily: 'Tajawal-Medium',
+    color: '#525f7f',
+    marginBottom: 16,
+  },
+  loginButton: {
+    backgroundColor: '#22C55E',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Tajawal-Bold',
   },
   profileHeader: {
     alignItems: 'center',
@@ -138,21 +170,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal-Bold',
     color: '#32325d',
     marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 14,
-    fontFamily: 'Tajawal-Regular',
-    color: '#6e6e6e',
-    marginBottom: 8,
-  },
-  userBio: {
-    fontSize: 14,
-    fontFamily: 'Tajawal-Regular',
-    color: '#525f7f',
-    textAlign: 'center',
-    marginBottom: 12,
-    lineHeight: 20,
-    paddingHorizontal: 20,
   },
   locationContainer: {
     flexDirection: 'row',

@@ -2,11 +2,14 @@ import React from 'react';
 import { I18nManager, View, ActivityIndicator } from 'react-native';
 import { useFonts } from 'expo-font';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { QueryClientProvider } from '@tanstack/react-query';
 import RootNavigator from './src/navigation/RootNavigator';
 import './src/config/i18n'; // ✅ i18n setup
 import { StatusBar } from 'react-native';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './src/config/i18n';
+import { queryClient } from './src/config/queryClient';
+import { ToastProvider } from './src/components/common/Toast';
 
 // Force RTL for Arabic
 if (!I18nManager.isRTL) {
@@ -30,11 +33,15 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <I18nextProvider i18n={i18n}>
-        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-        <RootNavigator />
-      </I18nextProvider>
-    </SafeAreaProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <I18nextProvider i18n={i18n}>
+          <ToastProvider>
+            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+            <RootNavigator />
+          </ToastProvider>
+        </I18nextProvider>
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
 }

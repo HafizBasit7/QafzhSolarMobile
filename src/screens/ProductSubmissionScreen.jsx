@@ -13,11 +13,15 @@ import ImageUploader from "../utils/imageUpload";
 import CurrencyPicker from "../components/CurrencyPicker";
 import { navigate } from "../navigation/navigationHelper";
 import { useTranslation } from "react-i18next";
-
-
+import { useProducts } from "../hooks/useProducts";
+import { useAuth } from "../hooks/useAuth";
+import AuthGuard from "../components/common/AuthGuard";
+import { showToast } from "../components/common/Toast";
 
 export default function ProductSubmissionScreen({ route }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { createProduct, isCreating } = useProducts();
 
   const brands = [
     { label: t('BRANDS.JINKO'), value: 'jinko' },
@@ -36,7 +40,7 @@ export default function ProductSubmissionScreen({ route }) {
     brand: "",
     governorate: "",
     city: "",
-    phone: route.params?.prefillPhone || "",
+    phone: user?.phone || "",
     images: [],
   });
 
@@ -53,7 +57,6 @@ export default function ProductSubmissionScreen({ route }) {
   ];
 
   const [cities, setCities] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleGovernorateChange = (value) => {
     const selectedGov = governorates.find(g => g.value === value);
@@ -75,213 +78,188 @@ export default function ProductSubmissionScreen({ route }) {
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting) return;
+    if (isCreating) return;
 
     const error = validateForm();
     if (error) {
-      Alert.alert(t("COMMON.ERROR"), error);
+      showToast('error', 'Error', error);
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      if (!product.phone) {
-        navigate("Verification", {
-          productData: product,
-          onSuccess: () => submitProduct()
-        });
-      } else {
-        await submitProduct();
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const submitProduct = async () => {
-    try {
-      const submissionData = {
+      await createProduct({
         ...product,
-        status: "pending",
-        submittedAt: new Date().toISOString()
-      };
+        price: parseFloat(product.price),
+        phone: user.phone,
+      });
 
-      console.log("Submitting:", submissionData);
-
-      Alert.alert(
-        t("PRODUCT_FORM.SUCCESS_TITLE"),
-        t("PRODUCT_FORM.SUCCESS_MESSAGE"),
-        [{ text: t("COMMON.OK"), onPress: () => navigate("Marketplace") }]
-      );
+      showToast('success', 'Success', t('PRODUCT_FORM.SUCCESS_MESSAGE'));
+      navigate('Marketplace');
     } catch (error) {
-      console.error("Submission error:", error);
-      Alert.alert(t("COMMON.ERROR"), t("PRODUCT_FORM.SUBMIT_ERROR"));
+      showToast('error', 'Error', error.message || t('PRODUCT_FORM.SUBMIT_ERROR'));
     }
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={styles.sectionTitle}>{t("PRODUCT_FORM.TITLE")}</Text>
+    <AuthGuard>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.sectionTitle}>{t("PRODUCT_FORM.TITLE")}</Text>
 
-      {/* Product Type */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.PRODUCT_TYPE")}</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={product.type}
-            onValueChange={(value) => setProduct({ ...product, type: value })}
-            dropdownIconColor="#16A34A"
-            mode="dropdown"
-            style={styles.picker}
-          >
-            <Picker.Item label={t("PRODUCT_FORM.SELECT_TYPE")} value="" />
-            {productTypes.map((item) => (
-              <Picker.Item key={item.value} label={item.label} value={item.value} />
-            ))}
-          </Picker>
-        </View>
-      </View>
-
-      {/* Condition */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.CONDITION")}</Text>
-        <View style={styles.conditionOptions}>
-          {["new", "used", "needs_repair"].map((cond) => (
-            <TouchableOpacity
-              key={cond}
-              style={[
-                styles.conditionOption,
-                product.condition === cond && styles.selectedCondition,
-              ]}
-              onPress={() => setProduct({ ...product, condition: cond })}
-            >
-              <Text style={styles.conditionText}>
-                {t(`CONDITIONS.${cond.toUpperCase()}`)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Title */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.TITLE")}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.title}
-          onChangeText={(text) => setProduct({ ...product, title: text })}
-          placeholder={t("PRODUCT_FORM.TITLE_PLACEHOLDER")}
-        />
-      </View>
-
-      {/* Description */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.DESCRIPTION")}</Text>
-        <TextInput
-          style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-          multiline
-          value={product.description}
-          onChangeText={(text) => setProduct({ ...product, description: text })}
-          placeholder={t("PRODUCT_FORM.DESCRIPTION_PLACEHOLDER")}
-        />
-      </View>
-
-      {/* Price */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.PRICE")}</Text>
-        <View style={styles.priceInputContainer}>
-          <TextInput
-            style={styles.priceInput}
-            keyboardType="numeric"
-            value={product.price}
-            onChangeText={(text) => setProduct({ ...product, price: text })}
-            placeholder={t("PRODUCT_FORM.PRICE_PLACEHOLDER")}
-          />
-          <CurrencyPicker
-            selected={product.currency}
-            onSelect={(currency) => setProduct({ ...product, currency })}
-          />
-        </View>
-      </View>
-
-      {/* Brand */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.BRAND")}</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={product.brand}
-            onValueChange={(value) => setProduct({ ...product, brand: value })}
-          >
-            <Picker.Item label={t("PRODUCT_FORM.BRAND")} value="" />
-            {brands.map((brand) => (
-              <Picker.Item key={brand.value} label={brand.label} value={brand.value} />
-            ))}
-          </Picker>
-        </View>
-      </View>
-
-      {/* Governorate */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.GOVERNORATE")}</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={product.governorate}
-            onValueChange={handleGovernorateChange}
-          >
-            <Picker.Item label={t("PRODUCT_FORM.GOVERNORATE")} value="" />
-            {governorates.map((gov) => (
-              <Picker.Item key={gov.value} label={gov.label} value={gov.value} />
-            ))}
-          </Picker>
-        </View>
-      </View>
-
-      {/* City */}
-      {product.governorate && (
+        {/* Product Type */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>{t("PRODUCT_FORM.CITY")}</Text>
+          <Text style={styles.label}>{t("PRODUCT_FORM.PRODUCT_TYPE")}</Text>
           <View style={styles.pickerContainer}>
             <Picker
-              selectedValue={product.city}
-              onValueChange={(value) => setProduct({ ...product, city: value })}
+              selectedValue={product.type}
+              onValueChange={(value) => setProduct({ ...product, type: value })}
+              dropdownIconColor="#16A34A"
+              mode="dropdown"
+              style={styles.picker}
             >
-              <Picker.Item label={t("PRODUCT_FORM.SELECT_CITY")} value="" />
-              {cities.map((city) => (
-                <Picker.Item key={city} label={city} value={city} />
+              <Picker.Item label={t("PRODUCT_FORM.SELECT_TYPE")} value="" />
+              {productTypes.map((item) => (
+                <Picker.Item key={item.value} label={item.label} value={item.value} />
               ))}
             </Picker>
           </View>
         </View>
-      )}
 
-      {/* Image Uploader (optional) */}
-      {/* <ImageUploader
-        images={product.images}
-        onImagesChange={(images) => setProduct({ ...product, images })}
-      /> */}
+        {/* Condition */}
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>{t("PRODUCT_FORM.CONDITION")}</Text>
+          <View style={styles.conditionOptions}>
+            {["new", "used", "needs_repair"].map((cond) => (
+              <TouchableOpacity
+                key={cond}
+                style={[
+                  styles.conditionOption,
+                  product.condition === cond && styles.selectedCondition,
+                ]}
+                onPress={() => setProduct({ ...product, condition: cond })}
+              >
+                <Text style={styles.conditionText}>
+                  {t(`CONDITIONS.${cond.toUpperCase()}`)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
-      {/* Submit Button */}
-      <TouchableOpacity
-        style={[styles.submitButton, isSubmitting && styles.disabledButton]}
-        onPress={handleSubmit}
-        disabled={isSubmitting}
-      >
-        <Text style={styles.submitButtonText}>
-          {isSubmitting
-            ? t("COMMON.SUBMITTING")
-            : product.phone
-              ? t("COMMON.SUBMIT")
-              : t("COMMON.VERIFY_AND_SUBMIT")}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* Title */}
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>{t("PRODUCT_FORM.TITLE")}</Text>
+          <TextInput
+            style={styles.input}
+            value={product.title}
+            onChangeText={(text) => setProduct({ ...product, title: text })}
+            placeholder={t("PRODUCT_FORM.TITLE_PLACEHOLDER")}
+          />
+        </View>
+
+        {/* Description */}
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>{t("PRODUCT_FORM.DESCRIPTION")}</Text>
+          <TextInput
+            style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+            multiline
+            value={product.description}
+            onChangeText={(text) => setProduct({ ...product, description: text })}
+            placeholder={t("PRODUCT_FORM.DESCRIPTION_PLACEHOLDER")}
+          />
+        </View>
+
+        {/* Price */}
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>{t("PRODUCT_FORM.PRICE")}</Text>
+          <View style={styles.priceInputContainer}>
+            <TextInput
+              style={styles.priceInput}
+              keyboardType="numeric"
+              value={product.price}
+              onChangeText={(text) => setProduct({ ...product, price: text })}
+              placeholder={t("PRODUCT_FORM.PRICE_PLACEHOLDER")}
+            />
+            <CurrencyPicker
+              selected={product.currency}
+              onSelect={(currency) => setProduct({ ...product, currency })}
+            />
+          </View>
+        </View>
+
+        {/* Brand */}
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>{t("PRODUCT_FORM.BRAND")}</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={product.brand}
+              onValueChange={(value) => setProduct({ ...product, brand: value })}
+            >
+              <Picker.Item label={t("PRODUCT_FORM.BRAND")} value="" />
+              {brands.map((brand) => (
+                <Picker.Item key={brand.value} label={brand.label} value={brand.value} />
+              ))}
+            </Picker>
+          </View>
+        </View>
+
+        {/* Governorate */}
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>{t("PRODUCT_FORM.GOVERNORATE")}</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={product.governorate}
+              onValueChange={handleGovernorateChange}
+            >
+              <Picker.Item label={t("PRODUCT_FORM.GOVERNORATE")} value="" />
+              {governorates.map((gov) => (
+                <Picker.Item key={gov.value} label={gov.label} value={gov.value} />
+              ))}
+            </Picker>
+          </View>
+        </View>
+
+        {/* City */}
+        {product.governorate && (
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>{t("PRODUCT_FORM.CITY")}</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={product.city}
+                onValueChange={(value) => setProduct({ ...product, city: value })}
+              >
+                <Picker.Item label={t("PRODUCT_FORM.SELECT_CITY")} value="" />
+                {cities.map((city) => (
+                  <Picker.Item key={city} label={city} value={city} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+        )}
+
+        {/* Image Uploader */}
+        <ImageUploader
+          images={product.images}
+          onImagesChange={(images) => setProduct({ ...product, images })}
+        />
+
+        {/* Submit Button */}
+        <TouchableOpacity
+          style={[styles.submitButton, isCreating && styles.disabledButton]}
+          onPress={handleSubmit}
+          disabled={isCreating}
+        >
+          <Text style={styles.submitButtonText}>
+            {isCreating ? t("COMMON.SUBMITTING") : t("COMMON.SUBMIT")}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </AuthGuard>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -371,7 +349,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   disabledButton: {
-    backgroundColor: "#93C5FD",
+    backgroundColor: "#94A3B8",
   },
   submitButtonText: {
     color: "white",

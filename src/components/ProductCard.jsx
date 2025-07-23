@@ -1,226 +1,256 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../hooks/useAuth';
 
-export default function ProductCard({ product }) {
-  const navigation = useNavigation();
+const ProductCard = ({ product, onLike, onUnlike }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
-  const handlePress = () => {
-    navigation.navigate('ProductDetail', { product });
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('ar-YE', {
+      style: 'decimal',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const handleLikePress = () => {
+    if (product.isLiked) {
+      onUnlike();
+    } else {
+      onLike();
+    }
+  };
+
+  const renderImage = () => {
+    if (imageError) {
+      return (
+        <View style={styles.imagePlaceholder}>
+          <MaterialIcons name="broken-image" size={24} color="#94A3B8" />
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: product.images?.[0] || 'https://via.placeholder.com/300' }}
+          style={styles.image}
+          onLoadStart={() => setImageLoading(true)}
+          onLoadEnd={() => setImageLoading(false)}
+          onError={() => {
+            setImageLoading(false);
+            setImageError(true);
+          }}
+        />
+        {imageLoading && (
+          <View style={styles.imageLoader}>
+            <ActivityIndicator color="#16A34A" />
+          </View>
+        )}
+        <TouchableOpacity 
+          style={styles.likeButton}
+          onPress={handleLikePress}
+          disabled={!user}
+        >
+          <Ionicons 
+            name={product.isLiked ? "heart" : "heart-outline"} 
+            size={24} 
+            color={product.isLiked ? "#EF4444" : "#FFFFFF"} 
+          />
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   return (
-    <TouchableOpacity 
-      activeOpacity={0.95} 
-      style={styles.card}
-      onPress={handlePress}
-    >
-      {/* Image with Badge and Favorite */}
-      <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: product?.images?.[0] || 'https://via.placeholder.com/300' }} 
-          style={styles.image} 
-          resizeMode="cover"
-        />
-        
-        <View style={styles.imageOverlay}>
-          {product?.condition === 'new' && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{t(`CONDITIONS.new`)}</Text>
-            </View>
-          )}
-          
-          <TouchableOpacity style={styles.favoriteButton}>
-            <Ionicons 
-              name={product?.isFavorite ? "heart" : "heart-outline"} 
-              size={20} 
-              color={product?.isFavorite ? "#EF4444" : "rgba(255,255,255,0.8)"} 
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View style={styles.container}>
+      {renderImage()}
 
-      {/* Product Details */}
-      <View style={styles.details}>
-        <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
-          {product?.title}
+      <View style={styles.content}>
+        <Text style={styles.title} numberOfLines={2}>
+          {product.title}
         </Text>
-        
-        {/* Price and Rating */}
-        <View style={styles.priceRatingContainer}>
+
+        <View style={styles.details}>
           <View style={styles.priceContainer}>
             <Text style={styles.price}>
-              {product?.price} {t(`CURRENCIES.${product?.currency}`)}
+              {formatPrice(product.price)} {product.currency}
             </Text>
-            {product?.originalPrice && (
-              <Text style={styles.originalPrice}>
-                {product.originalPrice} {t(`CURRENCIES.${product?.currency}`)}
+            {product.isNegotiable && (
+              <Text style={styles.negotiable}>{t('PRODUCT.NEGOTIABLE')}</Text>
+            )}
+          </View>
+
+          <View style={styles.locationContainer}>
+            <MaterialIcons name="location-on" size={12} color="#64748B" />
+            <Text style={styles.location} numberOfLines={1}>
+              {product.city}, {product.governorate}
+            </Text>
+          </View>
+
+          <View style={styles.badgeContainer}>
+            <View style={[styles.badge, styles[`${product.condition}Badge`]]}>
+              <Text style={[styles.badgeText, styles[`${product.condition}Text`]]}>
+                {t(`CONDITIONS.${product.condition.toUpperCase()}`)}
               </Text>
+            </View>
+            {product.isVerified && (
+              <View style={styles.verifiedBadge}>
+                <MaterialIcons name="verified" size={12} color="#10B981" />
+                <Text style={styles.verifiedText}>{t('COMMON.VERIFIED')}</Text>
+              </View>
             )}
           </View>
         </View>
-
-        {/* Footer with Location and Condition */}
-        <View style={styles.footer}>
-          <View style={styles.locationContainer}>
-            <Ionicons name="location-outline" size={14} color="#64748B" />
-            <Text style={styles.location} numberOfLines={1}>
-              {product?.location}
-            </Text>
-          </View>
-          
-          <View style={[
-            styles.conditionTag,
-            product?.condition === 'used' && styles.usedTag,
-            product?.condition === 'needs_repair' && styles.repairTag
-          ]}>
-            <Text style={styles.conditionText}>
-              {t(`${product?.condition}`)}
-            </Text>
-          </View>
-        </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
-}
-
+};
 
 const styles = StyleSheet.create({
-  card: {
+  container: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 12,
     overflow: 'hidden',
-    marginBottom: 16,
-    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   imageContainer: {
     position: 'relative',
-    height: 180,
+    width: '100%',
+    height: 150,
+    backgroundColor: '#F8FAFC',
   },
   image: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
-  imageOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    padding: 12,
-  },
-  badge: {
-    backgroundColor: '#10B981',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  badgeText: {
-    color: '#FFFFFF',
-    fontFamily: 'Tajawal-Bold',
-    fontSize: 12,
-  },
-  favoriteButton: {
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  imageLoader: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  details: {
-    padding: 14,
+  imagePlaceholder: {
+    width: '100%',
+    height: 150,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  likeButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    padding: 12,
   },
   title: {
-    fontFamily: 'Tajawal-SemiBold',
-    fontSize: 15,
+    fontSize: 14,
+    fontFamily: 'Tajawal-Bold',
     color: '#1E293B',
-    marginBottom: 10,
+    marginBottom: 8,
     textAlign: 'right',
-    lineHeight: 22,
   },
-  priceRatingContainer: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  details: {
+    gap: 8,
   },
   priceContainer: {
     flexDirection: 'row-reverse',
-    alignItems: 'baseline',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   price: {
+    fontSize: 16,
     fontFamily: 'Tajawal-Bold',
-    fontSize: 17,
-    color: '#1E293B',
+    color: '#16A34A',
   },
-  originalPrice: {
-    fontFamily: 'Tajawal-Regular',
-    fontSize: 13,
-    color: '#94A3B8',
-    textDecorationLine: 'line-through',
-    marginRight: 8,
-  },
-  ratingContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  ratingText: {
-    fontFamily: 'Tajawal-Medium',
+  negotiable: {
     fontSize: 12,
+    fontFamily: 'Tajawal-Medium',
     color: '#64748B',
-    marginRight: 4,
-  },
-  footer: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
   },
   locationContainer: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    flex: 1,
+    gap: 4,
   },
   location: {
+    fontSize: 12,
     fontFamily: 'Tajawal-Regular',
-    fontSize: 12,
     color: '#64748B',
-    marginRight: 6,
+    flex: 1,
+    textAlign: 'right',
   },
-  conditionTag: {
+  badgeContainer: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 8,
+  },
+  badge: {
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 4,
+    borderRadius: 6,
   },
-  usedTag: {
-    backgroundColor: '#FEF3C7',
+  newBadge: {
+    backgroundColor: '#ECFDF5',
   },
-  repairTag: {
-    backgroundColor: '#FEE2E2',
+  usedBadge: {
+    backgroundColor: '#EFF6FF',
   },
-  conditionText: {
-    fontFamily: 'Tajawal-Medium',
+  needs_repairBadge: {
+    backgroundColor: '#FEF2F2',
+  },
+  badgeText: {
     fontSize: 12,
-    color: '#1E3A8A',
+    fontFamily: 'Tajawal-Medium',
+  },
+  newText: {
+    color: '#10B981',
+  },
+  usedText: {
+    color: '#3B82F6',
+  },
+  needs_repairText: {
+    color: '#EF4444',
+  },
+  verifiedBadge: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  verifiedText: {
+    fontSize: 12,
+    fontFamily: 'Tajawal-Medium',
+    color: '#10B981',
   },
 });
+
+export default ProductCard;

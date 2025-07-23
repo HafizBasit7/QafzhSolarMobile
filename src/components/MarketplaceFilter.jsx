@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,275 +6,216 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Switch,
-  TextInput
+  Platform,
 } from 'react-native';
-import Slider from '@react-native-community/slider';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { governoratesAPI } from '../services/api';
+import { showToast } from './common/Toast';
 
-const productTypes = [
-  { id: 'panel', i18nKey: 'PRODUCT_TYPES.PANEL' },
-  { id: 'inverter', i18nKey: 'PRODUCT_TYPES.INVERTER' },
-  { id: 'battery', i18nKey: 'PRODUCT_TYPES.BATTERY' },
-  { id: 'accessory', i18nKey: 'PRODUCT_TYPES.ACCESSORY' }
-];
-
-const conditions = [
-  { id: 'new', i18nKey: 'CONDITIONS.NEW' },
-  { id: 'used', i18nKey: 'CONDITIONS.USED' },
-  { id: 'needsRepair', i18nKey: 'CONDITIONS.NEEDS_REPAIR' }
-];
-
-const governorates = [
-  { id: 'sanaa', i18nKey: 'GOVERNORATES.SANAA' },
-  { id: 'aden', i18nKey: 'GOVERNORATES.ADEN' },
-  { id: 'taiz', i18nKey: 'GOVERNORATES.TAIZ' },
-  { id: 'hodeidah', i18nKey: 'GOVERNORATES.HODEIDAH' },
-  { id: 'hadramout', i18nKey: 'GOVERNORATES.HADRAMOUT' }
-];
-
-
-export default function MarketplaceFilter({ visible, onClose, onApply }) {
+const MarketplaceFilter = ({ visible, onClose, onApply, initialFilters = {} }) => {
   const { t } = useTranslation();
   const [filters, setFilters] = useState({
-    productType: '',
-    condition: '',
-    priceRange: [0, 1000000],
-    governorate: '',
-    showVerified: false,
-    searchQuery: ''
+    productType: initialFilters.productType || '',
+    condition: initialFilters.condition || '',
+    priceRange: initialFilters.priceRange || [0, 1000000],
+    governorate: initialFilters.governorate || '',
+    sortBy: initialFilters.sortBy || 'newest',
   });
 
-  const toggleVerified = () =>
-    setFilters({ ...filters, showVerified: !filters.showVerified });
+  const [governorates, setGovernorates] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadGovernorates();
+  }, []);
+
+  const loadGovernorates = async () => {
+    try {
+      setLoading(true);
+      const data = await governoratesAPI.getGovernorates();
+      setGovernorates(data);
+    } catch (error) {
+      showToast('error', 'Error', 'Failed to load governorates');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const productTypes = [
+    { id: 'panel', label: t('PRODUCT_TYPES.PANEL') },
+    { id: 'inverter', label: t('PRODUCT_TYPES.INVERTER') },
+    { id: 'battery', label: t('PRODUCT_TYPES.BATTERY') },
+    { id: 'accessory', label: t('PRODUCT_TYPES.ACCESSORY') },
+  ];
+
+  const conditions = [
+    { id: 'new', label: t('CONDITIONS.NEW') },
+    { id: 'used', label: t('CONDITIONS.USED') },
+    { id: 'needs_repair', label: t('CONDITIONS.NEEDS_REPAIR') },
+  ];
+
+  const sortOptions = [
+    { id: 'newest', label: t('SORT.NEWEST') },
+    { id: 'price_asc', label: t('SORT.PRICE_LOW_HIGH') },
+    { id: 'price_desc', label: t('SORT.PRICE_HIGH_LOW') },
+  ];
+
+  const handleReset = () => {
+    setFilters({
+      productType: '',
+      condition: '',
+      priceRange: [0, 1000000],
+      governorate: '',
+      sortBy: 'newest',
+    });
+  };
+
+  const handleApply = () => {
+    onApply(filters);
+    onClose();
+  };
+
+  const renderFilterSection = (title, options, selectedValue, onSelect) => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.optionsContainer}>
+        {options.map((option) => (
+          <TouchableOpacity
+            key={option.id}
+            style={[
+              styles.optionButton,
+              selectedValue === option.id && styles.selectedOption,
+            ]}
+            onPress={() => onSelect(option.id)}
+          >
+            <Text
+              style={[
+                styles.optionText,
+                selectedValue === option.id && styles.selectedOptionText,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
 
   return (
-    <Modal visible={visible} animationType="slide">
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
       <View style={styles.modalContainer}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <MaterialIcons name="close" size={24} color="#6B7280" />
-          </TouchableOpacity>
-          <Text style={styles.title}>{t('COMMON.FILTERS')}</Text>
-          <TouchableOpacity
-            style={styles.resetButton}
-            onPress={() =>
-              setFilters({
-                productType: '',
-                condition: '',
-                priceRange: [0, 1000000],
-                governorate: '',
-                showVerified: false,
-                searchQuery: ''
-              })
-            }
-          >
-            <Text style={styles.resetText}>{t('COMMON.RESET')}</Text>
-          </TouchableOpacity>
+        <View style={styles.modalContent}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <MaterialIcons name="close" size={24} color="#64748B" />
+            </TouchableOpacity>
+            <Text style={styles.title}>{t('COMMON.FILTERS')}</Text>
+            <TouchableOpacity onPress={handleReset}>
+              <Text style={styles.resetText}>{t('COMMON.RESET')}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Filter Content */}
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Product Type */}
+            {renderFilterSection(
+              t('PRODUCT_FORM.PRODUCT_TYPE'),
+              productTypes,
+              filters.productType,
+              (value) => setFilters({ ...filters, productType: value })
+            )}
+
+            {/* Condition */}
+            {renderFilterSection(
+              t('PRODUCT_FORM.CONDITION'),
+              conditions,
+              filters.condition,
+              (value) => setFilters({ ...filters, condition: value })
+            )}
+
+            {/* Governorate */}
+            {renderFilterSection(
+              t('PRODUCT_FORM.GOVERNORATE'),
+              governorates.map(g => ({ id: g.name, label: g.name })),
+              filters.governorate,
+              (value) => setFilters({ ...filters, governorate: value })
+            )}
+
+            {/* Sort By */}
+            {renderFilterSection(
+              t('COMMON.SORT_BY'),
+              sortOptions,
+              filters.sortBy,
+              (value) => setFilters({ ...filters, sortBy: value })
+            )}
+          </ScrollView>
+
+          {/* Apply Button */}
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
+              <Text style={styles.applyButtonText}>{t('COMMON.APPLY')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <ScrollView style={styles.filterContent}>
-          {/* Search Input */}
-          <View style={styles.filterSection}>
-            <Text style={styles.sectionTitle}>{t('COMMON.SEARCH')}</Text>
-            <View style={styles.searchContainer}>
-              <MaterialIcons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder={t('MARKETPLACE.SEARCH_PLACEHOLDER')}
-                placeholderTextColor="#9CA3AF"
-                value={filters.searchQuery}
-                onChangeText={(text) => setFilters({ ...filters, searchQuery: text })}
-              />
-            </View>
-          </View>
-
-          {/* Product Type */}
-          <View style={styles.filterSection}>
-            <Text style={styles.sectionTitle}>{t('MARKETPLACE.PRODUCT_TYPE')}</Text>
-            <View style={styles.optionsContainer}>
-              {productTypes.map((type) => (
-                <TouchableOpacity
-                  key={type.id}
-                  style={[
-                    styles.optionButton,
-                    filters.productType === type.id && styles.selectedOption
-                  ]}
-                  onPress={() => setFilters({ ...filters, productType: type.id })}
-                >
-                  <Text style={[
-                    styles.optionText,
-                    filters.productType === type.id && styles.selectedOptionText
-                  ]}>
-                    {t(type.i18nKey)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Condition */}
-          <View style={styles.filterSection}>
-            <Text style={styles.sectionTitle}>{t('MARKETPLACE.CONDITION')}</Text>
-            <View style={styles.optionsContainer}>
-              {conditions.map((cond) => (
-                <TouchableOpacity
-                  key={cond.id}
-                  style={[
-                    styles.optionButton,
-                    filters.condition === cond.id && styles.selectedOption
-                  ]}
-                  onPress={() => setFilters({ ...filters, condition: cond.id })}
-                >
-                  <Text style={[
-                    styles.optionText,
-                    filters.condition === cond.id && styles.selectedOptionText
-                  ]}>
-                    {t(cond.i18nKey)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Price Range */}
-          <View style={styles.filterSection}>
-            <Text style={styles.sectionTitle}>{t('MARKETPLACE.PRICE_RANGE')}</Text>
-            <View style={styles.sliderContainer}>
-              <Slider
-                minimumValue={0}
-                maximumValue={1000000}
-                step={50000}
-                value={filters.priceRange[0]}
-                onValueChange={(value) =>
-                  setFilters({ ...filters, priceRange: [value, filters.priceRange[1]] })
-                }
-                minimumTrackTintColor="#16A34A"
-                maximumTrackTintColor="#E5E7EB"
-                thumbTintColor="#16A34A"
-              />
-              <View style={styles.priceRangeText}>
-                <Text style={styles.priceText}>{filters.priceRange[0].toLocaleString()}</Text>
-                <Text style={styles.priceText}>{filters.priceRange[1].toLocaleString()}</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Governorate */}
-          <View style={styles.filterSection}>
-            <Text style={styles.sectionTitle}>{t('MARKETPLACE.GOVERNORATE')}</Text>
-            <View style={styles.optionsContainer}>
-              {governorates.map((gov) => (
-                <TouchableOpacity
-                  key={gov.id}
-                  style={[
-                    styles.optionButton,
-                    filters.governorate === gov.id && styles.selectedOption
-                  ]}
-                  onPress={() => setFilters({ ...filters, governorate: gov.id })}
-                >
-                  <Text style={[
-                    styles.optionText,
-                    filters.governorate === gov.id && styles.selectedOptionText
-                  ]}>
-                    {t(gov.i18nKey)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Verified Only */}
-          <View style={styles.filterSection}>
-            <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>{t('MARKETPLACE.SHOW_VERIFIED')}</Text>
-              <Switch
-                trackColor={{ false: "#E5E7EB", true: "#16A34A" }}
-                thumbColor="#FFFFFF"
-                value={filters.showVerified}
-                onValueChange={toggleVerified}
-              />
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Apply Button */}
-        <TouchableOpacity
-          style={styles.applyButton}
-          onPress={() => onApply(filters)}
-        >
-          <Text style={styles.applyButtonText}>{t('COMMON.APPLY_FILTERS')}</Text>
-        </TouchableOpacity>
       </View>
     </Modal>
   );
-}
-
+};
 
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
-    paddingTop: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: '90%',
+    paddingTop: Platform.OS === 'ios' ? 8 : 0,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#E2E8F0',
   },
   closeButton: {
-    padding: 8,
+    padding: 4,
   },
   title: {
     fontSize: 18,
     fontFamily: 'Tajawal-Bold',
-    color: '#111827',
-  },
-  resetButton: {
-    padding: 8,
+    color: '#1E293B',
   },
   resetText: {
     fontSize: 14,
     fontFamily: 'Tajawal-Medium',
     color: '#16A34A',
   },
-  filterContent: {
+  content: {
     flex: 1,
-    paddingHorizontal: 20,
+    padding: 16,
   },
-  filterSection: {
+  section: {
     marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 16,
     fontFamily: 'Tajawal-Bold',
-    color: '#111827',
+    color: '#1E293B',
     marginBottom: 12,
-  },
-  searchContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  searchIcon: {
-    marginLeft: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: 'Tajawal-Regular',
-    color: '#111827',
     textAlign: 'right',
   },
   optionsContainer: {
@@ -283,58 +224,35 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   optionButton: {
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#E5E7EB',
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   selectedOption: {
     backgroundColor: '#16A34A',
+    borderColor: '#16A34A',
   },
   optionText: {
     fontSize: 14,
     fontFamily: 'Tajawal-Medium',
-    color: '#4B5563',
+    color: '#64748B',
   },
   selectedOptionText: {
     color: '#FFFFFF',
   },
-  sliderContainer: {
-    paddingHorizontal: 8,
-  },
-  priceRangeText: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  priceText: {
-    fontSize: 14,
-    fontFamily: 'Tajawal-Medium',
-    color: '#4B5563',
-  },
-  switchContainer: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  switchLabel: {
-    fontSize: 14,
-    fontFamily: 'Tajawal-Medium',
-    color: '#111827',
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
   },
   applyButton: {
     backgroundColor: '#16A34A',
-    paddingVertical: 16,
-    marginHorizontal: 20,
-    marginBottom: 24,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#16A34A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
   applyButtonText: {
     color: '#FFFFFF',
@@ -342,3 +260,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal-Bold',
   },
 });
+
+export default MarketplaceFilter;

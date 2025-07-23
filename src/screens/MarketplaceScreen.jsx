@@ -1,11 +1,9 @@
-import { useState, useRef , useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { 
   View, 
   Text, 
   FlatList, 
   TouchableOpacity, 
-  Modal, 
-  Image, 
   ScrollView,
   Dimensions,
   StatusBar,
@@ -13,7 +11,8 @@ import {
   Animated,
   StyleSheet,
   Platform,
-  RefreshControl
+  RefreshControl,
+  ActivityIndicator
 } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import ProductCard from "../components/ProductCard";
@@ -22,9 +21,10 @@ import EngineerCard from "../components/EngineerCard";
 import MarketplaceFilter from "../components/MarketplaceFilter";
 import { navigate } from "../navigation/navigationHelper";
 import { useTranslation } from "react-i18next";
-
+import { useMarketplace } from "../hooks/useMarketplace";
+import { useAuth } from "../hooks/useAuth";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 import { MaterialIcons, FontAwesome, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-
 
 // Responsive dimensions calculation
 const { width, height } = Dimensions.get('window');
@@ -42,12 +42,11 @@ const scaleFont = (size) => {
   return size * scaleFactor;
 };
 
-
 export default function MarketplaceScreen() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -58,264 +57,21 @@ export default function MarketplaceScreen() {
     governorate: "",
   });
 
-  // Enhanced product images with better quality
-const PRODUCT_IMAGES = {
-  solarPanels: [
-    'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-    'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-    'https://images.unsplash.com/photo-1487621167305-5d248087c724?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-    'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-  ],
-  inverters: [
-    'https://images.unsplash.com/photo-1551269901-5c5e14c25df7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-    'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-    'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-  ],
-  batteries: [
-    'https://images.unsplash.com/photo-1605152276897-4f618f831968?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-    'https://images.unsplash.com/photo-1605152511803-b9b4d39a449a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-    'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-  ],
-  accessories: [
-    'https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-    'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-  ],
-  shops: [
-    'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90',
-    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=90'
-  ],
-  engineers: [
-    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
-  ]
-};
-
-// Enhanced mock data
-const mockProducts = [
-  {
-    id: "1",
-    title: "لوح شمسي 300 واط - Jinko Solar",
-    price: "150,000",
-    currency: "YER",
-    condition: t('CONDITIONS.NEW'),
-    type: t('PRODUCT_TYPES.PANEL'),
-    brand: t('BRANDS.JINKO'),
-    location: t('GOVERNORATES.SANAA'),
-    images: PRODUCT_IMAGES.solarPanels,
-    isVerified: true,
-    rating: 4.8,
-    reviews: 24,
-    description: "لوح شمسي عالي الكفاءة من شركة جينكو الرائدة عالمياً",
-  },
-  {
-    id: "2",
-    title: "انفرتر هجين 5 كيلو واط - SMA",
-    price: "350,000",
-    currency: "YER",
-    condition: "مستعمل",
-    type: "انفرتر",
-    brand: "SMA",
-    location: "عدن",
-    images: PRODUCT_IMAGES.inverters,
-    isVerified: true,
-    rating: 4.6,
-    reviews: 18,
-    description: "انفرتر هجين متطور مع تقنية MPPT",
-  },
-  {
-    id: "3",
-    title: "بطارية ليثيوم 10 كيلو واط - LiFePO4",
-    price: "450,000",
-    currency: "YER",
-    condition: "جديد",
-    type: "بطارية",
-    brand: "Tesla",
-    location: "تعز",
-    images: PRODUCT_IMAGES.batteries,
-    isVerified: true,
-    rating: 4.9,
-    reviews: 31,
-    description: "بطارية ليثيوم عالية الأداء مع دورة حياة طويلة",
-  },
-  {
-    id: "4",
-    title: "شاحن شمسي متنقل 50 واط",
-    price: "75,000",
-    currency: "YER",
-    condition: "جديد",
-    type: "ملحقات",
-    brand: "Anker",
-    location: "حضرموت",
-    images: PRODUCT_IMAGES.accessories,
-    isVerified: false,
-    rating: 4.4,
-    reviews: 12,
-    description: "شاحن شمسي محمول مقاوم للماء",
-  },
-  {
-    id: "5",
-    title: "لوح شمسي 450 واط - Canadian Solar",
-    price: "200,000",
-    currency: "YER",
-    condition: "جديد",
-    type: "ألواح شمسية",
-    brand: "Canadian Solar",
-    location: "الحديدة",
-    images: PRODUCT_IMAGES.solarPanels,
-    isVerified: true,
-    rating: 4.7,
-    reviews: 19,
-    description: "لوح شمسي عالي القدرة مع تقنية PERC",
-  },
-  {
-    id: "6",
-    title: "انفرتر شبكي 10 كيلو واط - Huawei",
-    price: "500,000",
-    currency: "YER",
-    condition: "جديد",
-    type: "انفرتر",
-    brand: "Huawei",
-    location: "إب",
-    images: PRODUCT_IMAGES.inverters,
-    isVerified: true,
-    rating: 4.8,
-    reviews: 27,
-    description: "انفرتر شبكي ذكي مع مراقبة عن بعد",
-  }
-];
-
-const mockShops = [
-  {
-    id: "s1",
-    name: "متجر الطاقة الخضراء",
-    city: t('CITIES.NEW'),
-      governorate: t('GOVERNORATES.ADEN'),
-    phone: "+967712345678",
-    services: [
-      t('SERVICES.SELL'), 
-      t('SERVICES.INSTALL')
-    ],
-    isVerified: true,
-    image: PRODUCT_IMAGES.shops[0],
-    rating: 4.8,
-    reviews: 156,
-    establishedYear: 2018
-  },
-  {
-    id: "s2",
-    name: "مركز حلول الطاقة الشمسية",
-    city: "صنعاء",
-    governorate: "صنعاء",
-    phone: "+967712345679",
-    services: ["بيع", "تركيب", "صيانة"],
-    isVerified: true,
-    image: PRODUCT_IMAGES.shops[1],
-    rating: 4.9,
-    reviews: 203,
-    establishedYear: 2015
-  },
-  {
-    id: "s3",
-    name: "تكنولوجيا الطاقة المتجددة",
-    city: "تعز",
-    governorate: "تعز",
-    phone: "+967712345680",
-    services: ["بيع", "استشارات", "تصميم"],
-    isVerified: true,
-    image: PRODUCT_IMAGES.shops[2],
-    rating: 4.6,
-    reviews: 89,
-    establishedYear: 2020
-  }
-];
-
-const mockEngineers = [
-  {
-    id: "e1",
-    name: "م. أحمد محمد الصالحي",
-    specialization: "مهندس أنظمة الطاقة الشمسية",
-    experience: "8 سنوات",
-    location: t('GOVERNORATES.SANAA'),
-    phone: "+967771234567",
-    email: "ahmed.solar@email.com",
-    isVerified: true,
-    image: PRODUCT_IMAGES.engineers[0],
-    rating: 4.9,
-    reviews: 47,
-    completedProjects: 125,
-    // services: ["تصميم الأنظمة", "التركيب", "الصيانة", "الاستشارات"],
-    services: [
-      t('SERVICES.INSTALL'),
-      t('SERVICES.MAINTENANCE'),
-      t('SERVICES.CONSULTING'),
-    ],
-    certifications: ["معتمد من الطاقة المتجددة", "مهندس محترف"]
-  },
-  {
-    id: "e2",
-    name: "م. فاطمة عبدالله الزهراني",
-    specialization: "مهندسة كهرباء - طاقة متجددة",
-    experience: "6 سنوات",
-    location: "عدن",
-    phone: "+967771234568",
-    email: "fatima.renewable@email.com",
-    isVerified: true,
-    image: PRODUCT_IMAGES.engineers[1],
-    rating: 4.8,
-    reviews: 32,
-    completedProjects: 89,
-    services: ["تصميم الأنظمة", "الاستشارات الفنية", "دراسات الجدوى"],
-    certifications: ["ماجستير في الطاقة المتجددة", "معتمدة دولياً"]
-  },
-  {
-    id: "e3",
-    name: "م. خالد سالم البريكي",
-    specialization: "مهندس تركيب وصيانة",
-    experience: "5 سنوات",
-    location: "تعز",
-    phone: "+967771234569",
-    email: "khalid.installation@email.com",
-    isVerified: true,
-    image: PRODUCT_IMAGES.engineers[2],
-    rating: 4.7,
-    reviews: 28,
-    completedProjects: 76,
-    services: ["تركيب الأنظمة", "الصيانة الدورية", "الإصلاح"],
-    certifications: ["فني معتمد", "خبير تركيب"]
-  },
-  {
-    id: "e4",
-    name: "م. سارة محسن العامري",
-    specialization: "مهندسة استشارات الطاقة",
-    experience: "7 سنوات",
-    location: "الحديدة",
-    phone: "+967771234570",
-    email: "sara.consulting@email.com",
-    isVerified: true,
-    image: PRODUCT_IMAGES.engineers[3],
-    rating: 4.9,
-    reviews: 41,
-    completedProjects: 112,
-    services: ["الاستشارات", "دراسات الجدوى", "التدريب"],
-    certifications: ["دكتوراه في الطاقة المتجددة", "استشارية معتمدة"]
-  }
-];
-
-// Category configuration
-const categories = [
-  { id: 'all',  name: t('COMMON.ALL'), icon: 'view-grid', count: mockProducts.length + mockShops.length + mockEngineers.length },
-  { id: 'products', name: t('MARKETPLACE.LISTINGS'),  icon: 'solar-panel-large', count: mockProducts.length },
-  { id: 'shops', name: t('SHOP.TITLE'), icon: 'store', count: mockShops.length },
-  { id: 'engineers', name: t('ENGINEERS.TITLE'), icon: 'account-hard-hat', count: mockEngineers.length },
-  { id: 'solarPanels', name: t('PRODUCT_TYPES.PANEL'), icon: 'solar-panel', count: mockProducts.filter(p => p.type === 'ألواح شمسية').length },
-  { id: 'inverters',  name: t('PRODUCT_TYPES.INVERTER'), icon: 'sine-wave', count: mockProducts.filter(p => p.type === 'انفرتر').length },
-  { id: 'batteries', name: t('PRODUCT_TYPES.BATTERY'), icon: 'battery', count: mockProducts.filter(p => p.type === 'بطارية').length }
-];
-
-  
+  // Use the marketplace hook
+  const {
+    products,
+    engineers,
+    shops,
+    isLoading,
+    isError,
+    error,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    refetch,
+    likeProduct,
+    unlikeProduct
+  } = useMarketplace(filters, activeTab);
 
   const handleTabChange = (tabId) => {
     Animated.sequence([
@@ -331,38 +87,79 @@ const categories = [
       })
     ]).start(() => {
       setActiveTab(tabId);
-      // Scroll to top when tab changes
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     });
   };
- // Memoized filtered data calculation
- const getFilteredData = useCallback(() => {
-  switch (activeTab) {
-    case 'products':
-      return { products: mockProducts, shops: [], engineers: [] };
-    case 'shops':
-      return { products: [], shops: mockShops, engineers: [] };
-    case 'engineers':
-      return { products: [], shops: [], engineers: mockEngineers };
-    case 'solarPanels':
-      return { products: mockProducts.filter(p => p.type === 'ألواح شمسية'), shops: [], engineers: [] };
-    case 'inverters':
-      return { products: mockProducts.filter(p => p.type === 'انفرتر'), shops: [], engineers: [] };
-    case 'batteries':
-      return { products: mockProducts.filter(p => p.type === 'بطارية'), shops: [], engineers: [] };
-    default:
-      return { products: mockProducts, shops: mockShops, engineers: mockEngineers };
-  }
-}, [activeTab]);
 
-const { products, shops, engineers } = getFilteredData();
+  const handleLoadMore = (type) => {
+    if (hasNextPage[type] && !isFetchingNextPage[type]) {
+      fetchNextPage[type]();
+    }
+  };
 
+  const handleLikeProduct = (productId) => {
+    if (!user) {
+      navigate('AuthStack', {
+        screen: 'Auth',
+        params: { returnData: { screen: 'Marketplace', action: 'like', productId } }
+      });
+      return;
+    }
+    likeProduct(productId);
+  };
 
-const onRefresh = useCallback(() => {
-  setRefreshing(true);
-  setTimeout(() => setRefreshing(false), 1000);
-}, []);
+  const handleUnlikeProduct = (productId) => {
+    if (!user) {
+      navigate('AuthStack', {
+        screen: 'Auth',
+        params: { returnData: { screen: 'Marketplace', action: 'unlike', productId } }
+      });
+      return;
+    }
+    unlikeProduct(productId);
+  };
 
+  const renderFooter = (type) => {
+    if (!hasNextPage[type]) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#16A34A" />
+      </View>
+    );
+  };
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyText}>
+        {t('MARKETPLACE.NO_RESULTS')}
+      </Text>
+    </View>
+  );
+
+  const renderError = () => (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorText}>
+        {error?.message || t('COMMON.SOMETHING_WENT_WRONG')}
+      </Text>
+      <TouchableOpacity
+        style={styles.retryButton}
+        onPress={() => refetch()}
+      >
+        <Text style={styles.retryButtonText}>{t('COMMON.RETRY')}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Category configuration
+  const categories = [
+    { id: 'all', name: t('COMMON.ALL'), icon: 'view-grid', count: products.length + shops.length + engineers.length },
+    { id: 'products', name: t('MARKETPLACE.LISTINGS'), icon: 'solar-panel-large', count: products.length },
+    { id: 'shops', name: t('SHOP.TITLE'), icon: 'store', count: shops.length },
+    { id: 'engineers', name: t('ENGINEERS.TITLE'), icon: 'account-hard-hat', count: engineers.length },
+    { id: 'solarPanels', name: t('PRODUCT_TYPES.PANEL'), icon: 'solar-panel', count: products.filter(p => p.type === 'panel').length },
+    { id: 'inverters', name: t('PRODUCT_TYPES.INVERTER'), icon: 'sine-wave', count: products.filter(p => p.type === 'inverter').length },
+    { id: 'batteries', name: t('PRODUCT_TYPES.BATTERY'), icon: 'battery', count: products.filter(p => p.type === 'battery').length }
+  ];
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
@@ -372,12 +169,12 @@ const onRefresh = useCallback(() => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       >
-        <SafeAreaView  edges={['top']}>
+        <SafeAreaView edges={['top']}>
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <View style={styles.headerLeft}>
-              <Text style={styles.title}>{t('MARKETPLACE.TITLE')}</Text>
-              <Text style={styles.subtitle}>اكتشف أفضل المنتجات والخدمات</Text>
+                <Text style={styles.title}>{t('MARKETPLACE.TITLE')}</Text>
+                <Text style={styles.subtitle}>{t('MARKETPLACE.SUBTITLE')}</Text>
               </View>
               <TouchableOpacity
                 style={styles.searchButton}
@@ -405,48 +202,11 @@ const onRefresh = useCallback(() => {
                 <Text style={styles.locationText}>
                   {t('GOVERNORATES.SANAA')}, {t('CITIES.NEW')}
                 </Text>
-                    
               </View>
-              
-              {/* <TouchableOpacity style={styles.notificationButton}>
-                <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>3</Text>
-                </View>
-              </TouchableOpacity> */}
             </View>
           </View>
         </SafeAreaView>
       </LinearGradient>
-    </View>
-  );
-
-  const renderPromotionalBanner = () => (
-    <View style={styles.bannerContainer}>
-      <TouchableOpacity style={styles.bannerTouchable}
-      activeOpacity={0.9}
-      accessibilityRole="imagebutton"
-      accessibilityLabel="عرض خاص على الألواح الشمسية"
-      >
-        <Image 
-          source={{uri: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'}}
-          style={styles.bannerImage}
-          resizeMode="cover"
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.7)']}
-          style={styles.bannerGradient}
-        >
-          <View style={styles.bannerContent}>
-            <Text style={styles.bannerTitle}>خصم حتى 25%</Text>
-            <Text style={styles.bannerSubtitle}>على جميع الألواح الشمسية</Text>
-            <View style={styles.bannerCTA}>
-            <Text style={styles.bannerCTAText}>{t('MARKETPLACE.SELL_ITEM')}</Text>
-              <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
-            </View>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
     </View>
   );
 
@@ -499,131 +259,135 @@ const onRefresh = useCallback(() => {
     </View>
   );
 
-  const renderContent = () => (
-    <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}>
-      {/* Products Section */}
-      {products.length > 0 && (
-        <View style={styles.section}>
-          {activeTab === 'all' && (
-            <View style={styles.sectionHeader}>
-               <View style={styles.titleContainer}>
-              <Text style={styles.sectionTitle}>{t('MARKETPLACE.LISTINGS')}</Text>
+  const renderContent = () => {
+    if (isLoading) {
+      return <LoadingSpinner />;
+    }
+
+    if (isError) {
+      return renderError();
+    }
+
+    return (
+      <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}>
+        {/* Products Section */}
+        {products.length > 0 && (
+          <View style={styles.section}>
+            {activeTab === 'all' && (
+              <View style={styles.sectionHeader}>
+                <View style={styles.titleContainer}>
+                  <Text style={styles.sectionTitle}>{t('MARKETPLACE.LISTINGS')}</Text>
+                </View>
+                <TouchableOpacity onPress={() => setActiveTab('products')}>
+                  <Text style={styles.seeAllText}>{t('COMMON.SEE_ALL')}</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => setActiveTab('products')}
-             accessibilityLabel={t('COMMON.ALL') + ' ' + t('MARKETPLACE.LISTINGS')}
+            )}
+            <FlatList
+              data={products}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => navigate("ProductDetail", { product: item })}
+                  style={styles.cardWrapper}
                 >
-                {/* <Text style={styles.seeAllText}>{t('COMMON.ALL')}</Text> */}
-              </TouchableOpacity>
-            </View>
-          )}
-          <FlatList
-            data={products.slice(0, activeTab === 'all' ? (isTablet ? 6 : 4) : products.length)}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => navigate("ProductDetail", { product: item })}
-                style={styles.cardWrapper}
-              >
-                <ProductCard product={item} />
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item) => item.id}
-            numColumns={isTablet ? 3 : 2}
-            columnWrapperStyle={styles.columnWrapper}
-            scrollEnabled={false}
-            contentContainerStyle={styles.productsList}
-            initialNumToRender={4}
-            maxToRenderPerBatch={4}
-            windowSize={5}
-          />
-        </View>
-      )}
+                  <ProductCard 
+                    product={item}
+                    onLike={() => handleLikeProduct(item.id)}
+                    onUnlike={() => handleUnlikeProduct(item.id)}
+                  />
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id}
+              numColumns={isTablet ? 3 : 2}
+              columnWrapperStyle={styles.columnWrapper}
+              onEndReached={() => handleLoadMore('products')}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={() => renderFooter('products')}
+              ListEmptyComponent={renderEmptyState}
+            />
+          </View>
+        )}
 
-      {/* Engineers Section */}
-      {engineers.length > 0 && (
-        <View style={styles.section}>
-          {activeTab === 'all' && (
-            <View style={styles.sectionHeader}>
-               <View style={styles.titleContainer}>
-             <Text style={styles.sectionTitle}>{t('ENGINEERS.TITLE')}</Text>
-             </View>
-              <TouchableOpacity onPress={() => setActiveTab('engineers')}>
-              {/* <Text style={styles.seeAllText}>{t('COMMON.ALL')}</Text> */}
-              </TouchableOpacity>
-            </View>
-          )}
-          <FlatList
-            data={engineers.slice(0, activeTab === 'all' ? 2 : engineers.length)}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => navigate("EngineerDetail", { engineer: item })}
-                style={styles.fullWidthCard}
-              >
-                <EngineerCard engineer={item} />
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            initialNumToRender={2}
-            maxToRenderPerBatch={2}
-            windowSize={5}
-          />
-        </View>
-      )}
-
-      {/* Shops Section */}
-      {shops.length > 0 && (
-        <View style={styles.section}>
-          {activeTab === 'all' && (
-            <View style={styles.sectionHeader}>
-               <View style={styles.titleContainer}>
-              <Text style={styles.sectionTitle}>{t('SHOP.TITLE')}</Text>
+        {/* Engineers Section */}
+        {engineers.length > 0 && (
+          <View style={styles.section}>
+            {activeTab === 'all' && (
+              <View style={styles.sectionHeader}>
+                <View style={styles.titleContainer}>
+                  <Text style={styles.sectionTitle}>{t('ENGINEERS.TITLE')}</Text>
+                </View>
+                <TouchableOpacity onPress={() => setActiveTab('engineers')}>
+                  <Text style={styles.seeAllText}>{t('COMMON.SEE_ALL')}</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => setActiveTab('shops')}
-                accessibilityLabel={t('COMMON.ALL') + ' ' + t('SHOP.TITLE')}
-                >
-               {/* <Text style={styles.seeAllText}>{t('COMMON.ALL')}</Text> */}
-              </TouchableOpacity>
-            </View>
-          )}
-          <FlatList
-            data={shops.slice(0, activeTab === 'all' ? (isTablet ? 4 : 3) : shops.length)}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => navigate("ShopDetail", { shop: item })}
-                style={[styles.fullWidthCard, isTablet && styles.tabletCard]}
-              >
-                <ShopCard shop={item} />
-              </TouchableOpacity>
             )}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            numColumns={isTablet ? 2 : 1}
-            columnWrapperStyle={isTablet ? styles.columnWrapper : null}
-            initialNumToRender={3}
-            maxToRenderPerBatch={3}
-            windowSize={5}
-          />
-        </View>
-      )}
-    </Animated.View>
-  );
+            <FlatList
+              data={engineers}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => navigate("EngineerDetail", { engineer: item })}
+                  style={styles.fullWidthCard}
+                >
+                  <EngineerCard engineer={item} />
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id}
+              onEndReached={() => handleLoadMore('engineers')}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={() => renderFooter('engineers')}
+              ListEmptyComponent={renderEmptyState}
+            />
+          </View>
+        )}
 
-  
+        {/* Shops Section */}
+        {shops.length > 0 && (
+          <View style={styles.section}>
+            {activeTab === 'all' && (
+              <View style={styles.sectionHeader}>
+                <View style={styles.titleContainer}>
+                  <Text style={styles.sectionTitle}>{t('SHOP.TITLE')}</Text>
+                </View>
+                <TouchableOpacity onPress={() => setActiveTab('shops')}>
+                  <Text style={styles.seeAllText}>{t('COMMON.SEE_ALL')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <FlatList
+              data={shops}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => navigate("ShopDetail", { shop: item })}
+                  style={[styles.fullWidthCard, isTablet && styles.tabletCard]}
+                >
+                  <ShopCard shop={item} />
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id}
+              numColumns={isTablet ? 2 : 1}
+              columnWrapperStyle={isTablet ? styles.columnWrapper : null}
+              onEndReached={() => handleLoadMore('shops')}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={() => renderFooter('shops')}
+              ListEmptyComponent={renderEmptyState}
+            />
+          </View>
+        )}
+      </Animated.View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor="#16A34A" />
-
-    <View style={styles.container}>
-      {/* <StatusBar barStyle="light-content" backgroundColor="#16A34A" /> */}
-      
-      <ScrollView 
+      <View style={styles.container}>
+        <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
+              refreshing={isLoading}
+              onRefresh={refetch}
               colors={['#16A34A']}
               tintColor="#16A34A"
             />
@@ -631,24 +395,21 @@ const onRefresh = useCallback(() => {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-        {renderHeader()}
-        {renderPromotionalBanner()}
-        {renderCategoryTabs()}
-        {renderContent()}
-      </ScrollView>
+          {renderHeader()}
+          {renderCategoryTabs()}
+          {renderContent()}
+        </ScrollView>
 
-  
-
-      {/* Filter Modal */}
-      <MarketplaceFilter
-        visible={showFilters}
-        onClose={() => setShowFilters(false)}
-        onApply={(newFilters) => {
-          setFilters(newFilters);
-          setShowFilters(false);
-        }}
-      />
-    </View>
+        <MarketplaceFilter
+          visible={showFilters}
+          onClose={() => setShowFilters(false)}
+          onApply={(newFilters) => {
+            setFilters(newFilters);
+            setShowFilters(false);
+          }}
+          initialFilters={filters}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -946,5 +707,30 @@ titleContainer: {
     color: '#64748B',
     marginTop: scaleSize(16),
     textAlign: 'center',
+  },
+  footerLoader: {
+    paddingVertical: scaleSize(20),
+    alignItems: 'center',
+  },
+  errorContainer: {
+    paddingVertical: scaleSize(20),
+    alignItems: 'center',
+  },
+  errorText: {
+    fontFamily: 'Tajawal-Medium',
+    fontSize: scaleFont(16),
+    color: '#EF4444',
+    marginBottom: scaleSize(10),
+  },
+  retryButton: {
+    backgroundColor: '#16A34A',
+    paddingVertical: scaleSize(10),
+    paddingHorizontal: scaleSize(20),
+    borderRadius: scaleSize(10),
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Tajawal-Medium',
+    fontSize: scaleFont(16),
   },
 });

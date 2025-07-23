@@ -1,39 +1,98 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
 import i18n from '../../config/i18n';
+import { useAuth } from '../../hooks/useAuth';
+import * as ImagePicker from 'expo-image-picker';
+import { showToast } from '../../components/common/Toast';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const UpdateProfileScreen = ({ navigation }) => {
-  const [user, setUser] = useState({
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@example.com',
-    bio: 'Digital designer & photography enthusiast. Love collecting vintage items.',
-    location: 'San Francisco, CA',
-    phone: '+1 415-555-0132',
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+  const { user, isLoadingUser, updateProfile, isUpdating } = useAuth();
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    profileImageUrl: user?.profileImageUrl || '',
   });
+  const [isPickingImage, setIsPickingImage] = useState(false);
 
-  const handleUpdate = () => {
-    // Handle profile update logic here
-    navigation.goBack();
+  if (isLoadingUser) {
+    return <LoadingSpinner />;
+  }
+
+  const handleImagePick = async () => {
+    try {
+      setIsPickingImage(true);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setFormData(prev => ({
+          ...prev,
+          profileImageUrl: result.assets[0].uri
+        }));
+      }
+    } catch (error) {
+      showToast('error', 'Error', 'Failed to pick image');
+    } finally {
+      setIsPickingImage(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!formData.name.trim()) {
+      showToast('error', 'Error', 'Name is required');
+      return;
+    }
+
+    try {
+      await updateProfile(formData);
+      navigation.goBack();
+    } catch (error) {
+      showToast('error', 'Error', error.message || 'Failed to update profile');
+    }
   };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back" size={24} color="#5e72e4" />
+          <MaterialIcons name="arrow-back" size={24} color="#22C55E" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{i18n.t('PROFILE.UPDATE_PROFILE')}</Text>
-        <TouchableOpacity onPress={handleUpdate}>
-          <Text style={styles.saveButton}>Save</Text>
+        <TouchableOpacity 
+          onPress={handleUpdate}
+          disabled={isUpdating}
+          style={styles.saveButtonContainer}
+        >
+          {isUpdating ? (
+            <ActivityIndicator size="small" color="#22C55E" />
+          ) : (
+            <Text style={styles.saveButton}>Save</Text>
+          )}
         </TouchableOpacity>
       </View>
 
       <View style={styles.avatarContainer}>
-        <Image source={{ uri: user.avatar }} style={styles.avatar} />
-        <TouchableOpacity style={styles.editAvatarButton}>
-          <Feather name="camera" size={20} color="#fff" />
+        <Image 
+          source={{ 
+            uri: formData.profileImageUrl || 'https://via.placeholder.com/120'
+          }} 
+          style={styles.avatar} 
+        />
+        <TouchableOpacity 
+          style={styles.editAvatarButton}
+          onPress={handleImagePick}
+          disabled={isPickingImage}
+        >
+          {isPickingImage ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Feather name="camera" size={20} color="#fff" />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -42,55 +101,23 @@ const UpdateProfileScreen = ({ navigation }) => {
           <Text style={styles.inputLabel}>Full Name</Text>
           <TextInput
             style={styles.input}
-            value={user.name}
-            onChangeText={(text) => setUser({...user, name: text})}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Email</Text>
-          <TextInput
-            style={styles.input}
-            value={user.email}
-            onChangeText={(text) => setUser({...user, email: text})}
-            keyboardType="email-address"
+            value={formData.name}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+            placeholder="Enter your full name"
+            placeholderTextColor="#a0aec0"
           />
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Phone Number</Text>
           <TextInput
-            style={styles.input}
-            value={user.phone}
-            onChangeText={(text) => setUser({...user, phone: text})}
-            keyboardType="phone-pad"
+            style={[styles.input, { color: '#a0aec0' }]}
+            value={user?.phone}
+            editable={false}
           />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Location</Text>
-          <TextInput
-            style={styles.input}
-            value={user.location}
-            onChangeText={(text) => setUser({...user, location: text})}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Bio</Text>
-          <TextInput
-            style={[styles.input, styles.bioInput]}
-            value={user.bio}
-            onChangeText={(text) => setUser({...user, bio: text})}
-            multiline
-            numberOfLines={4}
-          />
+          <Text style={styles.helperText}>Phone number cannot be changed</Text>
         </View>
       </View>
-
-      <TouchableOpacity style={styles.deleteButton}>
-        <Text style={styles.deleteButtonText}>Delete Account</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -114,10 +141,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal-Bold',
     color: '#32325d',
   },
+  saveButtonContainer: {
+    minWidth: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   saveButton: {
     fontSize: 16,
     fontFamily: 'Tajawal-Medium',
-    color: '#5e72e4',
+    color: '#22C55E',
   },
   avatarContainer: {
     alignItems: 'center',
@@ -135,7 +167,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: '35%',
-    backgroundColor: '#5e72e4',
+    backgroundColor: '#22C55E',
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -171,19 +203,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal-Regular',
     color: '#32325d',
   },
-  bioInput: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  deleteButton: {
-    margin: 16,
-    padding: 16,
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    fontSize: 16,
-    fontFamily: 'Tajawal-Medium',
-    color: '#ff4757',
+  helperText: {
+    fontSize: 12,
+    fontFamily: 'Tajawal-Regular',
+    color: '#a0aec0',
+    marginTop: 4,
   },
 });
 

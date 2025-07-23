@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   View,
   Text,
@@ -14,12 +15,17 @@ import { useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from 'react-i18next';
+import { useShops } from '../hooks/useShops';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import AuthGuard from '../components/common/AuthGuard';
 
-export default function ShopScreen({ navigation }) {
+const ShopScreen = ({ navigation }) => {
   const route = useRoute();
-  const { shop } = route.params;
+  const { shopId } = route.params;
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
+  const { useShop } = useShops();
+  const { data: shop, isLoading, isError, error } = useShop(shopId);
 
   const handleCall = () => Linking.openURL(`tel:${shop.phone}`);
   const handleDirections = () => {
@@ -27,7 +33,41 @@ export default function ShopScreen({ navigation }) {
     Linking.openURL(url);
   };
 
-  return (
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          {error?.message || 'Failed to load shop details'}
+        </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!shop) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Shop not found</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const Content = () => (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header with Image */}
@@ -118,8 +158,13 @@ export default function ShopScreen({ navigation }) {
       </View>
     </SafeAreaView>
   );
-}
 
+  return (
+    <AuthGuard returnData={{ shopId }}>
+      <Content />
+    </AuthGuard>
+  );
+};
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -129,6 +174,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Tajawal-Medium',
+    color: '#EF4444',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#16A34A',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Tajawal-Medium',
+    fontSize: 14,
   },
   headerContainer: {
     width: '100%',
@@ -271,7 +340,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 12,
     marginLeft: 8,
-    marginRight:18
+    marginRight: 18,
   },
   primaryButtonText: {
     color: '#FFFFFF',
@@ -297,3 +366,5 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 });
+
+export default ShopScreen;

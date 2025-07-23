@@ -9,30 +9,66 @@ import {
   Linking,
   Dimensions,
   SafeAreaView,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useEngineers } from '../hooks/useEngineers';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import AuthGuard from '../components/common/AuthGuard';
 
 const { width } = Dimensions.get('window');
 
-export default function EngineerDetailScreen({ route, navigation }) {
-  const { engineer } = route.params;
+const EngineerDetailScreen = ({ navigation, route }) => {
+  const { engineerId } = route.params;
   const { t } = useTranslation();
+  const { useEngineer } = useEngineers();
+  const { data: engineer, isLoading, isError, error } = useEngineer(engineerId);
 
-  const handleCall = () => {
-    Linking.openURL(`tel:${engineer.phone}`);
-  };
-
+  const handleCall = () => Linking.openURL(`tel:${engineer.phone}`);
   const handleWhatsApp = () => {
     const message = t('ENGINEER.whatsappMessage', { name: engineer.name });
     Linking.openURL(`whatsapp://send?phone=${engineer.phone}&text=${encodeURIComponent(message)}`);
   };
 
-  return (
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          {error?.message || 'Failed to load engineer details'}
+        </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!engineer) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Engineer not found</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const Content = () => (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        
         {/* Header */}
         <View style={styles.header}>
           <Image 
@@ -124,14 +160,19 @@ export default function EngineerDetailScreen({ route, navigation }) {
         </View>
 
         {/* Request Button */}
-        <TouchableOpacity style={styles.requestButton}  onPress={handleCall}>
+        <TouchableOpacity style={styles.requestButton} onPress={handleCall}>
           <Text style={styles.requestButtonText}>{t('ENGINEER.requestService')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
-}
 
+  return (
+    <AuthGuard returnData={{ engineerId }}>
+      <Content />
+    </AuthGuard>
+  );
+};
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -141,6 +182,30 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 10,
     paddingBottom: 20,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Tajawal-Medium',
+    color: '#EF4444',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#16A34A',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Tajawal-Medium',
+    fontSize: 14,
   },
   header: {
     flexDirection: 'row-reverse',
@@ -302,7 +367,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Tajawal-Medium',
     color: '#16A34A',
-    
   },
   projectsText: {
     fontSize: 15,
@@ -336,3 +400,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 });
+
+export default EngineerDetailScreen;
