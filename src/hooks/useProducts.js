@@ -17,12 +17,10 @@ export const useProducts = (filters = {}) => {
     refetch
   } = useInfiniteQuery({
     queryKey: ['products', filters],
-    queryFn: ({ pageParam = 1 }) => productsAPI.getProducts({ page: pageParam, ...filters }),
+    queryFn: ({ pageParam = 1 }) => productsAPI.getProducts({ page: pageParam, limit: 10, ...filters }),
     getNextPageParam: (lastPage) => {
-      if (lastPage.currentPage < lastPage.totalPages) {
-        return lastPage.currentPage + 1;
-      }
-      return undefined;
+      if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
+      return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
     },
     keepPreviousData: true,
   });
@@ -90,7 +88,7 @@ export const useProducts = (filters = {}) => {
 
   // Helper function to get all products from all pages
   const getAllProducts = () => {
-    return data?.pages?.flatMap((page) => page.data) || [];
+    return data?.pages?.flatMap((page) => Array.isArray(page.data) ? page.data : []) || [];
   };
 
   return {

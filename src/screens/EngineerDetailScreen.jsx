@@ -16,7 +16,7 @@ import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-ic
 import { useTranslation } from 'react-i18next';
 import { useEngineers } from '../hooks/useEngineers';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import AuthGuard from '../components/common/AuthGuard';
+// import AuthGuard from '../components/common/AuthGuard';
 
 const { width } = Dimensions.get('window');
 
@@ -168,9 +168,10 @@ const EngineerDetailScreen = ({ navigation, route }) => {
   );
 
   return (
-    <AuthGuard returnData={{ engineerId }}>
-      <Content />
-    </AuthGuard>
+    // <AuthGuard returnData={{ engineerId }}>
+    //   <Content />
+    // </AuthGuard>
+    <Content />
   );
 };
 

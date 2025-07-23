@@ -10,6 +10,10 @@ import CalculatorResultsScreen from '../screens/CalculatorResultsScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import CalculatorScreen from '../screens/CalculatorScreen';
 import AdBannerScreen from '../screens/AdBannerScreen';
+import OTPVerificationScreen from '../screens/Auth/OTPVerificationScreen';
+
+
+
 
 const Stack = createNativeStackNavigator();
 
@@ -39,7 +43,7 @@ export default function MainStack() {
         name="ProductDetail"
         component={ProductDetailScreen}
         options={({ route }) => ({
-          title: route.params?.product?.title || t('MARKETPLACE.PRODUCT_DETAIL'),
+          title: route.params?.product?.name || t('MARKETPLACE.PRODUCT_DETAIL'),
           headerBackTitle: t('MARKETPLACE.TITLE'),
           headerShown: false,
         })}
@@ -101,6 +105,8 @@ export default function MainStack() {
           headerBackTitle: t('COMMON.BACK'),
         })}
       />
+
+<Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
     </Stack.Navigator>
   );
 }

@@ -15,7 +15,7 @@ import { navigate } from "../navigation/navigationHelper";
 import { useTranslation } from "react-i18next";
 import { useProducts } from "../hooks/useProducts";
 import { useAuth } from "../hooks/useAuth";
-import AuthGuard from "../components/common/AuthGuard";
+// import AuthGuard from "../components/common/AuthGuard";
 import { showToast } from "../components/common/Toast";
 
 export default function ProductSubmissionScreen({ route }) {
@@ -101,7 +101,7 @@ export default function ProductSubmissionScreen({ route }) {
   };
 
   return (
-    <AuthGuard>
+    // <AuthGuard>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -257,7 +257,7 @@ export default function ProductSubmissionScreen({ route }) {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-    </AuthGuard>
+    // </AuthGuard>
   );
 }
 

@@ -2,63 +2,42 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showToast } from '../components/common/Toast';
 
-const BASE_URL = 'http://10.0.2.2:5000'; // Android emulator localhost
-// const BASE_URL = 'http://localhost:5000'; // iOS simulator
+const BASE_URL = 'http://192.168.1.3:5005/api/v1'; // ✅ correct base path
 
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 seconds timeout
+  timeout: 10000,
 });
 
-// Request interceptor
-api.interceptors.request.use(
-  async (config) => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor
+// Handle API errors globally
 api.interceptors.response.use(
   (response) => {
-    // Handle successful responses
     if (response.data?.data) {
       return response.data.data;
     }
     return response.data;
   },
-  (error) => {
+  async (error) => {
     const message = error.response?.data?.message || 'Something went wrong';
-    
-    if (error.response?.status === 401) {
-      // Handle unauthorized error (e.g., clear token and redirect to login)
-      AsyncStorage.removeItem('token');
+    const hadAuthHeader = error.config?.headers?.Authorization;
+    if (error.response?.status === 401 && hadAuthHeader) {
+      await AsyncStorage.removeItem('token');
       showToast('error', 'Session Expired', 'Please login again');
     } else if (!error.response) {
-      // Network error
       showToast('error', 'Network Error', 'Please check your internet connection');
     } else {
       showToast('error', 'Error', message);
     }
-    
     return Promise.reject(error);
   }
 );
 
+// ----------------------------
 // Auth API
+// ----------------------------
 export const authAPI = {
   register: (phone) => api.post('/auth/register', { phone }),
   verifyOTP: (phone, otp) => api.post('/auth/verify', { phone, otp }),
@@ -66,10 +45,11 @@ export const authAPI = {
   getProfile: () => api.get('/auth/profile'),
 };
 
-// Products API
+// ----------------------------
+// Products API (userRoutes)
+// ----------------------------
 export const productsAPI = {
-  getProducts: (params) => api.get('/products', { params }),
-  getProduct: (id) => api.get(`/products/${id}`),
+  getProducts: (params) => api.get('/marketplace/browse-products', { params }),
   createProduct: (data) => {
     const formData = new FormData();
     Object.keys(data).forEach(key => {
@@ -85,7 +65,7 @@ export const productsAPI = {
         formData.append(key, data[key]);
       }
     });
-    return api.post('/products', formData, {
+    return api.post('/products/post', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -97,19 +77,32 @@ export const productsAPI = {
   unlikeProduct: (id) => api.delete(`/products/${id}/like`),
 };
 
-// Engineers API
+// ----------------------------
+// Engineers API (userRoutes)
+// ----------------------------
 export const engineersAPI = {
-  getEngineers: (params) => api.get('/engineers', { params }),
-  getEngineer: (id) => api.get(`/engineers/${id}`),
+  getEngineers: (params) => api.get('/marketplace/getAllEngineer', { params }),
+  filterEngineers: (params) => api.get('/marketplace/filters-engineer', { params }),
 };
 
-// Shops API
+// ----------------------------
+// Shops API (userRoutes)
+// ----------------------------
 export const shopsAPI = {
-  getShops: (params) => api.get('/shops', { params }),
-  getShop: (id) => api.get(`/shops/${id}`),
+  getShops: (params) => api.get('/marketplace/getAllShops', { params }),
+  filterShops: (params) => api.get('/marketplace/filters-shop', { params }),
 };
 
+// ----------------------------
 // Governorates API
+// ----------------------------
 export const governoratesAPI = {
-  getGovernorates: () => api.get('/governorates'),
-}; 
+  getGovernorates: () => api.get('/marketplace/get/governorate-data'),
+};
+
+// Ads API (optional)
+// ----------------------------
+// export const adsAPI = {
+//   getAds: () => api.get('/ads/getAllAds'),
+//   filterAds: (params) => api.get('/marketplace/filters-ads', { params }),
+// };

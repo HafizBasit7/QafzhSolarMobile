@@ -9,9 +9,13 @@ export const useAuth = () => {
   // Get user profile
   const { data: user, isLoading: isLoadingUser } = useQuery({
     queryKey: ['user'],
-    queryFn: authAPI.getProfile,
-    enabled: !!AsyncStorage.getItem('token'),
+    queryFn: async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) throw new Error('No token found');
+      return authAPI.getProfile();
+    },
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   // Register mutation
@@ -52,8 +56,13 @@ export const useAuth = () => {
 
   // Logout function
   const logout = async () => {
-    await AsyncStorage.removeItem('token');
-    queryClient.clear();
+    try {
+      await AsyncStorage.removeItem('token');
+      queryClient.removeQueries(); // Clear all queries
+      showToast('success', 'Logged out', 'You have been logged out successfully');
+    } catch (error) {
+      showToast('error', 'Logout Failed', 'Failed to logout');
+    }
   };
 
   return {

@@ -27,7 +27,7 @@ export default function EngineerCard({ engineer }) {
       {/* Engineer Header */}
       <View style={styles.header}>
         <Image 
-          source={{ uri: engineer.image || 'https://via.placeholder.com/60' }} 
+          source={{ uri: engineer.profileImageUrl || 'https://via.placeholder.com/60' }} 
           style={styles.engineerImage}
         />
         <View style={styles.engineerInfo}>
@@ -44,13 +44,13 @@ export default function EngineerCard({ engineer }) {
           <View style={styles.specializationContainer}>
             <MaterialIcons name="engineering" size={14} color="#64748B" />
             <Text style={styles.specialization}>
-              {engineer.specialization}
+              {Array.isArray(engineer.specializations) ? engineer.specializations.join(', ') : ''}
             </Text>
           </View>
           <View style={styles.locationContainer}>
             <Ionicons name="location-outline" size={14} color="#64748B" />
             <Text style={styles.location}>
-              {engineer.location}
+              {engineer.city}, {engineer.governorate}
             </Text>
           </View>
         </View>

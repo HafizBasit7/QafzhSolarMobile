@@ -80,7 +80,7 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
 
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={2}>
-          {product.title}
+          {product.name}
         </Text>
 
         <View style={styles.details}>

@@ -150,6 +150,9 @@ export default function MarketplaceScreen() {
     </View>
   );
 
+  // Helper to get ID (supports both id and _id)
+  const getId = (item) => item.id || item._id;
+
   // Category configuration
   const categories = [
     { id: 'all', name: t('COMMON.ALL'), icon: 'view-grid', count: products.length + shops.length + engineers.length },
@@ -260,7 +263,7 @@ export default function MarketplaceScreen() {
   );
 
   const renderContent = () => {
-    if (isLoading) {
+    if (isLoading && !products.length && !engineers.length && !shops.length) {
       return <LoadingSpinner />;
     }
 
@@ -269,7 +272,7 @@ export default function MarketplaceScreen() {
     }
 
     return (
-      <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}>
+      <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}> 
         {/* Products Section */}
         {products.length > 0 && (
           <View style={styles.section}>
@@ -288,22 +291,25 @@ export default function MarketplaceScreen() {
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => navigate("ProductDetail", { product: item })}
-                  style={styles.cardWrapper}
+                  style={styles.productCard}
                 >
                   <ProductCard 
                     product={item}
-                    onLike={() => handleLikeProduct(item.id)}
-                    onUnlike={() => handleUnlikeProduct(item.id)}
+                    onLike={() => handleLikeProduct(getId(item))}
+                    onUnlike={() => handleUnlikeProduct(getId(item))}
+                    isLiked={user?.likedProducts?.includes(getId(item))}
                   />
                 </TouchableOpacity>
               )}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => getId(item)?.toString()}
               numColumns={isTablet ? 3 : 2}
               columnWrapperStyle={styles.columnWrapper}
               onEndReached={() => handleLoadMore('products')}
               onEndReachedThreshold={0.5}
-              ListFooterComponent={() => renderFooter('products')}
-              ListEmptyComponent={renderEmptyState}
+              ListFooterComponent={() => (
+                isFetchingNextPage.products ? renderFooter('products') : null
+              )}
+              ListEmptyComponent={!isLoading ? renderEmptyState : null}
             />
           </View>
         )}
@@ -331,11 +337,11 @@ export default function MarketplaceScreen() {
                   <EngineerCard engineer={item} />
                 </TouchableOpacity>
               )}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => getId(item)?.toString()}
               onEndReached={() => handleLoadMore('engineers')}
               onEndReachedThreshold={0.5}
               ListFooterComponent={() => renderFooter('engineers')}
-              ListEmptyComponent={renderEmptyState}
+              ListEmptyComponent={!isLoading ? renderEmptyState : null}
             />
           </View>
         )}
@@ -357,19 +363,19 @@ export default function MarketplaceScreen() {
               data={shops}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  onPress={() => navigate("ShopDetail", { shop: item })}
+                  onPress={() => navigate("Shop", { shop: item })}
                   style={[styles.fullWidthCard, isTablet && styles.tabletCard]}
                 >
                   <ShopCard shop={item} />
                 </TouchableOpacity>
               )}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => getId(item)?.toString()}
               numColumns={isTablet ? 2 : 1}
               columnWrapperStyle={isTablet ? styles.columnWrapper : null}
               onEndReached={() => handleLoadMore('shops')}
               onEndReachedThreshold={0.5}
               ListFooterComponent={() => renderFooter('shops')}
-              ListEmptyComponent={renderEmptyState}
+              ListEmptyComponent={!isLoading ? renderEmptyState : null}
             />
           </View>
         )}

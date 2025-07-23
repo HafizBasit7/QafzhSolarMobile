@@ -13,12 +13,10 @@ export const useEngineers = (filters = {}) => {
     refetch
   } = useInfiniteQuery({
     queryKey: ['engineers', filters],
-    queryFn: ({ pageParam = 1 }) => engineersAPI.getEngineers({ page: pageParam, ...filters }),
+    queryFn: ({ pageParam = 1 }) => engineersAPI.getEngineers({ page: pageParam, limit: 10, ...filters }),
     getNextPageParam: (lastPage) => {
-      if (lastPage.currentPage < lastPage.totalPages) {
-        return lastPage.currentPage + 1;
-      }
-      return undefined;
+      if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
+      return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
     },
     keepPreviousData: true,
   });
@@ -34,7 +32,7 @@ export const useEngineers = (filters = {}) => {
 
   // Helper function to get all engineers from all pages
   const getAllEngineers = () => {
-    return data?.pages?.flatMap((page) => page.data) || [];
+    return data?.pages?.flatMap((page) => Array.isArray(page.data) ? page.data : []) || [];
   };
 
   return {

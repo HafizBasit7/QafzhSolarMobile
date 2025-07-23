@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from 'react-i18next';
 import { useShops } from '../hooks/useShops';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import AuthGuard from '../components/common/AuthGuard';
+// import AuthGuard from '../components/common/AuthGuard';
 
 const ShopScreen = ({ navigation }) => {
   const route = useRoute();
@@ -160,9 +160,11 @@ const ShopScreen = ({ navigation }) => {
   );
 
   return (
-    <AuthGuard returnData={{ shopId }}>
-      <Content />
-    </AuthGuard>
+    // <AuthGuard returnData={{ shopId }}>
+    //   <Content />
+    // </AuthGuard>
+    <Content />
+
   );
 };
 

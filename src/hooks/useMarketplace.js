@@ -4,44 +4,44 @@ import { showToast } from '../components/common/Toast';
 
 export const useMarketplace = (filters = {}, type = 'all') => {
   const queryClient = useQueryClient();
-  const limit = 20;
+  const limit = 10;
 
-  const getQueryKey = (dataType) => ['marketplace', dataType, filters];
+  // Helper to extract .data from each page (userRoutes.js returns {data: [...]})
+  const processData = (query) => {
+    if (!query.data || !query.data.pages) return [];
+    return query.data.pages.flatMap(page => Array.isArray(page.data) ? page.data : []);
+  };
 
   // Products Query
   const productsQuery = useInfiniteQuery({
-    queryKey: getQueryKey('products'),
-    queryFn: ({ pageParam = 1 }) => productsAPI.getProducts({ 
-      page: pageParam, 
-      limit,
-      ...filters,
-      type: type === 'all' ? undefined : type
-    }),
-    getNextPageParam: (lastPage, pages) => {
-      if (lastPage.hasNextPage) return pages.length + 1;
-      return undefined;
+    queryKey: ['marketplace', 'products', filters],
+    queryFn: ({ pageParam = 1 }) => productsAPI.getProducts({ page: pageParam, limit, ...filters }),
+    getNextPageParam: (lastPage) => {
+      if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
+      return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
     },
     enabled: type === 'all' || type === 'products' || ['solarPanels', 'inverters', 'batteries'].includes(type)
   });
 
   // Engineers Query
   const engineersQuery = useInfiniteQuery({
-    queryKey: getQueryKey('engineers'),
+    queryKey: ['marketplace', 'engineers', filters],
     queryFn: ({ pageParam = 1 }) => engineersAPI.getEngineers({ page: pageParam, limit, ...filters }),
-    getNextPageParam: (lastPage, pages) => {
-      if (lastPage.hasNextPage) return pages.length + 1;
-      return undefined;
+    getNextPageParam: (lastPage) => {
+      if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
+      return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
     },
-    enabled: type === 'all' || type === 'engineers'
+    enabled: type === 'all' || type === 'engineers',
+    staleTime: 5 * 60 * 1000
   });
 
   // Shops Query
   const shopsQuery = useInfiniteQuery({
-    queryKey: getQueryKey('shops'),
+    queryKey: ['marketplace', 'shops', filters],
     queryFn: ({ pageParam = 1 }) => shopsAPI.getShops({ page: pageParam, limit, ...filters }),
-    getNextPageParam: (lastPage, pages) => {
-      if (lastPage.hasNextPage) return pages.length + 1;
-      return undefined;
+    getNextPageParam: (lastPage) => {
+      if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
+      return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
     },
     enabled: type === 'all' || type === 'shops'
   });
@@ -69,27 +69,14 @@ export const useMarketplace = (filters = {}, type = 'all') => {
     }
   });
 
-  // Flatten and process data
-  const processData = (query) => {
-    if (!query.data) return [];
-    return query.data.pages.flatMap(page => page.data || []);
-  };
-
   return {
-    // Data
     products: processData(productsQuery),
     engineers: processData(engineersQuery),
     shops: processData(shopsQuery),
-
-    // Loading states
     isLoading: productsQuery.isLoading || engineersQuery.isLoading || shopsQuery.isLoading,
     isFetching: productsQuery.isFetching || engineersQuery.isFetching || shopsQuery.isFetching,
-
-    // Error states
     isError: productsQuery.isError || engineersQuery.isError || shopsQuery.isError,
     error: productsQuery.error || engineersQuery.error || shopsQuery.error,
-
-    // Pagination
     hasNextPage: {
       products: productsQuery.hasNextPage,
       engineers: engineersQuery.hasNextPage,
@@ -105,12 +92,8 @@ export const useMarketplace = (filters = {}, type = 'all') => {
       engineers: engineersQuery.isFetchingNextPage,
       shops: shopsQuery.isFetchingNextPage
     },
-
-    // Mutations
     likeProduct: likeMutation.mutate,
     unlikeProduct: unlikeMutation.mutate,
-
-    // Refetch
     refetch: () => {
       productsQuery.refetch();
       engineersQuery.refetch();

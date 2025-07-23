@@ -58,7 +58,7 @@ export default function ShopCard({ shop }) {
     >
       <View style={styles.header}>
         <Image
-          source={{ uri: shop.image || 'https://via.placeholder.com/60' }}
+          source={{ uri: shop.logoUrl || 'https://via.placeholder.com/60' }}
           style={styles.shopLogo}
           accessibilityIgnoresInvertColors
         />
