@@ -16,33 +16,45 @@ import { useTranslation } from 'react-i18next';
 
 const AuthScreen = ({ navigation, route }) => {
   const { t } = useTranslation();
-  const { register, isRegistering } = useAuth();
+  const { register, isRegistering, checkPhone } = useAuth();
   const [phone, setPhone] = useState('');
   const returnData = route.params?.returnData;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!phone.trim()) {
       showToast('error', 'Error', 'Please enter your phone number');
       return;
     }
 
-    // Ensure phone is in international format
-   
-  let formattedPhone = phone.trim();
-  if (!formattedPhone.startsWith('+')) {
-    formattedPhone = '+967' + formattedPhone.replace(/^0+/, '');
-  }
+    let formattedPhone = phone.trim();
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = `+967${formattedPhone.replace(/^0+/, '')}`;
+    }
 
- // Send OTP
- register(formattedPhone, {
-  onSuccess: () => {
-    navigation.navigate('OTPVerification', { phone: formattedPhone, returnData });
-  },
-  onError: (error) => {
-    showToast('error', 'Error', error.response?.data?.message || 'Failed to send OTP');
-  },
-});
-};
+    try {
+      // First check if user exists
+      const userExists = await checkPhone(formattedPhone);
+      
+      if (userExists) {
+        // User exists - request OTP
+        await register(formattedPhone);
+        showToast('success', 'Success', 'OTP sent to registered number');
+      } else {
+        // New user - register and get OTP
+        await register(formattedPhone);
+        showToast('success', 'Success', 'Account created and OTP sent');
+      }
+      
+      // Navigate to OTP screen in both cases
+      navigation.navigate('OTPVerification', { 
+        phone: formattedPhone, 
+        returnData,
+        isNewUser: !userExists
+      });
+    } catch (error) {
+      showToast('error', 'Error', error.response?.data?.message || 'Something went wrong');
+    }
+  };
 
   return (
     <KeyboardAvoidingView

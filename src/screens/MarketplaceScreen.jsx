@@ -146,9 +146,9 @@
       { id: 'products', name: t('MARKETPLACE.LISTINGS'), icon: 'solar-panel-large', count: products.length },
       { id: 'shops', name: t('SHOP.TITLE'), icon: 'store', count: shops.length },
       { id: 'engineers', name: t('ENGINEERS.TITLE'), icon: 'account-hard-hat', count: engineers.length },
-      { id: 'solarPanels', name: t('PRODUCT_TYPES.PANEL'), icon: 'solar-panel', count: products.filter(p => p.type === 'panel').length },
-      { id: 'inverters', name: t('PRODUCT_TYPES.INVERTER'), icon: 'sine-wave', count: products.filter(p => p.type === 'inverter').length },
-      { id: 'batteries', name: t('PRODUCT_TYPES.BATTERY'), icon: 'battery', count: products.filter(p => p.type === 'battery').length }
+      { id: 'solarPanels', name: t('PRODUCT_TYPES.PANEL'), icon: 'solar-panel', count: products.filter(p => p.type === 'Panel').length },
+      { id: 'inverters', name: t('PRODUCT_TYPES.INVERTER'), icon: 'sine-wave', count: products.filter(p => p.type === 'Inverter').length },
+      { id: 'batteries', name: t('PRODUCT_TYPES.BATTERY'), icon: 'battery', count: products.filter(p => p.type === 'Battery').length }
     ];
 
     const renderHeader = () => (
@@ -258,11 +258,24 @@
       </View>
     );
 
+   
+
     const renderSection = (type, data = [], titleKey, detailScreen, CardComponent) => {
+      
       const shouldRender = activeTab === 'all' || activeTab === type;
       if (!shouldRender) return null;
     
-      const sectionData = Array.isArray(data) ? data : [];
+      // Filter products based on type if needed
+      let sectionData = Array.isArray(data) ? data : [];
+      if (type === 'products' && activeTab !== 'all') {
+        const typeMap = {
+          solarPanels: 'Panel',
+          inverters: 'Inverter',
+          batteries: 'Battery'
+        };
+        sectionData = sectionData.filter(item => item.type === typeMap[activeTab]);
+      }
+    
       const showEmptyState = !isLoading && sectionData.length === 0;
       const showHeader = activeTab === 'all' && sectionData.length > 0;
     
@@ -271,18 +284,23 @@
           numColumns: isTablet ? 3 : 2,
           cardStyle: styles.productCard,
           detailKey: 'product',
+          loading: isFetchingNextPage?.products,
         },
         shops: {
           numColumns: isTablet ? 2 : 1,
           cardStyle: isTablet ? styles.tabletCard : styles.fullWidthCard,
           detailKey: 'shop',
+          loading: isFetchingNextPage?.shops,
         },
         engineers: {
           numColumns: 1,
           cardStyle: styles.fullWidthCard,
           detailKey: 'engineer',
-        }
+          loading: isFetchingNextPage?.engineers,
+        },
       };
+    
+      const { numColumns, cardStyle, detailKey, loading } = typeConfig[type];
     
       return (
         <View style={styles.section}>
@@ -308,31 +326,30 @@
               data={sectionData}
               renderItem={({ item }) => {
                 if (!item) return null;
-                
                 return (
                   <TouchableOpacity
-                    onPress={() => navigate(detailScreen, { [typeConfig[type].detailKey]: item })}
-                    style={typeConfig[type].cardStyle}
+                    onPress={() => navigate(detailScreen, { [detailKey]: item })}
+                    style={cardStyle}
                   >
-                    <CardComponent 
-                      {...{ [typeConfig[type].detailKey]: item }}
+                    <CardComponent
+                      {...{ [detailKey]: item }}
                       {...(type === 'products' && {
-                        onLike: () => handleLikeProduct(getId(item)),
-                        onUnlike: () => handleUnlikeProduct(getId(item)),
-                        isLiked: user?.likedProducts?.includes(getId(item))
+                        onLike: () => handleLikeProduct(item._id),
+                        onUnlike: () => handleUnlikeProduct(item._id),
+                        isLiked: user?.likedProducts?.includes(item._id),
                       })}
                     />
                   </TouchableOpacity>
                 );
               }}
-              keyExtractor={(item) => item?.id || item?._id || Math.random().toString()}
-              numColumns={typeConfig[type].numColumns}
-              columnWrapperStyle={typeConfig[type].numColumns > 1 ? styles.columnWrapper : null}
+              keyExtractor={(item) => item?._id || Math.random().toString()}
+              numColumns={numColumns}
+              columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : null}
               scrollEnabled={false}
               onEndReached={() => handleLoadMore(type)}
               onEndReachedThreshold={0.5}
               ListFooterComponent={
-                isFetchingNextPage[type] ? (
+                loading ? (
                   <ActivityIndicator size="small" style={styles.loader} />
                 ) : null
               }
@@ -341,8 +358,10 @@
         </View>
       );
     };
+    
 
     const renderContent = () => {
+      console.log('Products data:', products); 
       if (isLoading && !products.length && !engineers.length && !shops.length) {
         return <LoadingSpinner />;
       }

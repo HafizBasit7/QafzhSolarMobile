@@ -15,16 +15,25 @@ export const useMarketplace = (filters = {}, type = 'all') => {
       console.log(`[processData] No data or pages in ${dataType} query:`, query);
       return [];
     }
-    
-    const data = query.data.pages.flatMap(page => {
+
+    const data = query.data.pages.flatMap((page, i) => {
       if (!page) {
-        console.log(`[processData] Empty page in ${dataType} response`);
+        console.log(`[processData] Empty page in ${dataType} response [page ${i}]`);
         return [];
       }
 
-      // Handle both direct array responses and { data: [...] } responses
-      const items = Array.isArray(page) ? page : (page.data || []);
-      
+      // Special handling for products
+      if (dataType === 'products') {
+        return page.data || [];
+      }
+
+      // Existing logic for engineers and shops
+      const items = Array.isArray(page)
+        ? page
+        : Array.isArray(page.data)
+        ? page.data
+        : [];
+
       if (!Array.isArray(items)) {
         console.error(`[processData] Invalid ${dataType} data format:`, page);
         return [];
@@ -37,21 +46,22 @@ export const useMarketplace = (filters = {}, type = 'all') => {
     console.log(`[processData] Total ${dataType} processed:`, data.length);
     return data;
   };
+  
+  
 
   // 🔹 Products Query
   const productsQuery = useInfiniteQuery({
     queryKey: ['marketplace', 'products', activeTab, filters],
     queryFn: async ({ pageParam = 1 }) => {
-      // Validate activeTab first
       const validTabs = ['all', 'solarPanels', 'inverters', 'batteries'];
       const currentTab = validTabs.includes(activeTab) ? activeTab : 'all';
-  
+
       const params = {
         page: pageParam,
         limit: 10,
         status: 'approved'
       };
-  
+
       // Apply filters
       if (filters) {
         if (filters.search_keyword?.trim()) {
@@ -68,30 +78,36 @@ export const useMarketplace = (filters = {}, type = 'all') => {
           params.governorate = filters.governorate.trim();
         }
       }
-  
+
       // Apply product type filter if not 'all' tab
       if (currentTab !== 'all') {
         const productTypeMap = {
-          solarPanels: 'panel',
-          inverters: 'inverter',
-          batteries: 'battery'
+          solarPanels: 'Panel',
+          inverters: 'Inverter',
+          batteries: 'Battery'
         };
         if (productTypeMap[currentTab]) {
-          params.productType = productTypeMap[currentTab];
+          params.type = productTypeMap[currentTab];
         }
       }
-  
+
       try {
         const response = await productsAPI.getProducts(params);
+        console.log('Products API response:', response);
+
         return {
-          data: response.data?.data || [],
-          currentPage: response.data?.currentPage || pageParam,
-          totalPages: response.data?.totalPages || 1,
-          total: response.data?.total || 0,
+          pages: [response],
+          pageParams: [pageParam],
+          data: response.data || [],
+          currentPage: response.currentPage,
+          totalPages: response.totalPages,
+          total: response.total
         };
       } catch (error) {
         console.error('Products query error:', error);
         return {
+          pages: [],
+          pageParams: [pageParam],
           data: [],
           currentPage: pageParam,
           totalPages: 1,
@@ -106,7 +122,7 @@ export const useMarketplace = (filters = {}, type = 'all') => {
     },
     initialPageParam: 1,
     staleTime: 5 * 60 * 1000,
-    enabled: Boolean(activeTab) // Ensure activeTab exists before enabling query
+    enabled: Boolean(activeTab)
   });
 
   

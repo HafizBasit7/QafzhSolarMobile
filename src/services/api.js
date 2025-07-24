@@ -2,7 +2,9 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showToast } from '../components/common/Toast';
 
-const BASE_URL = 'http://192.168.1.3:5005/api/v1'; // ✅ Correct base path
+// const BASE_URL = 'http://192.168.1.3:5005/api/v1'; // HomeIP
+const BASE_URL = 'http://192.168.100.26:5005/api/v1'; // OfficeIP
+
 
 // Create Axios instance
 export const api = axios.create({
@@ -96,7 +98,7 @@ export const productsAPI = {
 // ----------------------------
 export const engineersAPI = {
   getEngineers: (params) => api.get('/marketplace/getAllEngineer', { params }),
-  getEngineer: (id) => api.get(`/marketplace/engineer/${id}`), // Add this
+  getEngineer: (id) => api.get(`/marketplace/getOneEngineer/${id}`), // Add this
   filterEngineers: (params) => api.get('/marketplace/filters-engineer', { params }),
 };
 
@@ -105,7 +107,7 @@ export const engineersAPI = {
 // ----------------------------
 export const shopsAPI = {
   getShops: (params) => api.get('/marketplace/getAllShops', { params }),
-  getShop: (id) => api.get(`/marketplace/shop/${id}`), // Add this
+  getShop: (id) => api.get(`/marketplace/getOneShop/${id}`), // Add this
   filterShops: (params) => api.get('/marketplace/filters-shop', { params }),
 };
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import TabNavigator from './TabNavigator';
 import ProductSubmissionScreen from '../screens/ProductSubmissionScreen';
-import VerificationScreen from '../screens/VerificationScreen';
+// import VerificationScreen from '../screens/VerificationScreen';
 import ShopScreen from '../screens/ShopScreen';
 import EngineerScreen from '../screens/EngineerDetailScreen';
 import CalculatorResultsScreen from '../screens/CalculatorResultsScreen';
@@ -56,14 +56,14 @@ export default function MainStack() {
           headerBackTitle: t('MARKETPLACE.TITLE'),
         }}
       />
-      <Stack.Screen
+      {/* <Stack.Screen
         name="Verification"
         component={VerificationScreen}
         options={{
           title: t('AUTH.VERIFY_PHONE'),
           headerBackTitle: t('MARKETPLACE.ADD_PRODUCT'),
         }}
-      />
+      /> */}
       <Stack.Screen
         name="Shop"
         component={ShopScreen}

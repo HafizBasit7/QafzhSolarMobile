@@ -6,8 +6,29 @@ import { showToast } from '../components/common/Toast';
 export const useAuth = () => {
   const queryClient = useQueryClient();
 
+    // Add this new mutation for phone check
+    const checkPhoneMutation = useMutation({
+      mutationFn: (phone) => authAPI.checkPhone(phone),
+    });
+  
+    // Add this helper function
+    const checkPhone = async (phone) => {
+      try {
+        const response = await checkPhoneMutation.mutateAsync(phone);
+        return response.exists; // Assuming your backend returns { exists: true/false }
+      } catch (error) {
+        console.error('Error checking phone:', error);
+        return false;
+      }
+    };
+
   // Get user profile
-  const { data: user, isLoading: isLoadingUser } = useQuery({
+  const { 
+    data: user, 
+    isLoading: isLoadingUser,
+    isError: isUserError,
+    refetch: refetchUser
+  } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
       const token = await AsyncStorage.getItem('token');
@@ -15,30 +36,42 @@ export const useAuth = () => {
       return authAPI.getProfile();
     },
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    staleTime: 5 * 60 * 1000,
   });
 
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: authAPI.register,
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       showToast('success', 'Success', 'OTP sent successfully');
+      return variables; // Return phone number for navigation
     },
     onError: (error) => {
-      showToast('error', 'Registration Failed', error.response?.data?.message || 'Something went wrong');
+      showToast('error', 'Error', error.response?.data?.message || 'Failed to send OTP');
     },
   });
 
   // Verify OTP mutation
   const verifyOTPMutation = useMutation({
-    mutationFn: authAPI.verifyOTP,
+    mutationFn: ({ phone, otp }) => authAPI.verifyOTP(phone, otp),
     onSuccess: async (data) => {
       await AsyncStorage.setItem('token', data.token);
-      queryClient.invalidateQueries(['user']);
-      showToast('success', 'Success', 'Phone number verified successfully');
+      await refetchUser(); // Immediately refetch user data
+      showToast('success', 'Success', 'Verified successfully');
     },
     onError: (error) => {
-      showToast('error', 'Verification Failed', error.response?.data?.message || 'Invalid OTP');
+      showToast('error', 'Error', error.response?.data?.message || 'Invalid OTP');
+    },
+  });
+
+  // Request new OTP mutation
+  const requestOTPMutation = useMutation({
+    mutationFn: authAPI.requestOTP,
+    onSuccess: () => {
+      showToast('success', 'Success', 'New OTP sent successfully');
+    },
+    onError: (error) => {
+      showToast('error', 'Error', error.response?.data?.message || 'Failed to resend OTP');
     },
   });
 
@@ -68,13 +101,17 @@ export const useAuth = () => {
   return {
     user,
     isLoadingUser,
+    isUserError,
     isAuthenticated: !!user,
-    register: registerMutation.mutate,
+    register: registerMutation.mutateAsync, // Using mutateAsync for better promise handling
     isRegistering: registerMutation.isLoading,
-    verifyOTP: verifyOTPMutation.mutate,
+    verifyOTP: verifyOTPMutation.mutateAsync,
     isVerifying: verifyOTPMutation.isLoading,
+    requestOTP: requestOTPMutation.mutateAsync,
+    isRequestingOTP: requestOTPMutation.isLoading,
     updateProfile: updateProfileMutation.mutate,
-    isUpdating: updateProfileMutation.isLoading,
+    isUpdating: updateProfileMutation.isLoading, checkPhone,
+    isCheckingPhone: checkPhoneMutation.isLoading,
     logout,
   };
 }; 

@@ -15,72 +15,55 @@ import { useTranslation } from 'react-i18next';
 
 const OTPVerificationScreen = ({ navigation, route }) => {
   const { t } = useTranslation();
-  const { verifyOTP, isVerifying, register } = useAuth();
-  const { phone, returnData } = route.params;
+  const { verifyOTP, isVerifying, requestOTP } = useAuth();
+  const { phone, returnData, isNewUser } = route.params;
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(60);
   const inputRefs = useRef([]);
 
+  // Auto verify when default OTP (112233) is entered
   useEffect(() => {
-    const countdown = timer > 0 && setInterval(() => setTimer(timer - 1), 1000);
-    return () => clearInterval(countdown);
-  }, [timer]);
-
-  const handleOtpChange = (value, index) => {
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    // Auto-focus next input
-    if (value && index < 5) {
-      inputRefs.current[index + 1].focus();
+    const enteredOTP = otp.join('');
+    if (enteredOTP === '112233') {
+      handleVerify('112233');
     }
-  };
+  }, [otp]);
 
-  const handleKeyPress = (e, index) => {
-    // Handle backspace
-    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1].focus();
-    }
-  };
-
-  const handleResendOTP = () => {
-    if (timer > 0) return;
-  
-    register(phone, {
-      onSuccess: () => {
-        setTimer(60);
-      },
-      onError: (error) => {
-        showToast('error', 'Error', error.response?.data?.message || 'Failed to resend OTP');
-      },
-    });
-  };
-
-  
-  const handleVerify = () => {
-    const otpString = otp.join('');
-    if (otpString.length !== 6) {
+  const handleVerify = async (enteredOTP = null) => {
+    const otpToVerify = enteredOTP || otp.join('');
+    
+    if (otpToVerify.length !== 6) {
       showToast('error', 'Error', 'Please enter complete OTP');
       return;
     }
 
-    verifyOTP({ phone, otp: otpString }, {
-      onSuccess: () => {
-        if (returnData) {
-          navigation.goBack();
-        } else {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'MainStack' }],
+    try {
+      await verifyOTP({ phone, otp: otpToVerify });
+      
+      showToast('success', 'Success', 
+        isNewUser ? 'Account verified successfully!' : 'Logged in successfully!');
+      
+      if (returnData) {
+        // If returning from product submission, navigate back and submit
+        if (returnData.screen === 'ProductSubmission' && returnData.productData) {
+          navigation.navigate('ProductSubmission', { 
+            productData: returnData.productData,
+            shouldSubmit: true 
           });
+        } else {
+          navigation.goBack();
         }
-      },
-      onError: (error) => {
-        showToast('error', 'Error', error.response?.data?.message || 'Invalid OTP');
-      },
-    });
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainStack' }],
+        });
+      }
+    } catch (error) {
+      showToast('error', 'Error', error.response?.data?.message || 'Invalid OTP');
+    }
   };
+
 
   return (
     <KeyboardAvoidingView
@@ -99,6 +82,7 @@ const OTPVerificationScreen = ({ navigation, route }) => {
         <Text style={styles.subtitle}>
           {t('AUTH.OTP_SENT_TO')} {phone}
         </Text>
+        <Text style={styles.devNote}>DEV NOTE: Enter "112233" for auto-verification</Text>
 
         <View style={styles.otpContainer}>
           {otp.map((digit, index) => (
@@ -184,6 +168,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
   },
+  devNote: {
+    fontSize: 14,
+    fontFamily: 'Tajawal-Regular',
+    color: '#DC2626',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
   otpContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -233,4 +225,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default OTPVerificationScreen; 
+export default OTPVerificationScreen;
