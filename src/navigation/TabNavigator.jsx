@@ -69,7 +69,7 @@ export default function TabNavigator() {
         tabBarHideOnKeyboard: true,
       }}
     >
-      {/* Public Routes */}
+      {/* Marketplace - Available to all */}
       <Tab.Screen
         name="MarketplaceTab"
         component={MarketplaceScreen}
@@ -85,6 +85,7 @@ export default function TabNavigator() {
         }}
       />
 
+      {/* Calculator - Available to all */}
       <Tab.Screen
         name="CalculatorTab"
         component={CalculatorScreen}
@@ -100,7 +101,7 @@ export default function TabNavigator() {
         }}
       />
 
-      {/* Protected Routes */}
+      {/* Product Submission - Only for verified users */}
       <Tab.Screen
         name="ProductSubmissionTab"
         component={ProductSubmissionScreen}
@@ -128,6 +129,7 @@ export default function TabNavigator() {
         }}
       />
 
+      {/* Ads - Available to all */}
       <Tab.Screen
         name="OffersTab"
         component={AdsScreen}
@@ -143,6 +145,7 @@ export default function TabNavigator() {
         }}
       />
 
+      {/* Profile - Only for verified users */}
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStack}
@@ -151,7 +154,7 @@ export default function TabNavigator() {
             if (!isAuthenticated) {
               e.preventDefault();
               navigation.navigate('AuthStack', {
-                screen: 'Register',
+                screen: 'Login',
                 params: {
                   returnScreen: 'Profile'
                 }

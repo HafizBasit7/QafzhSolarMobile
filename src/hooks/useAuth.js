@@ -74,7 +74,7 @@ export const useAuth = () => {
     },
   });
 
-  // Logout function
+  // Enhanced logout function
   const logout = async () => {
     try {
       await authAPI.logout();
