@@ -15,34 +15,46 @@ export const useMarketplace = (filters = {}, type = 'all') => {
       console.log(`[processData] No data or pages in ${dataType} query:`, query);
       return [];
     }
-
-    const data = query.data.pages.flatMap((page, i) => {
+  
+    const data = query.data.pages.flatMap((page) => {
       if (!page) {
-        console.log(`[processData] Empty page in ${dataType} response [page ${i}]`);
+        console.log(`[processData] Empty page in ${dataType} response`);
         return [];
       }
-
+  
       // Special handling for products
       if (dataType === 'products') {
-        return page.data || [];
+        // From your logs, products are in page.data array
+        if (Array.isArray(page.data)) {
+          console.log(`[processData] Processing ${page.data.length} products from page.data`);
+          return page.data;
+        }
+        // Fallback if structure is different
+        if (Array.isArray(page)) {
+          console.log(`[processData] Processing ${page.length} products directly from page`);
+          return page;
+        }
+        console.log(`[processData] No products array found in page:`, page);
+        return [];
       }
-
-      // Existing logic for engineers and shops
+  
+      // Existing logic for engineers and shops - KEEP THIS UNCHANGED
       const items = Array.isArray(page)
         ? page
         : Array.isArray(page.data)
         ? page.data
         : [];
-
+  
       if (!Array.isArray(items)) {
         console.error(`[processData] Invalid ${dataType} data format:`, page);
         return [];
       }
-
+  
       console.log(`[processData] Processed ${items.length} ${dataType} items`);
       return items;
     });
-
+  
+    console.log(`[processData] Final ${dataType} data:`, data);
     console.log(`[processData] Total ${dataType} processed:`, data.length);
     return data;
   };
@@ -50,80 +62,54 @@ export const useMarketplace = (filters = {}, type = 'all') => {
   
 
   // 🔹 Products Query
-  const productsQuery = useInfiniteQuery({
-    queryKey: ['marketplace', 'products', activeTab, filters],
-    queryFn: async ({ pageParam = 1 }) => {
-      const validTabs = ['all', 'solarPanels', 'inverters', 'batteries'];
-      const currentTab = validTabs.includes(activeTab) ? activeTab : 'all';
+ // In your useMarketplace hook, update the productsQuery to:
+const productsQuery = useInfiniteQuery({
+  queryKey: ['marketplace', 'products', activeTab, filters],
+  queryFn: async ({ pageParam = 1 }) => {
+    const params = {
+      page: pageParam,
+      limit: 10,
+      status: 'approved',
+      ...(activeTab !== 'all' && { type: activeTab === 'solarPanels' ? 'Panel' : 
+                                 activeTab === 'inverters' ? 'Inverter' : 
+                                 activeTab === 'batteries' ? 'Battery' : '' }),
+      ...filters
+    };
 
-      const params = {
-        page: pageParam,
-        limit: 10,
-        status: 'approved'
+    try {
+      const response = await productsAPI.getProducts(params);
+      console.log('Products API transformed response:', {
+        data: response, // Your API returns array directly
+        currentPage: pageParam,
+        totalPages: Math.ceil(response.total / params.limit), // Adjust based on your API's pagination
+        total: response.length
+      });
+      
+      return {
+        data: response, // The array of products
+        currentPage: pageParam,
+        totalPages: 1, // Update this based on your API's actual pagination
+        total: response.length
       };
-
-      // Apply filters
-      if (filters) {
-        if (filters.search_keyword?.trim()) {
-          params.search = filters.search_keyword.trim();
-        }
-        if (filters.priceRange?.length === 2) {
-          params.minPrice = filters.priceRange[0];
-          params.maxPrice = filters.priceRange[1];
-        }
-        if (filters.condition?.trim()) {
-          params.condition = filters.condition.trim();
-        }
-        if (filters.governorate?.trim()) {
-          params.governorate = filters.governorate.trim();
-        }
-      }
-
-      // Apply product type filter if not 'all' tab
-      if (currentTab !== 'all') {
-        const productTypeMap = {
-          solarPanels: 'Panel',
-          inverters: 'Inverter',
-          batteries: 'Battery'
-        };
-        if (productTypeMap[currentTab]) {
-          params.type = productTypeMap[currentTab];
-        }
-      }
-
-      try {
-        const response = await productsAPI.getProducts(params);
-        console.log('Products API response:', response);
-
-        return {
-          pages: [response],
-          pageParams: [pageParam],
-          data: response.data || [],
-          currentPage: response.currentPage,
-          totalPages: response.totalPages,
-          total: response.total
-        };
-      } catch (error) {
-        console.error('Products query error:', error);
-        return {
-          pages: [],
-          pageParams: [pageParam],
-          data: [],
-          currentPage: pageParam,
-          totalPages: 1,
-          total: 0
-        };
-      }
-    },
-    getNextPageParam: (lastPage) => {
-      return lastPage.currentPage < lastPage.totalPages 
-        ? lastPage.currentPage + 1 
-        : undefined;
-    },
-    initialPageParam: 1,
-    staleTime: 5 * 60 * 1000,
-    enabled: Boolean(activeTab)
-  });
+    } catch (error) {
+      console.error('Products query error:', error);
+      return {
+        data: [],
+        currentPage: pageParam,
+        totalPages: 1,
+        total: 0
+      };
+    }
+  },
+  getNextPageParam: (lastPage) => {
+    return lastPage.currentPage < lastPage.totalPages 
+      ? lastPage.currentPage + 1 
+      : undefined;
+  },
+  initialPageParam: 1,
+  staleTime: 5 * 60 * 1000,
+  enabled: true // Make sure this is always enabled for products
+});
 
   
   // 🔹 Engineers Query

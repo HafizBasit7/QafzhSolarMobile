@@ -15,7 +15,27 @@ export default function ProductDetailScreen() {
     Linking.openURL(`tel:${product.phone}`);
   };
 
+  const handleWhatsApp = () => {
+    if (product.whatsappPhone) {
+      Linking.openURL(`https://wa.me/${product.whatsappPhone}`);
+    }
+  };
+
   const currencySymbol = product.currency === 'YER' ? '﷼' : '$';
+
+  // Format specifications for display
+  const renderSpecifications = () => {
+    if (!product.specifications) return null;
+    
+    return Object.entries(product.specifications).map(([key, value]) => (
+      value && (
+        <View style={styles.specItem} key={key}>
+          <Text style={styles.specLabel}>{t(`PRODUCT.${key}`)}:</Text>
+          <Text style={styles.specValue}>{value || t('PRODUCT.notSpecified')}</Text>
+        </View>
+      )
+    ));
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -32,47 +52,46 @@ export default function ProductDetailScreen() {
               showsHorizontalScrollIndicator={false}
               style={styles.imageGallery}
             >
-              {(Array.isArray(product.images) && product.images.length > 0 ? product.images : [product.image]).map((img, index) => (
+              {(product.images?.length ? product.images : ['https://via.placeholder.com/400']).map((img, index) => (
                 <Image
                   key={index}
-                  source={{ uri: img || 'https://via.placeholder.com/400' }}
+                  source={{ uri: img }}
                   style={[styles.productImage, { width }]}
                   resizeMode="cover"
                 />
               ))}
             </ScrollView>
-
-            {/* Image Indicators */}
-            <View style={styles.imageIndicator}>
-              {(Array.isArray(product.images) && product.images.length > 0 ? product.images : [product.image]).map((_, index) => (
-                <View key={index} style={styles.indicatorDot} />
-              ))}
-            </View>
           </View>
 
           {/* Info Card */}
           <View style={styles.infoCard}>
             <View style={styles.headerRow}>
               <Text style={[styles.title, isSmallScreen && styles.smallTitle]} numberOfLines={2}>
-                {product.title}
+                {product.name}
               </Text>
-              {product.isVerified && (
-                <View style={styles.verifiedBadge}>
-                  <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-                  <Text style={styles.verifiedText}>{t('PRODUCT.verified')}</Text>
+              {product.featured && (
+                <View style={styles.featuredBadge}>
+                  <Ionicons name="star" size={14} color="#F59E0B" />
+                  <Text style={styles.featuredText}>{t('PRODUCT.featured')}</Text>
                 </View>
               )}
             </View>
 
-            <Text style={[styles.price, isSmallScreen && styles.smallPrice]}>
-              {product.price} {currencySymbol}
-            </Text>
+            <View style={styles.priceRow}>
+              <Text style={[styles.price, isSmallScreen && styles.smallPrice]}>
+                {product.price} {currencySymbol}
+              </Text>
+              {product.isNegotiable && (
+                <Text style={styles.negotiableText}>{t('PRODUCT.negotiable')}</Text>
+              )}
+            </View>
 
+            {/* Basic Details */}
             <View style={styles.detailsGrid}>
               <View style={styles.detailItem}>
                 <MaterialIcons name="category" size={18} color="#64748B" />
                 <Text style={styles.detailLabel}>{t('PRODUCT.type')}</Text>
-                <Text style={styles.detailValue} numberOfLines={1}>{product.type}</Text>
+                <Text style={styles.detailValue}>{product.type}</Text>
               </View>
 
               <View style={styles.detailItem}>
@@ -80,30 +99,41 @@ export default function ProductDetailScreen() {
                 <Text style={styles.detailLabel}>{t('PRODUCT.condition')}</Text>
                 <Text style={[
                   styles.detailValue,
-                  product.condition === 'new' && { color: '#10B981' },
-                  product.condition === 'used' && { color: '#F59E0B' }
+                  product.condition === 'New' && { color: '#10B981' },
+                  product.condition === 'Used' && { color: '#F59E0B' }
                 ]}>
-                  {product.condition === 'new' ? t('PRODUCT.new') : t('PRODUCT.used')}
+                  {product.condition}
                 </Text>
+              </View>
+
+              <View style={styles.detailItem}>
+                <Ionicons name="business-outline" size={18} color="#64748B" />
+                <Text style={styles.detailLabel}>{t('MARKETPLACE.BRAND')}</Text>
+                <Text style={styles.detailValue}>{product.brand || t('PRODUCT.notSpecified')}</Text>
               </View>
 
               <View style={styles.detailItem}>
                 <Ionicons name="location-outline" size={18} color="#64748B" />
                 <Text style={styles.detailLabel}>{t('PRODUCT.location')}</Text>
-                <Text style={styles.detailValue} numberOfLines={1}>
+                <Text style={styles.detailValue}>
                   {product.city}, {product.governorate}
-                </Text>
-              </View>
-
-              <View style={styles.detailItem}>
-                <MaterialIcons name="verified-user" size={18} color="#64748B" />
-                <Text style={styles.detailLabel}>{t('PRODUCT.warranty')}</Text>
-                <Text style={styles.detailValue} numberOfLines={1}>
-                  {product.warranty || t('PRODUCT.notAvailable')}
                 </Text>
               </View>
             </View>
 
+            {/* Specifications Section */}
+            {product.specifications && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, isSmallScreen && styles.smallSectionTitle]}>
+                  {t('PRODUCT.specifications')}
+                </Text>
+                <View style={styles.specificationsContainer}>
+                  {renderSpecifications()}
+                </View>
+              </View>
+            )}
+
+            {/* Description Section */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, isSmallScreen && styles.smallSectionTitle]}>
                 {t('PRODUCT.details')}
@@ -113,21 +143,47 @@ export default function ProductDetailScreen() {
               </Text>
             </View>
 
+            {/* Seller Information */}
             <View style={styles.sellerSection}>
               <Text style={[styles.sectionTitle, isSmallScreen && styles.smallSectionTitle]}>
                 {t('PRODUCT.sellerInfo')}
               </Text>
               <View style={styles.sellerInfo}>
                 <View style={styles.sellerText}>
-                  <Text style={styles.sellerName} numberOfLines={1}>
-                    {product.sellerName || t('PRODUCT.unknown')}
+                  <Text style={styles.sellerContact}>
+                    <Ionicons name="call-outline" size={14} color="#16A34A" />
+                    {' '}{product.phone}
                   </Text>
-                  <Text style={styles.sellerLocation} numberOfLines={1}>
-                    <Ionicons name="location-outline" size={12} />
+                  {product.whatsappPhone && (
+                    <Text style={styles.sellerContact}>
+                      <Ionicons name="logo-whatsapp" size={14} color="#25D366" />
+                      {' '}{product.whatsappPhone}
+                    </Text>
+                  )}
+                  <Text style={styles.sellerLocation}>
+                    <Ionicons name="location-outline" size={12} color="#64748B" />
                     {' '}{product.city}, {product.governorate}
                   </Text>
                 </View>
               </View>
+            </View>
+
+            {/* Product Status */}
+            <View style={styles.statusSection}>
+              <Text style={styles.statusItem}>
+                <Text style={styles.statusLabel}>{t('PRODUCT.status')}:</Text>
+                {' '}{product.status}
+              </Text>
+              <Text style={styles.statusItem}>
+                <Text style={styles.statusLabel}>{t('PRODUCT.listedOn')}:</Text>
+                {' '}{new Date(product.createdAt).toLocaleDateString()}
+              </Text>
+              {product.expiresAt && (
+                <Text style={styles.statusItem}>
+                  <Text style={styles.statusLabel}>{t('PRODUCT.expiresOn')}:</Text>
+                  {' '}{new Date(product.expiresAt).toLocaleDateString()}
+                </Text>
+              )}
             </View>
           </View>
         </ScrollView>
@@ -138,12 +194,24 @@ export default function ProductDetailScreen() {
             <Ionicons name="bookmark-outline" size={22} color="#16A34A" />
           </TouchableOpacity>
 
+          {product.whatsappPhone && (
+            <TouchableOpacity 
+              style={[styles.secondaryButton, isSmallScreen && styles.smallSecondaryButton]}
+              onPress={handleWhatsApp}
+            >
+              <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" />
+              <Text style={[styles.buttonText, isSmallScreen && styles.smallButtonText]}>
+                {t('PRODUCT.whatsapp')}
+              </Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity 
             style={[styles.primaryButton, isSmallScreen && styles.smallPrimaryButton]} 
             onPress={handleCallSeller}
           >
             <Ionicons name="call-outline" size={18} color="#FFFFFF" />
-            <Text style={[styles.primaryButtonText, isSmallScreen && styles.smallPrimaryButtonText]}>
+            <Text style={[styles.buttonText, isSmallScreen && styles.smallButtonText]}>
               {t('PRODUCT.callSeller')}
             </Text>
           </TouchableOpacity>
@@ -366,5 +434,95 @@ const styles = StyleSheet.create({
   },
   smallPrimaryButtonText: {
     fontSize: 14,
-  }
+  },
+  priceRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  negotiableText: {
+    fontSize: 14,
+    color: '#F59E0B',
+    marginRight: 10,
+    fontFamily: 'Tajawal-Medium',
+  },
+  featuredBadge: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  featuredText: {
+    fontSize: 12,
+    fontFamily: 'Tajawal-Medium',
+    color: '#D97706',
+    marginRight: 4,
+  },
+  specificationsContainer: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 12,
+  },
+  specItem: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  specLabel: {
+    fontSize: 14,
+    fontFamily: 'Tajawal-Medium',
+    color: '#64748B',
+  },
+  specValue: {
+    fontSize: 14,
+    fontFamily: 'Tajawal-Bold',
+    color: '#1E293B',
+  },
+  sellerContact: {
+    fontSize: 14,
+    fontFamily: 'Tajawal-Medium',
+    color: '#1E293B',
+    textAlign: 'right',
+    marginBottom: 6,
+  },
+  statusSection: {
+    marginTop: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 12,
+  },
+  statusItem: {
+    fontSize: 13,
+    fontFamily: 'Tajawal-Regular',
+    color: '#475569',
+    textAlign: 'right',
+    marginBottom: 6,
+  },
+  statusLabel: {
+    fontFamily: 'Tajawal-Medium',
+    color: '#1E293B',
+  },
+  secondaryButton: {
+    backgroundColor: '#25D366',
+    flexDirection: 'row-reverse',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 10,
+    marginLeft: 10,
+    // flex: product.whatsappPhone ? 1 : 0,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Tajawal-Bold',
+    fontSize: 15,
+    marginRight: 6,
+  },
+  smallButtonText: {
+    fontSize: 14,
+  },
+  
 });

@@ -139,16 +139,24 @@
       </View>
     );
 
-    const getId = (item) => item.id || item._id;
+    const getId = (item) => item?._id || item?.id;
 
     const categories = [
-      { id: 'all', name: t('COMMON.ALL'), icon: 'view-grid', count: products.length + shops.length + engineers.length },
-      { id: 'products', name: t('MARKETPLACE.LISTINGS'), icon: 'solar-panel-large', count: products.length },
-      { id: 'shops', name: t('SHOP.TITLE'), icon: 'store', count: shops.length },
-      { id: 'engineers', name: t('ENGINEERS.TITLE'), icon: 'account-hard-hat', count: engineers.length },
-      { id: 'solarPanels', name: t('PRODUCT_TYPES.PANEL'), icon: 'solar-panel', count: products.filter(p => p.type === 'Panel').length },
-      { id: 'inverters', name: t('PRODUCT_TYPES.INVERTER'), icon: 'sine-wave', count: products.filter(p => p.type === 'Inverter').length },
-      { id: 'batteries', name: t('PRODUCT_TYPES.BATTERY'), icon: 'battery', count: products.filter(p => p.type === 'Battery').length }
+      { id: 'all', name: t('COMMON.ALL'), icon: 'view-grid', 
+        count: (products?.length || 0) + (shops?.length || 0) + (engineers?.length || 0) },
+        { id: 'shops', name: t('SHOP.TITLE'), icon: 'store', 
+          count: shops?.length || 0 },
+      { id: 'products', name: t('MARKETPLACE.LISTINGS'), icon: 'solar-panel-large', 
+        count: products?.length || 0 },
+     
+      { id: 'engineers', name: t('ENGINEERS.TITLE'), icon: 'account-hard-hat', 
+        count: engineers?.length || 0 },
+      // { id: 'solarPanels', name: t('PRODUCT_TYPES.PANEL'), icon: 'solar-panel', 
+      //   count: products?.filter(p => p?.type === 'Panel')?.length || 0 },
+      // { id: 'inverters', name: t('PRODUCT_TYPES.INVERTER'), icon: 'sine-wave', 
+      //   count: products?.filter(p => p?.type === 'Inverter')?.length || 0 },
+      // { id: 'batteries', name: t('PRODUCT_TYPES.BATTERY'), icon: 'battery', 
+      //   count: products?.filter(p => p?.type === 'Battery')?.length || 0 }
     ];
 
     const renderHeader = () => (
@@ -258,24 +266,11 @@
       </View>
     );
 
-   
-
     const renderSection = (type, data = [], titleKey, detailScreen, CardComponent) => {
-      
       const shouldRender = activeTab === 'all' || activeTab === type;
       if (!shouldRender) return null;
     
-      // Filter products based on type if needed
-      let sectionData = Array.isArray(data) ? data : [];
-      if (type === 'products' && activeTab !== 'all') {
-        const typeMap = {
-          solarPanels: 'Panel',
-          inverters: 'Inverter',
-          batteries: 'Battery'
-        };
-        sectionData = sectionData.filter(item => item.type === typeMap[activeTab]);
-      }
-    
+      const sectionData = Array.isArray(data) ? data : [];
       const showEmptyState = !isLoading && sectionData.length === 0;
       const showHeader = activeTab === 'all' && sectionData.length > 0;
     
@@ -284,23 +279,37 @@
           numColumns: isTablet ? 3 : 2,
           cardStyle: styles.productCard,
           detailKey: 'product',
-          loading: isFetchingNextPage?.products,
+
+          additionalProps: (item) => ({
+            onLike: () => handleLikeProduct(getId(item)),
+            onUnlike: () => handleUnlikeProduct(getId(item)),
+            isLiked: user?.likedProducts?.includes(getId(item)),
+            // Ensure all product fields are passed
+            name: item?.name,
+            price: item?.price,
+            currency: item?.currency,
+            images: item?.images,
+            type: item?.type,
+            condition: item?.condition,
+            location: item?.governorate || item?.city ? 
+              `${item?.governorate || ''}${item?.governorate && item?.city ? ', ' : ''}${item?.city || ''}` : '',
+            isNegotiable: item?.isNegotiable
+          })
+  
         },
         shops: {
           numColumns: isTablet ? 2 : 1,
           cardStyle: isTablet ? styles.tabletCard : styles.fullWidthCard,
           detailKey: 'shop',
-          loading: isFetchingNextPage?.shops,
         },
         engineers: {
           numColumns: 1,
           cardStyle: styles.fullWidthCard,
           detailKey: 'engineer',
-          loading: isFetchingNextPage?.engineers,
         },
       };
     
-      const { numColumns, cardStyle, detailKey, loading } = typeConfig[type];
+      const { numColumns, cardStyle, detailKey } = typeConfig[type];
     
       return (
         <View style={styles.section}>
@@ -326,30 +335,33 @@
               data={sectionData}
               renderItem={({ item }) => {
                 if (!item) return null;
+    
+                const detailProps = { [detailKey]: item };
+    
                 return (
                   <TouchableOpacity
-                    onPress={() => navigate(detailScreen, { [detailKey]: item })}
+                    onPress={() => navigate(detailScreen, detailProps)}
                     style={cardStyle}
                   >
                     <CardComponent
-                      {...{ [detailKey]: item }}
+                      {...detailProps}
                       {...(type === 'products' && {
-                        onLike: () => handleLikeProduct(item._id),
-                        onUnlike: () => handleUnlikeProduct(item._id),
-                        isLiked: user?.likedProducts?.includes(item._id),
+                        onLike: () => handleLikeProduct(getId(item)),
+                        onUnlike: () => handleUnlikeProduct(getId(item)),
+                        isLiked: user?.likedProducts?.includes(getId(item)),
                       })}
                     />
                   </TouchableOpacity>
                 );
               }}
-              keyExtractor={(item) => item?._id || Math.random().toString()}
+              keyExtractor={(item) => item?.id || item?._id || Math.random().toString()}
               numColumns={numColumns}
               columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : null}
               scrollEnabled={false}
               onEndReached={() => handleLoadMore(type)}
               onEndReachedThreshold={0.5}
               ListFooterComponent={
-                loading ? (
+                isFetchingNextPage?.[type] ? (
                   <ActivityIndicator size="small" style={styles.loader} />
                 ) : null
               }
@@ -361,7 +373,6 @@
     
 
     const renderContent = () => {
-      console.log('Products data:', products); 
       if (isLoading && !products.length && !engineers.length && !shops.length) {
         return <LoadingSpinner />;
       }

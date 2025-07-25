@@ -17,10 +17,25 @@ export const useProducts = (filters = {}) => {
     refetch
   } = useInfiniteQuery({
     queryKey: ['products', filters],
-    queryFn: ({ pageParam = 1 }) =>
-      shouldUseFilters
-        ? productsAPI.filterProducts({ page: pageParam, limit: 10, ...filters })
-        : productsAPI.getProducts({ page: pageParam, limit: 10 }),
+    queryFn: async ({ pageParam = 1 }) => {
+      const params = { 
+        page: pageParam, 
+        limit: 10,
+        ...(shouldUseFilters && filters)
+      };
+      
+      const response = shouldUseFilters
+        ? await productsAPI.filterProducts(params)
+        : await productsAPI.getProducts(params);
+      
+      // Transform response to match expected structure
+      return {
+        data: response.data, // The array of products
+        currentPage: response.currentPage,
+        totalPages: response.totalPages,
+        total: response.total
+      };
+    },
     getNextPageParam: (lastPage) => {
       if (!lastPage || !lastPage.currentPage || !lastPage.totalPages) return undefined;
       return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
@@ -32,7 +47,10 @@ export const useProducts = (filters = {}) => {
   const useProduct = (id) =>
     useQuery({
       queryKey: ['product', id],
-      queryFn: () => productsAPI.getProduct(id),
+      queryFn: async () => {
+        const response = await productsAPI.getProduct(id);
+        return response.data?.[0] || null; // Return first product or null
+      },
       enabled: !!id,
     });
 
