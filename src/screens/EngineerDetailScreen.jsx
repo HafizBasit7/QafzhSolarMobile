@@ -24,7 +24,9 @@ const EngineerDetailScreen = ({ navigation, route }) => {
   const { engineerId } = route.params;
   const { t } = useTranslation();
   const { useEngineer } = useEngineers();
-  const { data: engineer, isLoading, isError, error } = useEngineer(engineerId);
+  const { data: engineerResponse, isLoading, isError, error } = useEngineer(engineerId)
+
+  const engineer = engineerResponse?.data || engineerResponse || {};
 
   const handleCall = () => Linking.openURL(`tel:${engineer?.phone}`);
   const handleWhatsApp = () => Linking.openURL(`https://wa.me/${engineer?.whatsappPhone}`);

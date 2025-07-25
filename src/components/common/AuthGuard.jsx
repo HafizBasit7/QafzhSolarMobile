@@ -1,14 +1,12 @@
 import React from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import { useNavigation } from '@react-navigation/native';
 import LoadingSpinner from './LoadingSpinner';
 
-// AuthGuard: By default, allows public access to all content (requireAuth=false)
-// Only blocks access if requireAuth=true is explicitly set
 const AuthGuard = ({ 
   children, 
-  onUnauthorized, 
-  requireAuth = false,  // Default: public access
+  requireAuth = false,
+  requireVerified = false,
   showLoading = true
 }) => {
   const { user, isLoadingUser } = useAuth();
@@ -18,23 +16,23 @@ const AuthGuard = ({
     return <LoadingSpinner />;
   }
 
-  // Only block if explicitly required AND user is not authenticated
-  if (requireAuth && !user) {
-    if (onUnauthorized) {
-      onUnauthorized();
-    } else {
-      navigation.navigate('AuthStack', {
-        screen: 'Auth',
-        params: {
-          message: 'Please sign in to continue',
-        },
-        initial: false,
-      });
-    }
+  // Block if authentication is required and user is not logged in
+  if (requireAuth && !user?.data?.user) {
+    navigation.navigate('AuthStack', {
+      screen: 'Auth',
+      params: {
+        message: 'Please sign in to continue',
+      },
+    });
     return null;
   }
 
-  // Always show content if auth isn't required
+  // Block if verification is required and user is not verified
+  if (requireVerified && (!user?.data?.user?.isVerified)) {
+    navigation.navigate('VerificationStack');
+    return null;
+  }
+
   return children;
 };
 

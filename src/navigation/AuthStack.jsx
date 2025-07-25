@@ -1,22 +1,26 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import AuthScreen from '../screens/Auth/AuthScreen';
-import OTPVerificationScreen from '../screens/Auth/OTPVerificationScreen';
+import { useTranslation } from 'react-i18next';
+
+import RegisterScreen from '../screens/Auth/RegisterScreen';
+import OtpVerif from '../screens/Auth/OtpVerif';
+import LoginScreen from '../screens/Auth/LoginScreen';
 
 const Stack = createNativeStackNavigator();
 
-const AuthStack = () => {
+export default function AuthStack() {
+  const { t } = useTranslation();
+
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: '#F8FAFC' },
       }}
     >
-      <Stack.Screen name="Auth" component={AuthScreen} />
-      <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="OtpVerif" component={OtpVerif} />
     </Stack.Navigator>
   );
-};
-
-export default AuthStack; 
+}

@@ -31,16 +31,25 @@ const MarketplaceFilter = ({ visible, onClose, onApply, initialFilters = {} }) =
   }, []);
 
   const loadGovernorates = async () => {
-    try {
-      setLoading(true);
-      const data = await governoratesAPI.getGovernorates();
-      setGovernorates(data);
-    } catch (error) {
-      showToast('error', 'Error', 'Failed to load governorates');
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+    const response = await governoratesAPI.getGovernorates();
+
+    // response = { success, message, data: [...] }
+    const data = response?.data || [];
+
+    if (!Array.isArray(data)) {
+      throw new Error('Governorates data is not an array');
     }
-  };
+
+    setGovernorates(data);
+  } catch (error) {
+    showToast('error', 'Error', 'Failed to load governorates');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const productTypes = [
     { id: 'panel', label: t('PRODUCT_TYPES.PANEL') },

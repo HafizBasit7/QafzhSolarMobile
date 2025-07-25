@@ -26,7 +26,9 @@ const ShopScreen = ({ navigation }) => {
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
   const { useShop } = useShops();
-  const { data: shop, isLoading, isError, error } = useShop(shopId);
+  const { data: shopResponse, isLoading, isError, error } = useShop(shopId);
+
+  const shop = shopResponse?.data || shopResponse || {};
 
   const handleCall = () => Linking.openURL(`tel:${shop?.phone}`);
   const handleDirections = () => {

@@ -24,6 +24,7 @@
   import { useAuth } from "../hooks/useAuth";
   import LoadingSpinner from "../components/common/LoadingSpinner";
   import { MaterialIcons, FontAwesome, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+  
 
   // Responsive dimensions
   const { width } = Dimensions.get('window');
@@ -208,7 +209,7 @@
     const renderBanner = () => (
       <View style={styles.bannerContainer}>
         <Image
-          source={{ uri: 'https://example.com/solar-banner.jpg' }} // Replace with your image URL
+          source={require('../../assets/images/solar1.jpg')} // Replace with your image URL
           style={styles.bannerImage}
           resizeMode="cover"
         />

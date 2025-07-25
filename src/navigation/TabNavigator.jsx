@@ -4,6 +4,7 @@ import { Ionicons, AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../hooks/useAuth';
 
 import MarketplaceScreen from '../screens/MarketplaceScreen';
 import CalculatorScreen from '../screens/CalculatorScreen';
@@ -29,7 +30,11 @@ const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation(); // ✅ Use i18n hook
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  
+  const isAuthenticated = !!user?.data?.user;
+  const isVerified = user?.data?.user?.isVerified;
 
   return (
     <Tab.Navigator
@@ -64,6 +69,7 @@ export default function TabNavigator() {
         tabBarHideOnKeyboard: true,
       }}
     >
+      {/* Public Routes */}
       <Tab.Screen
         name="MarketplaceTab"
         component={MarketplaceScreen}
@@ -94,9 +100,23 @@ export default function TabNavigator() {
         }}
       />
 
+      {/* Protected Routes */}
       <Tab.Screen
         name="ProductSubmissionTab"
         component={ProductSubmissionScreen}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            if (!isVerified) {
+              e.preventDefault();
+              navigation.navigate('AuthStack', {
+                screen: 'Register',
+                params: {
+                  returnScreen: 'ProductSubmission'
+                }
+              });
+            }
+          },
+        })}
         options={{
           title: '',
           tabBarIcon: ({ focused }) => (
@@ -126,6 +146,19 @@ export default function TabNavigator() {
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStack}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            if (!isAuthenticated) {
+              e.preventDefault();
+              navigation.navigate('AuthStack', {
+                screen: 'Register',
+                params: {
+                  returnScreen: 'Profile'
+                }
+              });
+            }
+          },
+        })}
         options={{
           title: t('PROFILE.TITLE'),
           tabBarIcon: ({ color, size, focused }) => (

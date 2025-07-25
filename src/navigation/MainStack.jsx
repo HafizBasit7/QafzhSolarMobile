@@ -1,9 +1,9 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
+import AuthGuard from '../components/common/AuthGuard';
 
 import TabNavigator from './TabNavigator';
 import ProductSubmissionScreen from '../screens/ProductSubmissionScreen';
-// import VerificationScreen from '../screens/VerificationScreen';
 import ShopScreen from '../screens/ShopScreen';
 import EngineerScreen from '../screens/EngineerDetailScreen';
 import CalculatorResultsScreen from '../screens/CalculatorResultsScreen';
@@ -11,9 +11,6 @@ import ProductDetailScreen from '../screens/ProductDetailScreen';
 import CalculatorScreen from '../screens/CalculatorScreen';
 import AdBannerScreen from '../screens/AdBannerScreen';
 import OTPVerificationScreen from '../screens/Auth/OTPVerificationScreen';
-
-
-
 
 const Stack = createNativeStackNavigator();
 
@@ -39,6 +36,7 @@ export default function MainStack() {
         options={{ headerShown: false }}
       />
 
+      {/* Public screens */}
       <Stack.Screen
         name="ProductDetail"
         component={ProductDetailScreen}
@@ -48,36 +46,17 @@ export default function MainStack() {
           headerShown: false,
         })}
       />
-      <Stack.Screen
-        name="ProductSubmission"
-        component={ProductSubmissionScreen}
-        options={{
-          title: t('MARKETPLACE.ADD_PRODUCT'),
-          headerBackTitle: t('MARKETPLACE.TITLE'),
-        }}
-      />
-      {/* <Stack.Screen
-        name="Verification"
-        component={VerificationScreen}
-        options={{
-          title: t('AUTH.VERIFY_PHONE'),
-          headerBackTitle: t('MARKETPLACE.ADD_PRODUCT'),
-        }}
-      /> */}
+
       <Stack.Screen
         name="Shop"
         component={ShopScreen}
-        options={{
-          headerShown: false,
-        }}
+        options={{ headerShown: false }}
       />
 
       <Stack.Screen
         name="EngineerDetail"
         component={EngineerScreen}
-        options={{
-          headerShown: false,
-        }}
+        options={{ headerShown: false }}
       />
 
       <Stack.Screen
@@ -88,6 +67,7 @@ export default function MainStack() {
           headerBackTitle: t('HOME.TITLE'),
         }}
       />
+
       <Stack.Screen
         name="CalculatorResults"
         component={CalculatorResultsScreen}
@@ -106,7 +86,25 @@ export default function MainStack() {
         })}
       />
 
-<Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
+      {/* Protected screens */}
+      <Stack.Screen
+        name="ProductSubmission"
+        options={{
+          title: t('MARKETPLACE.ADD_PRODUCT'),
+          headerBackTitle: t('MARKETPLACE.TITLE'),
+        }}
+      >
+        {() => (
+          <AuthGuard requireAuth requireVerified>
+            <ProductSubmissionScreen />
+          </AuthGuard>
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen 
+        name="OTPVerification" 
+        component={OTPVerificationScreen} 
+      />
     </Stack.Navigator>
   );
 }
