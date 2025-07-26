@@ -89,7 +89,7 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
               {formatPrice(product.price)} {product.currency}
             </Text>
             {product.isNegotiable && (
-              <Text style={styles.negotiable}>{t('PRODUCT.NEGOTIABLE')}</Text>
+              <Text style={styles.negotiable}>{t('PRODUCT.negotiable')}</Text>
             )}
           </View>
 

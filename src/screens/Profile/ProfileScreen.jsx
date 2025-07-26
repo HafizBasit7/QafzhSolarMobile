@@ -13,6 +13,15 @@ const ProfileScreen = ({ navigation }) => {
     refetchUser 
   } = useAuth();
 
+  const handleLogout = async () => {
+    try {
+      await logout();  // Call the hook's logout function
+      navigation.navigate('Login');  // Then navigate
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   // Loading state
   if (isLoadingUser) {
     return (
@@ -135,7 +144,8 @@ const ProfileScreen = ({ navigation }) => {
         
         <TouchableOpacity 
           style={[styles.actionButton, styles.logoutButton]}
-          onPress={logout}
+          onPress={handleLogout}
+          
         >
           <Feather name="log-out" size={20} color="#fff" />
           <Text style={[styles.actionButtonText, styles.logoutButtonText]}>Logout</Text>

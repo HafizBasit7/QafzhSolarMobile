@@ -6,11 +6,11 @@ import TabNavigator from './TabNavigator';
 import ProductSubmissionScreen from '../screens/ProductSubmissionScreen';
 import ShopScreen from '../screens/ShopScreen';
 import EngineerScreen from '../screens/EngineerDetailScreen';
-import CalculatorResultsScreen from '../screens/CalculatorResultsScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
-import CalculatorScreen from '../screens/CalculatorScreen';
+
 import AdBannerScreen from '../screens/AdBannerScreen';
 import OTPVerificationScreen from '../screens/Auth/OTPVerificationScreen';
+import SolarCalculator from '../screens/SolarCalculator';
 
 const Stack = createNativeStackNavigator();
 
@@ -59,18 +59,11 @@ export default function MainStack() {
         options={{ headerShown: false }}
       />
 
-      <Stack.Screen
-        name="Calculator"
-        component={CalculatorScreen}
-        options={{
-          title: t('CALCULATOR.TITLE'),
-          headerBackTitle: t('HOME.TITLE'),
-        }}
-      />
+   
 
       <Stack.Screen
-        name="CalculatorResults"
-        component={CalculatorResultsScreen}
+        name="SolarCalculator"
+        component={SolarCalculator}
         options={{
           title: t('CALCULATOR.RESULTS'),
           headerBackTitle: t('CALCULATOR.TITLE'),

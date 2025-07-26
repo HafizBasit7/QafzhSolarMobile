@@ -1,503 +1,513 @@
-import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  ScrollView, 
+  StyleSheet, 
   TouchableOpacity,
-  StyleSheet,
-  Switch
-} from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import ImageUploader from "../utils/imageUpload";
-import CurrencyPicker from "../components/CurrencyPicker";
-import { navigate } from "../navigation/navigationHelper";
-import { useTranslation } from "react-i18next";
-import { useProducts } from "../hooks/useProducts";
-import { useAuth } from "../hooks/useAuth";
-import { showToast } from "../components/common/Toast";
-import LoadingSpinner from "../components/common/LoadingSpinner";
+  Image,
+  Switch,
+  Alert
+} from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Picker } from '@react-native-picker/picker';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '../hooks/useAuth';
+import { useProducts } from '../hooks/useProducts';
 
-export default function ProductSubmissionScreen({ route, navigation }) {
+const colors = {
+  primary: '#2E7D32',
+  primaryLight: '#81C784',
+  background: '#F5F5F5',
+  white: '#FFFFFF',
+  textPrimary: '#212121',
+  border: '#E0E0E0',
+  error: '#D32F2F',
+};
+
+const ProductSubmissionScreen = ({ navigation }) => {
   const { t } = useTranslation();
-  const { user, isLoadingUser } = useAuth();
-  const { createProduct, isCreating } = useProducts();
-
-  // If loading user state, show spinner
-  if (isLoadingUser) {
-    return <LoadingSpinner />;
-  }
-
-  // User should be verified at this point due to AuthGuard
-  const [product, setProduct] = useState({
-    name: "",
-    description: "",
-    type: "",
-    condition: "New",
-    brand: "",
-    model: "",
-    price: "",
-    currency: "USD",
-    phone: user?.phone || "", // Pre-fill user's phone
-    whatsappPhone: "",
-    governorate: "",
-    city: "",
-    locationText: "",
+  const { user } = useAuth();
+  const { createProduct } = useProducts();
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    type: 'Panel',
+    condition: 'New',
+    brand: '',
+    model: '',
+    price: '',
+    currency: 'USD',
+    phone: user?.phone || '',
+    whatsappPhone: '',
+    governorate: "Sana'a",
+    city: '',
+    locationText: '',
     images: [],
     specifications: {
-      power: "",
-      voltage: "",
-      capacity: "",
-      warranty: ""
+      power: '',
+      voltage: '',
+      capacity: '',
+      warranty: ''
     },
     isNegotiable: true,
     isActive: true,
-    featured: false
+    featured: false,
+    status: 'pending'
   });
-  
-  const brands = [
-    { label: t('BRANDS.JINKO'), value: 'Jinko' },
-    { label: t('BRANDS.LONGI'), value: 'Longi' },
-    { label: t('BRANDS.HUAWEI'), value: 'Huawei' },
-    { label: t('BRANDS.TESLA'), value: 'Tesla' }
-  ];
 
-  const governorates = [
-    { label: t("GOVERNORATES.SANAA"), value: "Sana'a", cities: ["Al Wahdah", "Azal"] },
-    { label: t("GOVERNORATES.ADEN"), value: "Aden", cities: ["Crater", "Khormaksar"] }
-  ];
+  const productTypes = ['Panel', 'Inverter', 'Battery', 'Accessory'];
+  const conditions = ['New', 'Used', 'Refurbished'];
+  const currencies = ['USD', 'YER', 'SAR'];
+  const governorates = ["Sana'a", 'Aden', 'Taiz', 'Hodeidah', 'Ibb'];
 
-  const productTypes = [
-    { label: t("PRODUCT_TYPES.PANEL"), value: "Panel" },
-    { label: t("PRODUCT_TYPES.INVERTER"), value: "Inverter" },
-    { label: t("PRODUCT_TYPES.BATTERY"), value: "Battery" },
-    { label: t("PRODUCT_TYPES.ACCESSORY"), value: "Accessory" },
-  ];
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('common.permissionRequired'), t('productSubmission.photoPermission'));
+      return;
+    }
 
-  const conditions = ["New", "Used", "Refurbished"];
-
-  const [cities, setCities] = useState([]);
-
-  const handleGovernorateChange = (value) => {
-    const selectedGov = governorates.find(g => g.value === value);
-    setCities(selectedGov?.cities || []);
-    setProduct({
-      ...product,
-      governorate: value,
-      city: ""
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+      allowsMultipleSelection: true,
     });
+
+    if (!result.canceled && result.assets) {
+      setFormData({
+        ...formData,
+        images: [...formData.images, ...result.assets.map(asset => asset.uri)]
+      });
+    }
   };
 
-  const handleSpecificationChange = (key, value) => {
-    setProduct({
-      ...product,
+  const removeImage = (index) => {
+    const newImages = [...formData.images];
+    newImages.splice(index, 1);
+    setFormData({ ...formData, images: newImages });
+  };
+
+  const handleSpecChange = (field, value) => {
+    setFormData({
+      ...formData,
       specifications: {
-        ...product.specifications,
-        [key]: value
+        ...formData.specifications,
+        [field]: value
       }
     });
   };
 
   const validateForm = () => {
-    if (!product.type) return t("VALIDATION.PRODUCT_TYPE_REQUIRED");
-    if (!product.name) return t("VALIDATION.NAME_REQUIRED");
-    if (!product.price) return t("VALIDATION.PRICE_REQUIRED");
-    if (!product.brand) return t("VALIDATION.BRAND_REQUIRED");
-    if (!product.governorate) return t("VALIDATION.GOVERNORATE_REQUIRED");
-    return null;
+    if (!formData.name.trim()) {
+      Alert.alert(t('common.error'), t('productSubmission.nameRequired'));
+      return false;
+    }
+    if (!formData.price || isNaN(parseFloat(formData.price))) {
+      Alert.alert(t('common.error'), t('productSubmission.validPrice'));
+      return false;
+    }
+    // if (formData.images.length === 0) {
+    //   Alert.alert(t('common.error'), t('productSubmission.imageRequired'));
+    //   return false;
+    // }
+    return true;
   };
 
   const handleSubmit = async () => {
-    if (isCreating) return;
-
-    const error = validateForm();
-    if (error) {
-      showToast('error', 'Error', error);
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       await createProduct({
-        ...product,
-        price: parseFloat(product.price),
-        phone: user.phone, // Always use verified phone
+        ...formData,
+        price: parseFloat(formData.price),
+        userId: user._id
       });
-
-      showToast('success', 'Success', t('PRODUCT_FORM.SUCCESS_MESSAGE'));
-      navigation.navigate('MarketplaceTab');
+      
+      // Success handled in the mutation's onSuccess callback
+      navigation.goBack();
     } catch (error) {
-      showToast('error', 'Error', error.message || t('PRODUCT_FORM.SUBMIT_ERROR'));
+      // Error handled in the mutation's onError callback
+      console.error('Submission error:', error);
     }
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={styles.sectionTitle}>{t("PRODUCT_FORM.TITLE")}</Text>
-
-      {/* Product Type */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.PRODUCT_TYPE")}</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={product.type}
-            onValueChange={(value) => setProduct({ ...product, type: value })}
-            dropdownIconColor="#16A34A"
-            mode="dropdown"
-            style={styles.picker}
-          >
-            <Picker.Item label={t("PRODUCT_FORM.SELECT_TYPE")} value="" />
-            {productTypes.map((item) => (
-              <Picker.Item key={item.value} label={item.label} value={item.value} />
-            ))}
-          </Picker>
-        </View>
-      </View>
-
-      {/* Condition */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.CONDITION")}</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={product.condition}
-            onValueChange={(value) => setProduct({ ...product, condition: value })}
-          >
-            {conditions.map((cond) => (
-              <Picker.Item key={cond} label={cond} value={cond} />
-            ))}
-          </Picker>
-        </View>
-      </View>
-
-      {/* Name */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.NAME")}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.name}
-          onChangeText={(text) => setProduct({ ...product, name: text })}
-          placeholder={t("PRODUCT_FORM.NAME_PLACEHOLDER")}
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>{t('productSubmission.title')}</Text>
+      
+      {/* Basic Information Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('productSubmission.basicInfo')}</Text>
+        
+        <InputField
+          label={`${t('productSubmission.name')} *`}
+          value={formData.name}
+          onChangeText={(text) => setFormData({...formData, name: text})}
+          placeholder={t('productSubmission.namePlaceholder')}
         />
-      </View>
-
-      {/* Description */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.DESCRIPTION")}</Text>
-        <TextInput
-          style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+        
+        <InputField
+          label={t('productSubmission.description')}
+          value={formData.description}
+          onChangeText={(text) => setFormData({...formData, description: text})}
+          placeholder={t('productSubmission.descriptionPlaceholder')}
           multiline
-          value={product.description}
-          onChangeText={(text) => setProduct({ ...product, description: text })}
-          placeholder={t("PRODUCT_FORM.DESCRIPTION_PLACEHOLDER")}
+          numberOfLines={4}
+        />
+        
+        <DropdownField
+          label={t('productSubmission.type')}
+          selectedValue={formData.type}
+          onValueChange={(itemValue) => setFormData({...formData, type: itemValue})}
+          items={productTypes}
+        />
+        
+        <DropdownField
+          label={t('productSubmission.condition')}
+          selectedValue={formData.condition}
+          onValueChange={(itemValue) => setFormData({...formData, condition: itemValue})}
+          items={conditions}
+        />
+        
+        <InputField
+          label={t('productSubmission.brand')}
+          value={formData.brand}
+          onChangeText={(text) => setFormData({...formData, brand: text})}
+          placeholder={t('productSubmission.brandPlaceholder')}
+        />
+        
+        <InputField
+          label={t('productSubmission.model')}
+          value={formData.model}
+          onChangeText={(text) => setFormData({...formData, model: text})}
+          placeholder={t('productSubmission.modelPlaceholder')}
         />
       </View>
-
-      {/* Brand */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.BRAND")}</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={product.brand}
-            onValueChange={(value) => setProduct({ ...product, brand: value })}
-          >
-            <Picker.Item label={t("PRODUCT_FORM.SELECT_BRAND")} value="" />
-            {brands.map((brand) => (
-              <Picker.Item key={brand.value} label={brand.label} value={brand.value} />
-            ))}
-          </Picker>
-        </View>
-      </View>
-
-      {/* Model */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.MODEL")}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.model}
-          onChangeText={(text) => setProduct({ ...product, model: text })}
-          placeholder={t("PRODUCT_FORM.MODEL_PLACEHOLDER")}
-        />
-      </View>
-
-      {/* Price */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.PRICE")}</Text>
-        <View style={styles.priceInputContainer}>
-          <TextInput
-            style={styles.priceInput}
-            keyboardType="numeric"
-            value={product.price}
-            onChangeText={(text) => setProduct({ ...product, price: text })}
-            placeholder={t("PRODUCT_FORM.PRICE_PLACEHOLDER")}
-          />
-          <CurrencyPicker
-            selected={product.currency}
-            onSelect={(currency) => setProduct({ ...product, currency })}
-          />
-        </View>
-      </View>
-
-      {/* Phone */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.PHONE")}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.phone}
-          onChangeText={(text) => setProduct({ ...product, phone: text })}
-          placeholder={t("PRODUCT_FORM.PHONE_PLACEHOLDER")}
-          keyboardType="phone-pad"
-        />
-      </View>
-
-      {/* WhatsApp Phone */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.WHATSAPP_PHONE")}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.whatsappPhone}
-          onChangeText={(text) => setProduct({ ...product, whatsappPhone: text })}
-          placeholder={t("PRODUCT_FORM.WHATSAPP_PHONE_PLACEHOLDER")}
-          keyboardType="phone-pad"
-        />
-      </View>
-
-      {/* Governorate */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.GOVERNORATE")}</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={product.governorate}
-            onValueChange={handleGovernorateChange}
-          >
-            <Picker.Item label={t("PRODUCT_FORM.SELECT_GOVERNORATE")} value="" />
-            {governorates.map((gov) => (
-              <Picker.Item key={gov.value} label={gov.label} value={gov.value} />
-            ))}
-          </Picker>
-        </View>
-      </View>
-
-      {/* City */}
-      {product.governorate && (
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>{t("PRODUCT_FORM.CITY")}</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={product.city}
-              onValueChange={(value) => setProduct({ ...product, city: value })}
-            >
-              <Picker.Item label={t("PRODUCT_FORM.SELECT_CITY")} value="" />
-              {cities.map((city) => (
-                <Picker.Item key={city} label={city} value={city} />
-              ))}
-            </Picker>
+      
+      {/* Pricing Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('productSubmission.pricing')}</Text>
+        
+        <View style={styles.row}>
+          <View style={{ flex: 0.7 }}>
+            <InputField
+              label={`${t('productSubmission.price')} *`}
+              value={formData.price}
+              onChangeText={(text) => setFormData({...formData, price: text})}
+              placeholder="0.00"
+              keyboardType="numeric"
+            />
+          </View>
+          <View style={{ flex: 0.3 }}>
+            <DropdownField
+              selectedValue={formData.currency}
+              onValueChange={(itemValue) => setFormData({...formData, currency: itemValue})}
+              items={currencies}
+            />
           </View>
         </View>
-      )}
-
-      {/* Location Text */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.LOCATION_TEXT")}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.locationText}
-          onChangeText={(text) => setProduct({ ...product, locationText: text })}
-          placeholder={t("PRODUCT_FORM.LOCATION_TEXT_PLACEHOLDER")}
+        
+        <ToggleField
+          label={t('productSubmission.negotiable')}
+          value={formData.isNegotiable}
+          onValueChange={(value) => setFormData({...formData, isNegotiable: value})}
         />
       </View>
-
-      {/* Specifications */}
-      <Text style={[styles.label, { marginTop: 20 }]}>{t("PRODUCT_FORM.SPECIFICATIONS")}</Text>
       
-      {/* Power */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.POWER")}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.specifications.power}
-          onChangeText={(text) => handleSpecificationChange("power", text)}
-          placeholder={t("PRODUCT_FORM.POWER_PLACEHOLDER")}
+      {/* Contact Information */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('productSubmission.contactInfo')}</Text>
+        
+        <InputField
+          label={t('productSubmission.phone')}
+          value={formData.phone}
+          onChangeText={(text) => setFormData({...formData, phone: text})}
+          placeholder={t('productSubmission.phonePlaceholder')}
+          keyboardType="phone-pad"
+        />
+        
+        <InputField
+          label={t('productSubmission.whatsapp')}
+          value={formData.whatsappPhone}
+          onChangeText={(text) => setFormData({...formData, whatsappPhone: text})}
+          placeholder={t('productSubmission.whatsappPlaceholder')}
+          keyboardType="phone-pad"
         />
       </View>
-
-      {/* Voltage */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.VOLTAGE")}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.specifications.voltage}
-          onChangeText={(text) => handleSpecificationChange("voltage", text)}
-          placeholder={t("PRODUCT_FORM.VOLTAGE_PLACEHOLDER")}
+      
+      {/* Location Information */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('productSubmission.location')}</Text>
+        
+        <DropdownField
+          label={t('productSubmission.governorate')}
+          selectedValue={formData.governorate}
+          onValueChange={(itemValue) => setFormData({...formData, governorate: itemValue})}
+          items={governorates}
+        />
+        
+        <InputField
+          label={t('productSubmission.city')}
+          value={formData.city}
+          onChangeText={(text) => setFormData({...formData, city: text})}
+          placeholder={t('productSubmission.cityPlaceholder')}
+        />
+        
+        <InputField
+          label={t('productSubmission.locationText')}
+          value={formData.locationText}
+          onChangeText={(text) => setFormData({...formData, locationText: text})}
+          placeholder={t('productSubmission.locationPlaceholder')}
         />
       </View>
-
-      {/* Capacity */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.CAPACITY")}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.specifications.capacity}
-          onChangeText={(text) => handleSpecificationChange("capacity", text)}
-          placeholder={t("PRODUCT_FORM.CAPACITY_PLACEHOLDER")}
+      
+      {/* Specifications */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('productSubmission.specifications')}</Text>
+        
+        <InputField
+          label={t('productSubmission.power')}
+          value={formData.specifications.power}
+          onChangeText={(text) => handleSpecChange('power', text)}
+          placeholder="550W"
+        />
+        
+        <InputField
+          label={t('productSubmission.voltage')}
+          value={formData.specifications.voltage}
+          onChangeText={(text) => handleSpecChange('voltage', text)}
+          placeholder="41V"
+        />
+        
+        <InputField
+          label={t('productSubmission.warranty')}
+          value={formData.specifications.warranty}
+          onChangeText={(text) => handleSpecChange('warranty', text)}
+          placeholder="12 Years"
         />
       </View>
-
-      {/* Warranty */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{t("PRODUCT_FORM.WARRANTY")}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.specifications.warranty}
-          onChangeText={(text) => handleSpecificationChange("warranty", text)}
-          placeholder={t("PRODUCT_FORM.WARRANTY_PLACEHOLDER")}
-        />
-      </View>
-
-      {/* Toggle Switches */}
-      <View style={styles.toggleContainer}>
-        <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>{t("PRODUCT_FORM.NEGOTIABLE")}</Text>
-          <Switch
-            value={product.isNegotiable}
-            onValueChange={(value) => setProduct({ ...product, isNegotiable: value })}
-            trackColor={{ false: "#767577", true: "#16A34A" }}
-          />
+      
+      {/* Images Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('productSubmission.images')}</Text>
+        <Text style={styles.hintText}>{t('productSubmission.imagesHint')}</Text>
+        
+        <View style={styles.imageContainer}>
+          {formData.images.map((uri, index) => (
+            <View key={index} style={styles.imageWrapper}>
+              <Image source={{ uri }} style={styles.image} />
+              <TouchableOpacity 
+                style={styles.removeImageButton}
+                onPress={() => removeImage(index)}
+              >
+                <AntDesign name="close" size={16} color="white" />
+              </TouchableOpacity>
+            </View>
+          ))}
+          
+          {formData.images.length < 5 && (
+            <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
+              <Ionicons name="add" size={24} color={colors.primary} />
+              <Text style={styles.addImageText}>{t('productSubmission.addImage')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>{t("PRODUCT_FORM.ACTIVE")}</Text>
-          <Switch
-            value={product.isActive}
-            onValueChange={(value) => setProduct({ ...product, isActive: value })}
-            trackColor={{ false: "#767577", true: "#16A34A" }}
-          />
-        </View>
-        <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>{t("PRODUCT_FORM.FEATURED")}</Text>
-          <Switch
-            value={product.featured}
-            onValueChange={(value) => setProduct({ ...product, featured: value })}
-            trackColor={{ false: "#767577", true: "#16A34A" }}
-          />
-        </View>
       </View>
-
-      {/* Image Uploader */}
-      <ImageUploader
-        images={product.images}
-        onImagesChange={(images) => setProduct({ ...product, images })}
-      />
-
+      
       {/* Submit Button */}
-      <TouchableOpacity
-        style={[styles.submitButton, isCreating && styles.disabledButton]}
+      <TouchableOpacity 
+        style={styles.submitButton}
         onPress={handleSubmit}
-        disabled={isCreating}
+        disabled={createProduct.isLoading}
       >
-        <Text style={styles.submitButtonText}>
-          {isCreating ? t("COMMON.SUBMITTING") : t("COMMON.SUBMIT")}
-        </Text>
+        {createProduct.isLoading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.submitButtonText}>
+            {t('productSubmission.submit')}
+          </Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
-}
+};
+
+
+// Reusable components
+const InputField = ({ label, ...props }) => (
+  <View style={styles.inputContainer}>
+    <Text style={styles.label}>{label}</Text>
+    <TextInput style={styles.input} {...props} />
+  </View>
+);
+
+const DropdownField = ({ label, selectedValue, onValueChange, items }) => (
+  <View style={styles.inputContainer}>
+    <Text style={styles.label}>{label}</Text>
+    <View style={styles.pickerContainer}>
+      <Picker
+        selectedValue={selectedValue}
+        onValueChange={onValueChange}
+        style={styles.picker}
+        dropdownIconColor={colors.primary}
+      >
+        {items.map(item => (
+          <Picker.Item key={item} label={item} value={item} />
+        ))}
+      </Picker>
+    </View>
+  </View>
+);
+
+const ToggleField = ({ label, value, onValueChange }) => (
+  <View style={styles.toggleContainer}>
+    <Text style={styles.label}>{label}</Text>
+    <Switch
+      trackColor={{ false: colors.gray, true: colors.primaryLight }}
+      thumbColor={value ? colors.primary : colors.lightGray}
+      onValueChange={onValueChange}
+      value={value}
+    />
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
-    padding: 20,
+    padding: 16,
+    backgroundColor: colors.background,
   },
-  content: {
-    paddingBottom: 100,
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 24,
+    textAlign: 'center',
   },
-  formGroup: {
-    marginBottom: 20,
+  section: {
+    marginBottom: 24,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.primary,
+    marginBottom: 16,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  input: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    color: colors.textPrimary,
+    backgroundColor: colors.white,
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     borderRadius: 8,
-    overflow: "hidden",
-    backgroundColor: "white",
-    marginTop: 8,
+    overflow: 'hidden',
   },
   picker: {
-    width: '100%',
-    color: '#1E293B',
+    height: 48,
+    color: colors.textPrimary,
   },
-  label: {
-    fontFamily: "Tajawal-Medium",
-    color: "#475569",
-    fontSize: 16,
-    textAlign: "right",
-    marginBottom: 4,
-  },
-  input: {
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 8,
-    padding: 12,
-    fontFamily: "Tajawal-Regular",
-    textAlign: "right",
-    marginTop: 8,
-  },
-  priceInputContainer: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  priceInput: {
-    flex: 1,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 8,
-    padding: 12,
-    fontFamily: "Tajawal-Regular",
-    textAlign: "right",
-    marginLeft: 8,
-  },
-  submitButton: {
-    backgroundColor: "#16A34A",
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 24,
-  },
-  disabledButton: {
-    backgroundColor: "#94A3B8",
-  },
-  submitButtonText: {
-    color: "white",
-    fontFamily: "Tajawal-Bold",
-    fontSize: 16,
-  },
-  sectionTitle: {
-    fontFamily: "Tajawal-Bold",
-    fontSize: 20,
-    color: "#1E293B",
-    textAlign: "right",
-    marginBottom: 24,
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   toggleContainer: {
-    marginVertical: 20,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-  },
-  toggleRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
+  },
+  imageContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  imageWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: colors.error,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addImageButton: {
+    width: 100,
+    height: 100,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addImageText: {
+    marginTop: 8,
+    color: colors.primary,
+    fontSize: 12,
+  },
+  hintText: {
+    fontSize: 12,
+    color: colors.textHint,
     marginBottom: 12,
   },
-  toggleLabel: {
-    fontFamily: "Tajawal-Medium",
-    color: "#475569",
+  submitButton: {
+    backgroundColor: colors.primary,
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 32,
+  },
+  submitButtonDisabled: {
+    backgroundColor: colors.primaryLight,
+  },
+  submitButtonText: {
+    color: colors.white,
     fontSize: 16,
-  }
+    fontWeight: '600',
+  },
 });
+
+export default ProductSubmissionScreen;

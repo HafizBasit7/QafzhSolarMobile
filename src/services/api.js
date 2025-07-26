@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { showToast } from '../components/common/Toast';
 
-const BASE_URL = 'http://192.168.100.26:5005/api/v1'; // OfficeIP
+// const BASE_URL = 'http://192.168.100.26:5005/api/v1'; // OfficeIP
+const BASE_URL = 'http://192.168.1.6:5005/api/v1'; //HomeIP
+
 
 // Create Axios instance
 export const api = axios.create({
@@ -40,7 +42,7 @@ api.interceptors.response.use(
     const message = error.response?.data?.message || 'Something went wrong';
 
     if (error.response?.status === 401) {
-      showToast('error', 'Session Expired', 'Please login again');
+      // showToast('error', 'Session Expired', 'Please login again');
     } else if (!error.response) {
       showToast('error', 'Network Error', 'Please check your internet connection');
     } else {

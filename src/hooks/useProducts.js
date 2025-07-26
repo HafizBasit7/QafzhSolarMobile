@@ -5,6 +5,7 @@ import { showToast } from '../components/common/Toast';
 export const useProducts = (filters = {}) => {
   const queryClient = useQueryClient();
   const shouldUseFilters = !!filters?.search_keyword?.trim();
+  const isUserProducts = !!filters?.user_id; // New flag for user products
 
   const {
     data,
@@ -24,11 +25,19 @@ export const useProducts = (filters = {}) => {
         ...(shouldUseFilters && filters)
       };
       
-      const response = shouldUseFilters
-        ? await productsAPI.filterProducts(params)
-        : await productsAPI.getProducts(params);
+      // Determine which API endpoint to call based on filters
+      let response;
+      if (isUserProducts) {
+        // Fetch only user's products
+        response = await productsAPI.getUserProducts(filters.user_id, params);
+      } else if (shouldUseFilters) {
+        // Fetch filtered products
+        response = await productsAPI.filterProducts(params);
+      } else {
+        // Fetch all products
+        response = await productsAPI.getProducts(params);
+      }
       
-      // Transform response to match expected structure
       return {
         data: response.data, // The array of products
         currentPage: response.currentPage,

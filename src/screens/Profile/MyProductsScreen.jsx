@@ -1,92 +1,139 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import { MaterialIcons, AntDesign } from '@expo/vector-icons';
-import i18n from '../../config/i18n';
+import React, { useState } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useAuth } from '../../hooks/useAuth';
+import { useProducts } from '../../hooks/useProducts';
+import ProductCard from '../../components/ProductCard';
+import EmptyState from '../../components/EmptyState';
 
-// Mock data for user's products
-const mockProducts = [
-  {
-    id: '1',
-    title: 'Vintage Polaroid Camera',
-    price: '$75',
-    image: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-    status: 'Active',
-    views: 124,
-    date: 'Posted 3 days ago'
-  },
-  {
-    id: '2',
-    title: 'Leather Backpack',
-    price: '$120',
-    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-    status: 'Sold',
-    views: 89,
-    date: 'Posted 2 weeks ago'
-  },
-  {
-    id: '3',
-    title: 'Wooden Coffee Table',
-    price: '$150',
-    image: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-    status: 'Pending',
-    views: 56,
-    date: 'Posted 1 month ago'
-  },
-];
+const MyProductsScreen = () => {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const navigation = useNavigation();
+  const [refreshing, setRefreshing] = useState(false);
 
-const MyProductsScreen = ({ navigation }) => {
+  const { 
+    products, 
+    isLoading, 
+    isError, 
+    error,
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage,
+    refetch,
+    deleteProduct,
+    isDeleting
+  } = useProducts({ user_id: user?._id });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  const handleDelete = (productId) => {
+    Alert.alert(
+      t('COMMON.CONFIRM_DELETE'),
+      t('PRODUCT.DELETE_CONFIRMATION'),
+      [
+        {
+          text: t('COMMON.CANCEL'),
+          style: 'cancel'
+        },
+        { 
+          text: t('COMMON.DELETE'), 
+          onPress: () => deleteProduct(productId),
+          style: 'destructive'
+        }
+      ]
+    );
+  };
+
+  const handleEdit = (productId) => {
+    navigation.navigate('EditProduct', { productId });
+  };
+
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.productCard}>
-      <Image source={{ uri: item.image }} style={styles.productImage} />
-      <View style={styles.productDetails}>
-        <Text style={styles.productTitle}>{item.title}</Text>
-        <Text style={styles.productPrice}>{item.price}</Text>
-        <View style={styles.productMeta}>
-          <View style={[styles.statusBadge, item.status === 'Sold' ? styles.soldBadge : styles.activeBadge]}>
-            <Text style={styles.statusText}>{item.status}</Text>
-          </View>
-          <Text style={styles.productViews}>{item.views} views</Text>
-        </View>
-        <Text style={styles.productDate}>{item.date}</Text>
+    <View style={styles.productContainer}>
+      <ProductCard product={item} />
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => handleEdit(item._id)}
+        >
+          <MaterialIcons name="edit" size={24} color="#3B82F6" />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => handleDelete(item._id)}
+          disabled={isDeleting}
+        >
+          {isDeleting ? (
+            <ActivityIndicator size="small" color="#EF4444" />
+          ) : (
+            <MaterialIcons name="delete" size={24} color="#EF4444" />
+          )}
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.editButton}>
-        <AntDesign name="edit" size={20} color="#5e72e4" />
-      </TouchableOpacity>
-    </TouchableOpacity>
+    </View>
   );
+
+  const renderFooter = () => {
+    if (!hasNextPage) return null;
+    return (
+      <View style={styles.footer}>
+        {isFetchingNextPage && <ActivityIndicator size="large" color="#16A34A" />}
+      </View>
+    );
+  };
+
+  if (isLoading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#16A34A" />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <EmptyState 
+        icon="error"
+        title={t('COMMON.ERROR')}
+        message={error?.message || t('COMMON.SOMETHING_WENT_WRONG')}
+        actionText={t('COMMON.RETRY')}
+        onAction={refetch}
+      />
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <EmptyState 
+        icon="inventory"
+        title={t('PRODUCT.NO_PRODUCTS_TITLE')}
+        message={t('PRODUCT.NO_PRODUCTS_MESSAGE')}
+        actionText={t('PRODUCT.ADD_FIRST_PRODUCT')}
+        onAction={() => navigation.navigate('ProductSubmission')}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back" size={24} color="#5e72e4" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{i18n.t('PROFILE.MY_PRODUCTS')}</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('AddProduct')}>
-          <MaterialIcons name="add" size={28} color="#5e72e4" />
-        </TouchableOpacity>
-      </View>
-      
-      {mockProducts.length > 0 ? (
-        <FlatList
-          data={mockProducts}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContainer}
-        />
-      ) : (
-        <View style={styles.emptyState}>
-          <MaterialIcons name="inventory" size={48} color="#adb5bd" />
-          <Text style={styles.emptyText}>No products listed yet</Text>
-          <Text style={styles.emptySubtext}>Add your first product to get started</Text>
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={() => navigation.navigate('AddProduct')}
-          >
-            <Text style={styles.addButtonText}>Add Product</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <FlatList
+        data={products}
+        renderItem={renderItem}
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={styles.listContent}
+        onEndReached={() => hasNextPage && fetchNextPage()}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+      />
     </View>
   );
 };
@@ -94,122 +141,41 @@ const MyProductsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F5F5F5',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  listContent: {
     padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    paddingBottom: 32,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: 'Tajawal-Bold',
-    color: '#32325d',
-  },
-  listContainer: {
-    padding: 16,
-  },
-  productCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
+  productContainer: {
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
-  productImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  productDetails: {
-    flex: 1,
-  },
-  productTitle: {
-    fontSize: 16,
-    fontFamily: 'Tajawal-Bold',
-    color: '#32325d',
-    marginBottom: 4,
-  },
-  productPrice: {
-    fontSize: 14,
-    fontFamily: 'Tajawal-Bold',
-    color: '#5e72e4',
-    marginBottom: 8,
-  },
-  productMeta: {
+  actionsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+    justifyContent: 'space-around',
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  activeBadge: {
-    backgroundColor: '#d4edda',
-  },
-  soldBadge: {
-    backgroundColor: '#f8d7da',
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: 'Tajawal-Medium',
-  },
-  productViews: {
-    fontSize: 12,
-    fontFamily: 'Tajawal-Regular',
-    color: '#6e6e6e',
-  },
-  productDate: {
-    fontSize: 12,
-    fontFamily: 'Tajawal-Regular',
-    color: '#adb5bd',
-  },
-  editButton: {
+  actionButton: {
     padding: 8,
-    alignSelf: 'flex-start',
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
+  footer: {
+    padding: 16,
     alignItems: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontFamily: 'Tajawal-Bold',
-    color: '#32325d',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    fontFamily: 'Tajawal-Regular',
-    color: '#6e6e6e',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  addButton: {
-    backgroundColor: '#5e72e4',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontFamily: 'Tajawal-Medium',
-    color: '#fff',
   },
 });
 

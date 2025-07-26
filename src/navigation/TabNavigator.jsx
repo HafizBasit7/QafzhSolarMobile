@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 
 import MarketplaceScreen from '../screens/MarketplaceScreen';
-import CalculatorScreen from '../screens/CalculatorScreen';
+import SolarCalculator from '../screens/SolarCalculator';
 import ProductSubmissionScreen from '../screens/ProductSubmissionScreen';
 import AdsScreen from '../screens/AdsScreen';
 import ProfileStack from './ProfileStack';
@@ -87,8 +87,8 @@ export default function TabNavigator() {
 
       {/* Calculator - Available to all */}
       <Tab.Screen
-        name="CalculatorTab"
-        component={CalculatorScreen}
+        name="SolarCalculator"
+        component={SolarCalculator}
         options={{
           title: t('CALCULATOR.TITLE'),
           tabBarIcon: ({ color, size, focused }) => (
