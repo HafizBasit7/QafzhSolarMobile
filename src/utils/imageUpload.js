@@ -1,37 +1,36 @@
-import * as ImagePicker from 'expo-image-picker';
+// utils/uploadAPI.js
+import axios from 'axios';
 
-export const pickImageFromGallery = async () => {
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== 'granted') {
-    alert('Permission denied!');
-    return;
-  }
+export const uploadAPI = {
+  uploadImage: async (uri, filename, mimetype) => {
+    try {
+      // Convert the image URI to a blob
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      
+      // Create FormData
+      const formData = new FormData();
+      formData.append('file', blob, {
+        name: filename,
+        type: mimetype,
+      });
 
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    quality: 1,
-  });
+      // Make the upload request
+      const uploadResponse = await axios.post(
+        'https://srv694651.hstgr.cloud/storage/upload',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'x-api-key': 'ayzenn09876@'
+          }
+        }
+      );
 
-  if (!result.canceled) {
-    return result.assets[0].uri;
+      return uploadResponse.data;
+    } catch (error) {
+      console.error('Image upload error:', error);
+      throw error;
+    }
   }
 };
-
-export const pickImageFromCamera = async () => {
-  const { status } = await ImagePicker.requestCameraPermissionsAsync();
-  if (status !== 'granted') {
-    alert('Camera permission denied!');
-    return;
-  }
-
-  const result = await ImagePicker.launchCameraAsync({
-    allowsEditing: true,
-    quality: 1,
-  });
-
-  if (!result.canceled) {
-    return result.assets[0].uri;
-  }
-};
-

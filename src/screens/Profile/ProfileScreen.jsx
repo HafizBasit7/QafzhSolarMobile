@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIn
 import { MaterialIcons, Feather, AntDesign } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { showToast } from '../../components/common/Toast';
-
+import { useProducts} from "../../hooks/useProducts"
 const ProfileScreen = ({ navigation }) => {
   const { 
     user, 
@@ -13,17 +13,50 @@ const ProfileScreen = ({ navigation }) => {
     refetchUser 
   } = useAuth();
 
+  const { 
+    products: userProducts, 
+    isLoading: isLoadingProducts,
+    refetch: refetchProducts
+  } = useProducts({ user_id: user?.data?.user?._id });
+
+  // Get all liked products (you'll need to implement this in your API)
+  const { 
+    products: likedProducts,
+    isLoading: isLoadingLikes
+  } = useProducts({ liked_by: user?.data?.user?._id });
+
+
+  // const handleLogout = async () => {
+  //   try {
+  //     await logout();
+      
+  //     // Reset to RootNavigator → AuthStack → Login
+  //     navigation.reset({
+  //       index: 0,
+  //       routes: [{
+  //         name: 'RootNavigator',
+  //         state: {
+  //           routes: [{ name: 'AuthStack' }], // Forces AuthStack to be active
+  //         },
+  //       }],
+  //     });
+  //   } catch (error) {
+  //     console.error('Logout error:', error);
+  //   }
+  // };
   const handleLogout = async () => {
     try {
-      await logout();  // Call the hook's logout function
-      navigation.navigate('Login');  // Then navigate
+      await logout();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'AuthStack' }],
+      });
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
-
   // Loading state
-  if (isLoadingUser) {
+  if (isLoadingUser || isLoadingProducts || isLoadingLikes) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#22C55E" />
@@ -50,6 +83,9 @@ const ProfileScreen = ({ navigation }) => {
 
   // Extract user data from the response structure
   const userData = user.data.user;
+  const productCount = userProducts?.length || 0;
+  const likedCount = likedProducts?.length || 0;
+
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -101,15 +137,23 @@ const ProfileScreen = ({ navigation }) => {
       </View>
 
       {/* Stats Section */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>0</Text>
+ <View style={styles.statsContainer}>
+        <TouchableOpacity 
+          style={styles.statItem}
+          onPress={() => navigation.navigate('MyProducts')}
+        >
+          <Text style={styles.statNumber}>{productCount}</Text>
           <Text style={styles.statLabel}>Products</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>0</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.statItem}
+          onPress={() => navigation.navigate('LikedPosts')}
+        >
+          <Text style={styles.statNumber}>{likedCount}</Text>
           <Text style={styles.statLabel}>Liked</Text>
-        </View>
+        </TouchableOpacity>
+        
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>{userData.isVerified ? 'Yes' : 'No'}</Text>
           <Text style={styles.statLabel}>Verified</Text>

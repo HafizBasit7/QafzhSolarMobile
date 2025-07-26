@@ -71,7 +71,19 @@ export const useProducts = (filters = {}) => {
       showToast('success', 'Success', 'Product created successfully');
     },
     onError: (error) => {
-      showToast('error', 'Creation Failed', error.response?.data?.message || 'Failed to create product');
+      console.log('Full error:', error); // Debug
+      console.log('Error response:', error.response); // Debug
+      
+      let errorMessage = 'Failed to create product';
+      if (error.response) {
+        errorMessage = error.response.data?.message || 
+                     error.response.data?.error || 
+                     JSON.stringify(error.response.data);
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      showToast('error', 'Creation Failed', errorMessage);
     },
   });
 
@@ -90,14 +102,31 @@ export const useProducts = (filters = {}) => {
 
   // Delete product
   const deleteProductMutation = useMutation({
-    mutationFn: productsAPI.deleteProduct,
+    mutationFn: async (id) => {
+      const response = await productsAPI.deleteProduct(id);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['products']);
-      showToast('success', 'Success', 'Product deleted successfully');
+      showToast('success', 'Deleted', 'Product removed successfully');
+      navigation.goBack();
     },
     onError: (error) => {
-      showToast('error', 'Deletion Failed', error.response?.data?.message || 'Failed to delete product');
-    },
+      console.error('Delete error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
+  
+      const serverMessage = error.response?.data?.msg;
+      const errorDetails = error.response?.data?.error;
+      
+      showToast(
+        'error', 
+        'Deletion Failed', 
+        serverMessage || errorDetails || error.message
+      );
+    }
   });
 
   // Like product

@@ -110,7 +110,7 @@ export default function TabNavigator() {
             if (!isVerified) {
               e.preventDefault();
               navigation.navigate('AuthStack', {
-                screen: 'Register',
+                screen: 'Login',
                 params: {
                   returnScreen: 'ProductSubmission'
                 }

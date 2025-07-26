@@ -16,6 +16,7 @@ import { AntDesign, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../hooks/useAuth';
 import { useProducts } from '../hooks/useProducts';
+import { governorates } from '../../data/governorates'
 
 const colors = {
   primary: '#2E7D32',
@@ -62,6 +63,7 @@ const ProductSubmissionScreen = ({ navigation }) => {
   const conditions = ['New', 'Used', 'Refurbished'];
   const currencies = ['USD', 'YER', 'SAR'];
   const governorates = ["Sana'a", 'Aden', 'Taiz', 'Hodeidah', 'Ibb'];
+  const cities = ["Crater", "Mualla", "Tawahi", "Sheikh Othman", "Mansoura", "Dar Saad", "Al Buraiqa", "Khour Maksar"]
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -129,7 +131,7 @@ const ProductSubmissionScreen = ({ navigation }) => {
       });
       
       // Success handled in the mutation's onSuccess callback
-      navigation.goBack();
+      // navigation.goBack();
     } catch (error) {
       // Error handled in the mutation's onError callback
       console.error('Submission error:', error);
@@ -251,11 +253,12 @@ const ProductSubmissionScreen = ({ navigation }) => {
           items={governorates}
         />
         
-        <InputField
+        <DropdownField
           label={t('productSubmission.city')}
-          value={formData.city}
-          onChangeText={(text) => setFormData({...formData, city: text})}
+          selectedValue={formData.city}
+          onValueChange={(cities) => setFormData({...formData, city: cities})}
           placeholder={t('productSubmission.cityPlaceholder')}
+          items={cities}
         />
         
         <InputField

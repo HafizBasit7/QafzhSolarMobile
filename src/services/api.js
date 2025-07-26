@@ -53,42 +53,47 @@ api.interceptors.response.use(
   }
 );
 
+
+
 // Auth API endpoints
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   verifyOTP: (phone, otp) => api.post(`/auth/verify-otp/${phone}`, { otp }),
   requestOTP: (phone) => api.post('/auth/request-otp', { phone }),
-  updateProfile: (data) => api.patch('/auth/profile', data),
+  updateProfile: (data) => api.patch('/auth/update-profile', data),
   getProfile: () => api.get('/auth/profile'),
   logout: () => api.post('/auth/logout'),
 };
 
+
+
 // Products API
 export const productsAPI = {
   getProducts: (params) => api.get('/marketplace/browse-products', { params }),
-  createProduct: (data) => {
-    const formData = new FormData();
-    Object.keys(data).forEach(key => {
-      if (key === 'images') {
-        data[key].forEach((image, index) => {
-          formData.append('images', {
-            uri: image,
-            type: 'image/jpeg',
-            name: `image${index}.jpg`
-          });
-        });
-      } else {
-        formData.append(key, data[key]);
-      }
-    });
-    return api.post('/products/post', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+
+
+  createProduct: async (productData) => {
+    // 1. Upload images first
+    const imageUrls = await Promise.all(
+      productData.images.map(async (image) => {
+        const response = await uploadAPI.uploadImage(
+          image.uri,
+          image.name,
+          image.type
+        );
+        return response.data.fileUrl; // Adjust based on your API response
+      })
+    );
+
+    // 2. Create product with image URLs
+    return api.post('/products/post', {
+      ...productData,
+      images: imageUrls, // Replace local URIs with cloud URLs
     });
   },
-  updateProduct: (id, data) => api.patch(`/products/${id}`, data),
-  deleteProduct: (id) => api.delete(`/products/${id}`),
+  getUserProducts: (userId, params) => api.get(`/products/user-products/${userId}`, { params }),
+  updateProduct: (id, data) => api.patch(`/products/update-products${id}`, data),
+  deleteProduct: (id) => api.delete(`products/delete-product/${id}`),
   likeProduct: (id) => api.post(`/products/${id}/like`),
   unlikeProduct: (id) => api.delete(`/products/${id}/like`),
 };
