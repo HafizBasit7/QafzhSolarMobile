@@ -11,15 +11,15 @@ import { useTranslation } from "react-i18next";
 import { useFocusEffect } from "@react-navigation/native";
 
 const defaultAppliances = [
-  { name: "calculator.appliances.light", key: "lights", watt: 12 },
-  { name: "calculator.appliances.fan", key: "fans", watt: 70 },
+  { name: "CALCULATOR.APPLIANCES.LIGHT", key: "lights", watt: 12 },
+  { name: "CALCULATOR.APPLIANCES.FAN", key: "fans", watt: 70 },
   {
-    name: "calculator.appliances.refrigerator",
+    name: "CALCULATOR.APPLIANCES.REFRIGERATOR",
     key: "refrigerator",
     watt: 200,
   },
-  { name: "calculator.appliances.iron", key: "iron", watt: 1200 },
-  { name: "calculator.appliances.other", key: "other", watt: 0 },
+  { name: "CALCULATOR.APPLIANCES.IRON", key: "iron", watt: 1200 },
+  { name: "CALCULATOR.APPLIANCES.OTHER", key: "other", watt: 0 },
 ];
 
 const SUN_HOURS = 5;
@@ -39,21 +39,23 @@ export default function SolarCalculator() {
   );
   const [results, setResults] = useState(null);
 
-    // Reset calculator when screen loses focus
-    useFocusEffect(
-      React.useCallback(() => {
-        return () => {
-          // Cleanup function - runs when screen loses focus
-          setResults(null);
-          setAppliances(defaultAppliances.map((a) => ({
+  // Reset calculator when screen loses focus
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        // Cleanup function - runs when screen loses focus
+        setResults(null);
+        setAppliances(
+          defaultAppliances.map((a) => ({
             ...a,
             quantity: 0,
             hours: 0,
             watt: a.watt,
-          })));
-        };
-      }, [])
-    );
+          }))
+        );
+      };
+    }, [])
+  );
 
   const handleChange = (idx, field, value) => {
     const updated = appliances.map((a, i) =>
@@ -93,28 +95,28 @@ export default function SolarCalculator() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.paper}>
-        <Text style={styles.title}>{t("calculator.title")}</Text>
-        
+        <Text style={styles.title}>{t("CALCULATOR.TITLE")}</Text>
+
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={styles.headerText}>
-              <Text style={styles.bold}>{t("calculator.appliance")}</Text>
+              <Text style={styles.bold}>{t("CALCULATOR.APPLIANCE")}</Text>
             </Text>
             <Text style={styles.headerText}>
-              <Text style={styles.bold}>{t("calculator.quantity")}</Text>
+              <Text style={styles.bold}>{t("CALCULATOR.QUANTITY")}</Text>
             </Text>
             <Text style={styles.headerText}>
-              <Text style={styles.bold}>{t("calculator.watt")}</Text>
+              <Text style={styles.bold}>{t("CALCULATOR.WATT")}</Text>
             </Text>
             <Text style={styles.headerText}>
-              <Text style={styles.bold}>{t("calculator.hoursPerDay")}</Text>
+              <Text style={styles.bold}>{t("CALCULATOR.HOURS_PER_DAY")}</Text>
             </Text>
           </View>
-          
+
           {appliances.map((appliance, idx) => (
             <View key={appliance.key} style={styles.tableRow}>
               <Text style={styles.cell}>{t(appliance.name)}</Text>
-              
+
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -122,7 +124,7 @@ export default function SolarCalculator() {
                 onChangeText={(value) => handleChange(idx, "quantity", value)}
                 min={0}
               />
-              
+
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -131,7 +133,7 @@ export default function SolarCalculator() {
                 min={0}
                 editable={appliance.key === "other"}
               />
-              
+
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -142,42 +144,42 @@ export default function SolarCalculator() {
             </View>
           ))}
         </View>
-        
+
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.button, !canCalculate && styles.disabledButton]}
             onPress={handleCalculate}
             disabled={!canCalculate}
           >
-            <Text style={styles.buttonText}>{t("calculator.calculate")}</Text>
+            <Text style={styles.buttonText}>{t("CALCULATOR.CALCULATE")}</Text>
           </TouchableOpacity>
         </View>
-        
+
         {results && (
           <View style={styles.resultsContainer}>
-            <Text style={styles.resultsTitle}>{t("calculator.results")}</Text>
+            <Text style={styles.resultsTitle}>{t("CALCULATOR.RESULTS")}</Text>
             <Text style={styles.resultText}>
-              {t("calculator.totalDailyEnergy")}:{" "}
+              {t("CALCULATOR.TOTAL_DAILY_ENERGY")}:{" "}
               <Text style={styles.bold}>{results.totalDailyWh} Wh</Text>
             </Text>
             <Text style={styles.resultText}>
-              {t("calculator.peakLoad")}:{" "}
+              {t("CALCULATOR.PEAK_LOAD")}:{" "}
               <Text style={styles.bold}>{results.peakLoad} W</Text>
             </Text>
             <Text style={styles.resultText}>
-              {t("calculator.solarPanels")}:{" "}
+              {t("CALCULATOR.SOLAR_PANELS")}:{" "}
               <Text style={styles.bold}>
                 {results.numPanels} x {results.panelWatt}W
               </Text>{" "}
-              ({t("calculator.total")}: {results.requiredPanelWatt}W)
+              ({t("CALCULATOR.TOTAL")}: {results.requiredPanelWatt}W)
             </Text>
             <Text style={styles.resultText}>
-              {t("calculator.batterySize")}:{" "}
+              {t("CALCULATOR.BATTERY_SIZE")}:{" "}
               <Text style={styles.bold}>{results.batteryAh} Ah</Text>{" "}
-              {t("calculator.batteryDetails")}
+              {t("CALCULATOR.BATTERY_DETAILS")}
             </Text>
             <Text style={styles.resultText}>
-              {t("calculator.inverterSize")}:{" "}
+              {t("CALCULATOR.INVERTER_SIZE")}:{" "}
               <Text style={styles.bold}>{results.inverterWatt} W</Text>
             </Text>
           </View>
