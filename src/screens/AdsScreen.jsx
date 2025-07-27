@@ -1,59 +1,63 @@
-import React from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  FlatList, 
-  Image, 
-  Text, 
-  TouchableOpacity, 
+import React from "react";
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  Image,
+  Text,
+  TouchableOpacity,
   useWindowDimensions,
   Platform,
-  SafeAreaView
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialIcons } from '@expo/vector-icons';
+  SafeAreaView,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialIcons } from "@expo/vector-icons";
 
 // Mock offers data
 const mockOffers = [
   {
-    id: '1',
-    title: 'خصم 25% على الألواح الشمسية',
-    description: 'عرض خاص لفترة محدودة على ألواح جينكو 450 واط',
-    image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    expiry: 'ينتهي في 15 ديسمبر',
-    discount: '25%',
+    id: "1",
+    title: "خصم 25% على الألواح الشمسية",
+    description: "عرض خاص لفترة محدودة على ألواح جينكو 450 واط",
+    image:
+      "https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    expiry: "ينتهي في 15 ديسمبر",
+    discount: "25%",
     isHot: true,
-    category: 'الطاقة الشمسية'
+    category: "الطاقة الشمسية",
   },
   {
-    id: '2',
-    title: 'تركيب مجاني مع شراء النظام الكامل',
-    description: 'احصل على تركيب مجاني عند شراء نظام 5 كيلو واط أو أكثر',
-    image: 'https://images.unsplash.com/photo-1551269901-5c5e14c25df7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    expiry: 'عرض مستمر',
-    discount: 'تركيب مجاني',
+    id: "2",
+    title: "تركيب مجاني مع شراء النظام الكامل",
+    description: "احصل على تركيب مجاني عند شراء نظام 5 كيلو واط أو أكثر",
+    image:
+      "https://images.unsplash.com/photo-1551269901-5c5e14c25df7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    expiry: "عرض مستمر",
+    discount: "تركيب مجاني",
     isHot: false,
-    category: 'التركيبات'
+    category: "التركيبات",
   },
   {
-    id: '3',
-    title: 'عرض البطاريات الذكية',
-    description: 'خصم 15% على بطاريات الليثيوم مع ضمان 5 سنوات',
-    image: 'https://images.unsplash.com/photo-1605152276897-4f618f831968?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    expiry: 'ينتهي في 30 نوفمبر',
-    discount: '15%',
+    id: "3",
+    title: "عرض البطاريات الذكية",
+    description: "خصم 15% على بطاريات الليثيوم مع ضمان 5 سنوات",
+    image:
+      "https://images.unsplash.com/photo-1605152276897-4f618f831968?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    expiry: "ينتهي في 30 نوفمبر",
+    discount: "15%",
     isHot: true,
-    category: 'البطاريات'
+    category: "البطاريات",
   },
   {
-    id: '4',
-    title: 'أنظمة الطاقة الهجينة',
-    description: 'حلول متكاملة للطاقة الشمسية مع مولدات احتياطية',
-    image: 'https://images.unsplash.com/photo-1521618755572-156ae0cdd74d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    expiry: 'ينتهي في 10 يناير',
-    discount: '10%',
+    id: "4",
+    title: "أنظمة الطاقة الهجينة",
+    description: "حلول متكاملة للطاقة الشمسية مع مولدات احتياطية",
+    image:
+      "https://images.unsplash.com/photo-1521618755572-156ae0cdd74d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    expiry: "ينتهي في 10 يناير",
+    discount: "10%",
     isHot: false,
-    category: 'أنظمة متكاملة'
+    category: "أنظمة متكاملة",
   },
 ];
 
@@ -63,43 +67,58 @@ export default function AdsScreen({ navigation }) {
   const cardHeight = isLandscape ? height * 0.6 : width * 0.6;
 
   const renderOfferItem = ({ item }) => (
-    <TouchableOpacity 
-      style={[styles.card, { height: cardHeight }]}
-      onPress={() => navigation.navigate('OfferDetail', { offer: item })}
-      activeOpacity={0.9}
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate("OfferDetail", { offer: item })}
+      activeOpacity={0.95}
     >
-      <Image 
-        source={{ uri: item.image }} 
-        style={styles.cardImage}
-        resizeMode="cover"
-      />
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
-        style={styles.gradient}
-      />
-      
-      <View style={styles.cardContent}>
-        <View style={styles.badgeContainer}>
-          {item.isHot && (
-            <View style={styles.hotBadge}>
-              <MaterialIcons name="local-fire-department" size={16} color="#FFF" />
-              <Text style={styles.hotText}>عرض حصري</Text>
-            </View>
-          )}
+      <View style={styles.cardHeader}>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.cardImage}
+          resizeMode="cover"
+        />
+
+        {/* Discount Badge */}
+        <View style={styles.discountBadge}>
+          <Text style={styles.discountText}>{item.discount}</Text>
+        </View>
+
+        {/* Hot Badge */}
+        {item.isHot && (
+          <View style={styles.hotBadge}>
+            <MaterialIcons
+              name="local-fire-department"
+              size={16}
+              color="#FFFFFF"
+            />
+            <Text style={styles.hotText}>عرض حصري</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.cardBody}>
+        {/* Category Badge */}
+        <View style={styles.categoryContainer}>
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryText}>{item.category}</Text>
           </View>
         </View>
-        
-        <Text style={styles.discountBadge}>{item.discount}</Text>
-        
-        <View style={styles.textContainer}>
-          <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-          <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
-          <View style={styles.expiryContainer}>
-            <MaterialIcons name="access-time" size={14} color="#F59E0B" />
-            <Text style={styles.expiry}>{item.expiry}</Text>
-          </View>
+
+        {/* Title */}
+        <Text style={styles.title} numberOfLines={2}>
+          {item.title}
+        </Text>
+
+        {/* Description */}
+        <Text style={styles.description} numberOfLines={2}>
+          {item.description}
+        </Text>
+
+        {/* Expiry */}
+        <View style={styles.expiryContainer}>
+          <MaterialIcons name="access-time" size={16} color="#6B7280" />
+          <Text style={styles.expiry}>{item.expiry}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -114,16 +133,16 @@ export default function AdsScreen({ navigation }) {
             <MaterialIcons name="filter-list" size={24} color="#3B82F6" />
           </TouchableOpacity> */}
         </View>
-        
+
         <FlatList
           data={mockOffers}
           renderItem={renderOfferItem}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={<View style={styles.listHeader} />}
           ListFooterComponent={<View style={styles.listFooter} />}
-          key={isLandscape ? 'landscape' : 'portrait'} // Force re-render on orientation change
+          key={isLandscape ? "landscape" : "portrait"} // Force re-render on orientation change
         />
       </View>
     </SafeAreaView>
@@ -133,25 +152,26 @@ export default function AdsScreen({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFFFFF",
   },
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
   },
   header: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
   },
   headerTitle: {
-    fontFamily: 'Tajawal-Bold',
-    fontSize: 22,
-    color: '#1F2937',
+    fontFamily: "Tajawal-Bold",
+    fontSize: 24,
+    color: "#1F2937",
   },
   filterButton: {
     padding: 8,
@@ -161,136 +181,119 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   listHeader: {
-    height: 10,
+    height: 16,
   },
   listFooter: {
     height: 30,
   },
   card: {
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+  },
+  cardHeader: {
+    position: "relative",
+    height: 200,
+    backgroundColor: "#F8FAFC",
   },
   cardImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  gradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '60%',
-  },
-  cardContent: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: 16,
-  },
-  badgeContainer: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  hotBadge: {
-    flexDirection: 'row-reverse',
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  categoryBadge: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  categoryText: {
-    fontFamily: 'Tajawal-Medium',
-    fontSize: 12,
-    color: '#FFF',
-  },
-  hotText: {
-    color: '#FFF',
-    fontFamily: 'Tajawal-Bold',
-    fontSize: 12,
-    marginRight: 5,
+    width: "100%",
+    height: "100%",
   },
   discountBadge: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    backgroundColor: '#16A34A',
+    position: "absolute",
+    top: 12,
+    right: 12,
+    backgroundColor: "#16A34A",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    fontFamily: 'Tajawal-Bold',
-    fontSize: 14,
-    color: '#FFF',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  textContainer: {
-    marginTop: 8,
+  discountText: {
+    fontFamily: "Tajawal-Bold",
+    fontSize: 14,
+    color: "#FFFFFF",
+  },
+  hotBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    flexDirection: "row-reverse",
+    backgroundColor: "#EF4444",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  hotText: {
+    color: "#FFFFFF",
+    fontFamily: "Tajawal-Bold",
+    fontSize: 12,
+    marginRight: 4,
+  },
+  cardBody: {
+    padding: 16,
+  },
+  categoryContainer: {
+    marginBottom: 12,
+  },
+  categoryBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  categoryText: {
+    fontFamily: "Tajawal-Medium",
+    fontSize: 12,
+    color: "#6B7280",
   },
   title: {
-    fontFamily: 'Tajawal-Bold',
-    fontSize: 20,
-    lineHeight: 28,
-    color: '#FFF',
-    textAlign: 'right',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    fontFamily: "Tajawal-Bold",
+    fontSize: 18,
+    lineHeight: 24,
+    color: "#1F2937",
+    textAlign: "right",
+    marginBottom: 8,
   },
   description: {
-    fontFamily: 'Tajawal-Regular',
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#E5E7EB',
-    textAlign: 'right',
-    marginVertical: 6,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    fontFamily: "Tajawal-Regular",
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#6B7280",
+    textAlign: "right",
+    marginBottom: 12,
   },
   expiryContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    marginTop: 4,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 6,
   },
   expiry: {
-    fontFamily: 'Tajawal-Medium',
+    fontFamily: "Tajawal-Medium",
     fontSize: 13,
-    color: '#F59E0B',
-    textAlign: 'right',
-    marginRight: 5,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    color: "#6B7280",
+    textAlign: "right",
   },
 });

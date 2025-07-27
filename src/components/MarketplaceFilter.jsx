@@ -56,22 +56,22 @@ const MarketplaceFilter = ({
   };
 
   const productTypes = [
-    { id: "panel", label: "ألواح شمسية" },
-    { id: "inverter", label: "محولات" },
-    { id: "battery", label: "بطاريات" },
-    { id: "accessory", label: "ملحقات" },
+    { id: "panel", label: t("PRODUCT_TYPES.PANEL") },
+    { id: "inverter", label: t("PRODUCT_TYPES.INVERTER") },
+    { id: "battery", label: t("PRODUCT_TYPES.BATTERY") },
+    { id: "accessory", label: t("PRODUCT_TYPES.ACCESSORY") },
   ];
 
   const conditions = [
-    { id: "new", label: "جديد" },
-    { id: "used", label: "مستعمل" },
-    { id: "needs_repair", label: "يحتاج إصلاح" },
+    { id: "new", label: t("MARKETPLACE.NEW") },
+    { id: "used", label: t("MARKETPLACE.USED") },
+    { id: "needs_repair", label: t("MARKETPLACE.NEEDS_REPAIR") },
   ];
 
   const sortOptions = [
-    { id: "newest", label: "الأحدث" },
-    { id: "price_asc", label: "السعر: من الأقل إلى الأعلى" },
-    { id: "price_desc", label: "السعر: من الأعلى إلى الأقل" },
+    { id: "newest", label: t("MARKETPLACE.RECENT") },
+    { id: "price_asc", label: t("MARKETPLACE.LOW_TO_HIGH") },
+    { id: "price_desc", label: t("MARKETPLACE.HIGH_TO_LOW") },
   ];
 
   const handleReset = () => {
@@ -130,9 +130,9 @@ const MarketplaceFilter = ({
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <MaterialIcons name="close" size={24} color="#64748B" />
             </TouchableOpacity>
-            <Text style={styles.title}>الفلاتر</Text>
+            <Text style={styles.title}>{t("COMMON.FILTERS")}</Text>
             <TouchableOpacity onPress={handleReset}>
-              <Text style={styles.resetText}>إعادة تعيين</Text>
+              <Text style={styles.resetText}>{t("COMMON.RESET")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -143,7 +143,7 @@ const MarketplaceFilter = ({
           >
             {/* Product Type */}
             {renderFilterSection(
-              "نوع المنتج",
+              t("MARKETPLACE.PRODUCT_TYPE"),
               productTypes,
               filters.productType,
               (value) => setFilters({ ...filters, productType: value })
@@ -151,7 +151,7 @@ const MarketplaceFilter = ({
 
             {/* Condition */}
             {renderFilterSection(
-              "الحالة",
+              t("MARKETPLACE.CONDITION"),
               conditions,
               filters.condition,
               (value) => setFilters({ ...filters, condition: value })
@@ -159,7 +159,7 @@ const MarketplaceFilter = ({
 
             {/* Governorate */}
             {renderFilterSection(
-              "المحافظة",
+              t("MARKETPLACE.GOVERNORATE"),
               governorates.map((g) => ({ id: g.name, label: g.name })),
               filters.governorate,
               (value) => setFilters({ ...filters, governorate: value })
@@ -167,7 +167,7 @@ const MarketplaceFilter = ({
 
             {/* Sort By */}
             {renderFilterSection(
-              "ترتيب حسب",
+              t("COMMON.SORT_BY"),
               sortOptions,
               filters.sortBy,
               (value) => setFilters({ ...filters, sortBy: value })
@@ -177,7 +177,7 @@ const MarketplaceFilter = ({
           {/* Apply Button */}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-              <Text style={styles.applyButtonText}>تطبيق</Text>
+              <Text style={styles.applyButtonText}>{t("COMMON.APPLY")}</Text>
             </TouchableOpacity>
           </View>
         </View>

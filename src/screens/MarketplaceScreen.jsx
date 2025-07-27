@@ -60,8 +60,6 @@ export default function MarketplaceScreen() {
     fetchNextPage,
     isFetchingNextPage,
     refetch,
-    likeProduct,
-    unlikeProduct,
   } = useMarketplace(
     {
       productType:
@@ -98,32 +96,6 @@ export default function MarketplaceScreen() {
     if (hasNextPage[type] && !isFetchingNextPage[type]) {
       fetchNextPage[type]();
     }
-  };
-
-  const handleLikeProduct = (productId) => {
-    if (!user) {
-      navigate("AuthStack", {
-        screen: "Auth",
-        params: {
-          returnData: { screen: "Marketplace", action: "like", productId },
-        },
-      });
-      return;
-    }
-    likeProduct(productId);
-  };
-
-  const handleUnlikeProduct = (productId) => {
-    if (!user) {
-      navigate("AuthStack", {
-        screen: "Auth",
-        params: {
-          returnData: { screen: "Marketplace", action: "unlike", productId },
-        },
-      });
-      return;
-    }
-    unlikeProduct(productId);
   };
 
   const renderFooter = (type) => {
@@ -246,21 +218,26 @@ export default function MarketplaceScreen() {
   const renderBanner = () => (
     <View style={styles.bannerContainer}>
       <Image
-        source={require("../../assets/images/solar1.jpg")} // Replace with your image URL
+        source={require("../../assets/images/solar1.jpg")}
         style={styles.bannerImage}
         resizeMode="cover"
       />
-      <View style={styles.bannerOverlay}>
-        <Text style={styles.bannerTitle}>{t("MARKETPLACE.BANNER_TITLE")}</Text>
-        <Text style={styles.bannerSubtitle}>
-          {t("MARKETPLACE.BANNER_SUBTITLE")}
-        </Text>
-        <TouchableOpacity style={styles.bannerButton}>
-          <Text style={styles.bannerButtonText}>
-            {t("MARKETPLACE.BANNER_BUTTON")}
+      <LinearGradient
+        colors={["rgba(0,0,0,0.3)", "rgba(0,0,0,0.6)"]}
+        style={styles.bannerOverlay}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <View style={styles.bannerContent}>
+          <Text style={styles.bannerTitle}>خصومات تصل إلى 30%</Text>
+          <Text style={styles.bannerSubtitle}>
+            احصل على أفضل العروض على الأنظمة الشمسية
           </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.bannerButton}>
+            <Text style={styles.bannerButtonText}>تسوق الآن</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
     </View>
   );
 
@@ -335,9 +312,6 @@ export default function MarketplaceScreen() {
         detailKey: "product",
 
         additionalProps: (item) => ({
-          onLike: () => handleLikeProduct(getId(item)),
-          onUnlike: () => handleUnlikeProduct(getId(item)),
-          isLiked: user?.likedProducts?.includes(getId(item)),
           // Ensure all product fields are passed
           name: item?.name,
           price: item?.price,
@@ -400,14 +374,7 @@ export default function MarketplaceScreen() {
                   onPress={() => navigate(detailScreen, detailProps)}
                   style={cardStyle}
                 >
-                  <CardComponent
-                    {...detailProps}
-                    {...(type === "products" && {
-                      onLike: () => handleLikeProduct(getId(item)),
-                      onUnlike: () => handleUnlikeProduct(getId(item)),
-                      isLiked: user?.likedProducts?.includes(getId(item)),
-                    })}
-                  />
+                  <CardComponent {...detailProps} />
                 </TouchableOpacity>
               );
             }}
@@ -554,6 +521,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     paddingHorizontal: 12,
+    paddingVertical: 12,
 
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -721,16 +689,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   bannerContainer: {
-    height: 150,
+    height: 180,
     marginHorizontal: 15,
     marginBottom: 15,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
-    elevation: 3,
+    elevation: 4,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   bannerImage: {
     width: "100%",
@@ -739,33 +707,45 @@ const styles = StyleSheet.create({
   },
   bannerOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+  },
+  bannerContent: {
+    alignItems: "center",
+    padding: 24,
   },
   bannerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontFamily: "Tajawal-Bold",
     color: "#FFFFFF",
     textAlign: "center",
-    marginBottom: 5,
+    marginBottom: 8,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   bannerSubtitle: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.9)",
+    fontSize: 15,
+    fontFamily: "Tajawal-Regular",
+    color: "rgba(255,255,255,0.95)",
     textAlign: "center",
-    marginBottom: 15,
+    marginBottom: 20,
+    lineHeight: 20,
   },
   bannerButton: {
     backgroundColor: "#16A34A",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 28,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   bannerButtonText: {
     color: "#FFFFFF",
-    fontWeight: "bold",
-    fontSize: 14,
+    fontFamily: "Tajawal-Bold",
+    fontSize: 15,
   },
 });

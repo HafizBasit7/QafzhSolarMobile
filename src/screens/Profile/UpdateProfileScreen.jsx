@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
-import { MaterialIcons, Feather } from '@expo/vector-icons';
-import i18n from '../../config/i18n';
-import { useAuth } from '../../hooks/useAuth';
-import * as ImagePicker from 'expo-image-picker';
-import { showToast } from '../../components/common/Toast';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { MaterialIcons, Feather } from "@expo/vector-icons";
+import i18n from "../../config/i18n";
+import { useAuth } from "../../hooks/useAuth";
+import * as ImagePicker from "expo-image-picker";
+import { showToast } from "../../components/common/Toast";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 const UpdateProfileScreen = ({ navigation }) => {
   const { user, isLoadingUser, updateProfile, isUpdating } = useAuth();
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    profileImageUrl: user?.profileImageUrl || '',
+    name: user?.name || "",
+    profileImageUrl: user?.profileImageUrl || "",
   });
   const [isPickingImage, setIsPickingImage] = useState(false);
 
@@ -30,13 +39,13 @@ const UpdateProfileScreen = ({ navigation }) => {
       });
 
       if (!result.canceled) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          profileImageUrl: result.assets[0].uri
+          profileImageUrl: result.assets[0].uri,
         }));
       }
     } catch (error) {
-      showToast('error', 'Error', 'Failed to pick image');
+      showToast("error", "خطأ", "فشل في اختيار الصورة");
     } finally {
       setIsPickingImage(false);
     }
@@ -44,7 +53,7 @@ const UpdateProfileScreen = ({ navigation }) => {
 
   const handleUpdate = async () => {
     if (!formData.name.trim()) {
-      showToast('error', 'Error', 'Name is required');
+      showToast("error", "خطأ", "الاسم مطلوب");
       return;
     }
 
@@ -52,7 +61,7 @@ const UpdateProfileScreen = ({ navigation }) => {
       await updateProfile(formData);
       navigation.goBack();
     } catch (error) {
-      showToast('error', 'Error', error.message || 'Failed to update profile');
+      showToast("error", "خطأ", error.message || "فشل في تحديث الملف الشخصي");
     }
   };
 
@@ -62,8 +71,8 @@ const UpdateProfileScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialIcons name="arrow-back" size={24} color="#22C55E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{i18n.t('PROFILE.UPDATE_PROFILE')}</Text>
-        <TouchableOpacity 
+        <Text style={styles.headerTitle}>تحديث الملف الشخصي</Text>
+        <TouchableOpacity
           onPress={handleUpdate}
           disabled={isUpdating}
           style={styles.saveButtonContainer}
@@ -71,19 +80,19 @@ const UpdateProfileScreen = ({ navigation }) => {
           {isUpdating ? (
             <ActivityIndicator size="small" color="#22C55E" />
           ) : (
-            <Text style={styles.saveButton}>Save</Text>
+            <Text style={styles.saveButton}>حفظ</Text>
           )}
         </TouchableOpacity>
       </View>
 
       <View style={styles.avatarContainer}>
-        <Image 
-          source={{ 
-            uri: formData.profileImageUrl || 'https://via.placeholder.com/120'
-          }} 
-          style={styles.avatar} 
+        <Image
+          source={{
+            uri: formData.profileImageUrl || "https://via.placeholder.com/120",
+          }}
+          style={styles.avatar}
         />
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.editAvatarButton}
           onPress={handleImagePick}
           disabled={isPickingImage}
@@ -98,24 +107,26 @@ const UpdateProfileScreen = ({ navigation }) => {
 
       <View style={styles.formContainer}>
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Full Name</Text>
+          <Text style={styles.inputLabel}>الاسم الكامل</Text>
           <TextInput
             style={styles.input}
             value={formData.name}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
-            placeholder="Enter your full name"
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, name: text }))
+            }
+            placeholder="أدخل اسمك الكامل"
             placeholderTextColor="#a0aec0"
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Phone Number</Text>
+          <Text style={styles.inputLabel}>رقم الهاتف</Text>
           <TextInput
-            style={[styles.input, { color: '#a0aec0' }]}
+            style={[styles.input, { color: "#a0aec0" }]}
             value={user?.phone}
             editable={false}
           />
-          <Text style={styles.helperText}>Phone number cannot be changed</Text>
+          <Text style={styles.helperText}>لا يمكن تغيير رقم الهاتف</Text>
         </View>
       </View>
     </ScrollView>
@@ -125,34 +136,34 @@ const UpdateProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    borderBottomColor: "#e9ecef",
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: 'Tajawal-Bold',
-    color: '#32325d',
+    fontFamily: "Tajawal-Bold",
+    color: "#32325d",
   },
   saveButtonContainer: {
     minWidth: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   saveButton: {
     fontSize: 16,
-    fontFamily: 'Tajawal-Medium',
-    color: '#22C55E',
+    fontFamily: "Tajawal-Medium",
+    color: "#22C55E",
   },
   avatarContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 24,
     marginBottom: 16,
   },
@@ -161,25 +172,25 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 3,
-    borderColor: '#f0f2f5',
+    borderColor: "#f0f2f5",
   },
   editAvatarButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
-    right: '35%',
-    backgroundColor: '#22C55E',
+    right: "35%",
+    backgroundColor: "#22C55E",
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   formContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     margin: 16,
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -190,23 +201,23 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontFamily: 'Tajawal-Medium',
-    color: '#525f7f',
+    fontFamily: "Tajawal-Medium",
+    color: "#525f7f",
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: "#e9ecef",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    fontFamily: 'Tajawal-Regular',
-    color: '#32325d',
+    fontFamily: "Tajawal-Regular",
+    color: "#32325d",
   },
   helperText: {
     fontSize: 12,
-    fontFamily: 'Tajawal-Regular',
-    color: '#a0aec0',
+    fontFamily: "Tajawal-Regular",
+    color: "#a0aec0",
     marginTop: 4,
   },
 });

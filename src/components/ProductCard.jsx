@@ -11,7 +11,7 @@ import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
 
-const ProductCard = ({ product, onLike, onUnlike }) => {
+const ProductCard = ({ product }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [imageLoading, setImageLoading] = useState(true);
@@ -23,14 +23,6 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
-  };
-
-  const handleLikePress = () => {
-    if (product.isLiked) {
-      onUnlike();
-    } else {
-      onLike();
-    }
   };
 
   const renderImage = () => {
@@ -62,19 +54,6 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
             <ActivityIndicator color="#16A34A" size="large" />
           </View>
         )}
-
-        {/* Like Button */}
-        <TouchableOpacity
-          style={styles.likeButton}
-          onPress={handleLikePress}
-          disabled={!user}
-        >
-          <Ionicons
-            name={product.isLiked ? "heart" : "heart-outline"}
-            size={20}
-            color={product.isLiked ? "#EF4444" : "#FFFFFF"}
-          />
-        </TouchableOpacity>
 
         {/* Condition Badge */}
         <View
@@ -138,12 +117,12 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
           <View style={styles.typeBadge}>
             <Text style={styles.typeText}>
               {product.type === "Panel"
-                ? "ألواح"
+                ? t("PRODUCT_TYPES.PANEL")
                 : product.type === "Inverter"
-                ? "محول"
+                ? t("PRODUCT_TYPES.INVERTER")
                 : product.type === "Battery"
-                ? "بطارية"
-                : "منتج"}
+                ? t("PRODUCT_TYPES.BATTERY")
+                : t("PRODUCT_TYPES.ACCESSORY")}
             </Text>
           </View>
         </View>
@@ -195,22 +174,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontFamily: "Tajawal-Regular",
   },
-  likeButton: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
+
   conditionBadge: {
     position: "absolute",
     top: 12,

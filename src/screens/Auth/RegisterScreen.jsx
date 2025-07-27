@@ -1,5 +1,5 @@
 // screens/RegisterScreen.js
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,12 +11,12 @@ import {
   ActivityIndicator,
   ScrollView,
   Image,
-} from 'react-native';
-import { useAuth } from '../../hooks/useAuth';
-import { showToast } from '../../components/common/Toast';
-import { useTranslation } from 'react-i18next';
-import * as ImagePicker from 'expo-image-picker';
-import { uploadImage } from '../../utils/imageUpload';
+} from "react-native";
+import { useAuth } from "../../hooks/useAuth";
+import { showToast } from "../../components/common/Toast";
+import { useTranslation } from "react-i18next";
+import * as ImagePicker from "expo-image-picker";
+import { uploadImage } from "../../utils/imageUpload";
 
 const RegisterScreen = ({ navigation, route }) => {
   const { t } = useTranslation();
@@ -24,9 +24,9 @@ const RegisterScreen = ({ navigation, route }) => {
   const returnData = route.params?.returnData;
 
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    password: '',
+    name: "",
+    phone: "",
+    password: "",
     // profileImageUrl: '',
   });
   const [isUploading, setIsUploading] = useState(false);
@@ -43,27 +43,27 @@ const RegisterScreen = ({ navigation, route }) => {
       if (!result.canceled) {
         setIsUploading(true);
         const imageUrl = await uploadImage(result.assets[0].uri);
-        setFormData(prev => ({ ...prev, profileImageUrl: imageUrl }));
+        setFormData((prev) => ({ ...prev, profileImageUrl: imageUrl }));
         setIsUploading(false);
       }
     } catch (error) {
       setIsUploading(false);
-      showToast('error', 'Error', 'Failed to upload image');
+      showToast("error", "خطأ", "فشل في تحميل الصورة");
     }
   };
 
   const handleSubmit = async () => {
     // Validate form
     if (!formData.name.trim()) {
-      showToast('error', 'Error', 'Please enter your name');
+      showToast("error", "خطأ", "يرجى إدخال اسمك");
       return;
     }
     if (!formData.phone.trim()) {
-      showToast('error', 'Error', 'Please enter your phone number');
+      showToast("error", "خطأ", "يرجى إدخال رقم هاتفك");
       return;
     }
     if (!formData.password || formData.password.length < 6) {
-      showToast('error', 'Error', 'Password must be at least 6 characters');
+      showToast("error", "خطأ", "يجب أن تكون كلمة المرور 6 أحرف على الأقل");
       return;
     }
     // if (!formData.profileImageUrl) {
@@ -72,9 +72,14 @@ const RegisterScreen = ({ navigation, route }) => {
     // }
 
     // Validate password format (at least one uppercase, one number, one special character)
-    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
     if (!passwordRegex.test(formData.password)) {
-      showToast('error', 'Error', 'Password must contain at least one uppercase letter, one number, and one special character');
+      showToast(
+        "error",
+        "خطأ",
+        "يجب أن تحتوي كلمة المرور على حرف كبير، رقم، ورمز خاص"
+      );
       return;
     }
 
@@ -83,22 +88,26 @@ const RegisterScreen = ({ navigation, route }) => {
       await register(formData);
 
       // Add small delay before navigation
-await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       // Navigate to OTP verification
-      navigation.navigate('OtpVerif', {
+      navigation.navigate("OtpVerif", {
         phone: formData.phone,
         returnData,
         isNewUser: true,
       });
     } catch (error) {
-      showToast('error', 'Error', error.response?.data?.message || 'Registration failed');
+      showToast(
+        "error",
+        "خطأ",
+        error.response?.data?.message || "فشل في عملية التسجيل"
+      );
     }
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
@@ -109,8 +118,8 @@ await new Promise(resolve => setTimeout(resolve, 500));
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity> */}
 
-          <Text style={styles.title}>{t('AUTH.CREATE_ACCOUNT')}</Text>
-          <Text style={styles.subtitle}>{t('AUTH.FILL_DETAILS')}</Text>
+          <Text style={styles.title}>إنشاء حساب</Text>
+          <Text style={styles.subtitle}>يرجى ملء التفاصيل أدناه</Text>
 
           <View style={styles.form}>
             {/* <TouchableOpacity 
@@ -135,50 +144,59 @@ await new Promise(resolve => setTimeout(resolve, 500));
             </TouchableOpacity> */}
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>{t('AUTH.NAME')}</Text>
+              <Text style={styles.label}>الاسم الكامل</Text>
               <TextInput
                 style={styles.input}
                 value={formData.name}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
-                placeholder={t('AUTH.ENTER_NAME')}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, name: text }))
+                }
+                placeholder="أدخل اسمك الكامل"
                 autoCapitalize="words"
               />
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>{t('AUTH.PHONE')}</Text>
+              <Text style={styles.label}>رقم الهاتف</Text>
               <TextInput
                 style={styles.input}
                 value={formData.phone}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, phone: text }))}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, phone: text }))
+                }
                 placeholder="03XX-XXXXXXX"
                 keyboardType="phone-pad"
               />
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>{t('AUTH.PASSWORD')}</Text>
+              <Text style={styles.label}>كلمة المرور</Text>
               <TextInput
                 style={styles.input}
                 value={formData.password}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, password: text }))}
-                placeholder="Password (e.g., User@1)"
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, password: text }))
+                }
+                placeholder="كلمة المرور (مثال: User@1)"
                 secureTextEntry
               />
               <Text style={styles.helperText}>
-                Must contain uppercase, number, and special character
+                يجب أن تحتوي على حرف كبير، رقم، ورمز خاص
               </Text>
             </View>
 
             <TouchableOpacity
-              style={[styles.button, (isRegistering || isUploading) && styles.buttonDisabled]}
+              style={[
+                styles.button,
+                (isRegistering || isUploading) && styles.buttonDisabled,
+              ]}
               onPress={handleSubmit}
               disabled={isRegistering || isUploading}
             >
               {isRegistering ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>{t('AUTH.REGISTER')}</Text>
+                <Text style={styles.buttonText}>تسجيل</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -191,7 +209,7 @@ await new Promise(resolve => setTimeout(resolve, 500));
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
   },
   scrollContent: {
     flexGrow: 1,
@@ -205,59 +223,59 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
   },
   backButtonText: {
     fontSize: 24,
-    color: '#475569',
+    color: "#475569",
   },
   title: {
     fontSize: 28,
-    fontFamily: 'Tajawal-Bold',
-    color: '#1E293B',
-    textAlign: 'center',
+    fontFamily: "Tajawal-Bold",
+    color: "#1E293B",
+    textAlign: "center",
     marginTop: 24,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    fontFamily: 'Tajawal-Regular',
-    color: '#64748B',
-    textAlign: 'center',
+    fontFamily: "Tajawal-Regular",
+    color: "#64748B",
+    textAlign: "center",
     marginBottom: 32,
   },
   form: {
-    width: '100%',
+    width: "100%",
   },
   imageUpload: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: 24,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   profileImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   uploadPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
-    borderColor: '#E2E8F0',
-    borderStyle: 'dashed',
+    borderColor: "#E2E8F0",
+    borderStyle: "dashed",
   },
   uploadText: {
     fontSize: 14,
-    fontFamily: 'Tajawal-Medium',
-    color: '#64748B',
-    textAlign: 'center',
+    fontFamily: "Tajawal-Medium",
+    color: "#64748B",
+    textAlign: "center",
     paddingHorizontal: 8,
   },
   inputContainer: {
@@ -265,40 +283,40 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontFamily: 'Tajawal-Medium',
-    color: '#475569',
+    fontFamily: "Tajawal-Medium",
+    color: "#475569",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: "#E2E8F0",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    fontFamily: 'Tajawal-Regular',
-    color: '#1E293B',
+    fontFamily: "Tajawal-Regular",
+    color: "#1E293B",
   },
   helperText: {
     fontSize: 12,
-    fontFamily: 'Tajawal-Regular',
-    color: '#64748B',
+    fontFamily: "Tajawal-Regular",
+    color: "#64748B",
     marginTop: 4,
   },
   button: {
-    backgroundColor: '#16A34A',
+    backgroundColor: "#16A34A",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
   },
   buttonDisabled: {
-    backgroundColor: '#94A3B8',
+    backgroundColor: "#94A3B8",
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: 'Tajawal-Bold',
+    fontFamily: "Tajawal-Bold",
   },
 });
 
