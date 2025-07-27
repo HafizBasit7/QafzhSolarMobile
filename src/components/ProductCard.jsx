@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-} from 'react-native';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '../hooks/useAuth';
+} from "react-native";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "../hooks/useAuth";
 
 const ProductCard = ({ product, onLike, onUnlike }) => {
   const { t } = useTranslation();
@@ -18,8 +18,8 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
   const [imageError, setImageError] = useState(false);
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('ar-YE', {
-      style: 'decimal',
+    return new Intl.NumberFormat("ar-YE", {
+      style: "decimal",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
@@ -37,7 +37,8 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
     if (imageError) {
       return (
         <View style={styles.imagePlaceholder}>
-          <MaterialIcons name="broken-image" size={24} color="#94A3B8" />
+          <MaterialIcons name="broken-image" size={32} color="#CBD5E1" />
+          <Text style={styles.placeholderText}>لا توجد صورة</Text>
         </View>
       );
     }
@@ -45,7 +46,9 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
     return (
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: product.images?.[0] || 'https://via.placeholder.com/300' }}
+          source={{
+            uri: product.images?.[0] || "https://via.placeholder.com/300",
+          }}
           style={styles.image}
           onLoadStart={() => setImageLoading(true)}
           onLoadEnd={() => setImageLoading(false)}
@@ -56,20 +59,33 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
         />
         {imageLoading && (
           <View style={styles.imageLoader}>
-            <ActivityIndicator color="#16A34A" />
+            <ActivityIndicator color="#16A34A" size="large" />
           </View>
         )}
-        <TouchableOpacity 
+
+        {/* Like Button */}
+        <TouchableOpacity
           style={styles.likeButton}
           onPress={handleLikePress}
           disabled={!user}
         >
-          <Ionicons 
-            name={product.isLiked ? "heart" : "heart-outline"} 
-            size={24} 
-            color={product.isLiked ? "#EF4444" : "#FFFFFF"} 
+          <Ionicons
+            name={product.isLiked ? "heart" : "heart-outline"}
+            size={20}
+            color={product.isLiked ? "#EF4444" : "#FFFFFF"}
           />
         </TouchableOpacity>
+
+        {/* Condition Badge */}
+        <View
+          style={[styles.conditionBadge, styles[`${product.condition}Badge`]]}
+        >
+          <Text
+            style={[styles.conditionText, styles[`${product.condition}Text`]]}
+          >
+            {t(`CONDITIONS.${product.condition.toUpperCase()}`)}
+          </Text>
+        </View>
       </View>
     );
   };
@@ -79,39 +95,56 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
       {renderImage()}
 
       <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={2}>
+        {/* Title - Single line with ellipsis */}
+        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
           {product.name}
         </Text>
 
-        <View style={styles.details}>
+        {/* Price Section */}
+        <View style={styles.priceSection}>
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>
-              {formatPrice(product.price)} {product.currency}
-            </Text>
-            {product.isNegotiable && (
-              <Text style={styles.negotiable}>{t('PRODUCT.negotiable')}</Text>
-            )}
+            <Text style={styles.price}>{formatPrice(product.price)}</Text>
+            <Text style={styles.currency}>{product.currency}</Text>
           </View>
-
-          <View style={styles.locationContainer}>
-            <MaterialIcons name="location-on" size={12} color="#64748B" />
-            <Text style={styles.location} numberOfLines={1}>
-              {product.city}, {product.governorate}
-            </Text>
-          </View>
-
-          <View style={styles.badgeContainer}>
-            <View style={[styles.badge, styles[`${product.condition}Badge`]]}>
-              <Text style={[styles.badgeText, styles[`${product.condition}Text`]]}>
-                {t(`CONDITIONS.${product.condition.toUpperCase()}`)}
-              </Text>
+          {product.isNegotiable && (
+            <View style={styles.negotiableBadge}>
+              <Text style={styles.negotiableText}>قابل للتفاوض</Text>
             </View>
-            {product.isVerified && (
-              <View style={styles.verifiedBadge}>
-                <MaterialIcons name="verified" size={12} color="#10B981" />
-                <Text style={styles.verifiedText}>{t('COMMON.VERIFIED')}</Text>
-              </View>
-            )}
+          )}
+        </View>
+
+        {/* Location */}
+        <View style={styles.locationContainer}>
+          <MaterialIcons name="location-on" size={14} color="#64748B" />
+          <Text style={styles.location} numberOfLines={1}>
+            {product.city}, {product.governorate}
+          </Text>
+        </View>
+
+        {/* Bottom Section */}
+        <View style={styles.bottomSection}>
+          {/* Verified Badge */}
+          {product.isVerified && (
+            <View style={styles.verifiedBadge}>
+              <MaterialIcons name="verified" size={14} color="#10B981" />
+              <Text style={styles.verifiedText}>موثوق</Text>
+            </View>
+          )}
+
+          {/* Spacer */}
+          <View style={styles.spacer} />
+
+          {/* Product Type */}
+          <View style={styles.typeBadge}>
+            <Text style={styles.typeText}>
+              {product.type === "Panel"
+                ? "ألواح"
+                : product.type === "Inverter"
+                ? "محول"
+                : product.type === "Battery"
+                ? "بطارية"
+                : "منتج"}
+            </Text>
           </View>
         </View>
       </View>
@@ -121,135 +154,186 @@ const ProductCard = ({ product, onLike, onUnlike }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
   },
   imageContainer: {
-    position: 'relative',
-    width: '100%',
-    height: 150,
-    backgroundColor: '#F8FAFC',
+    position: "relative",
+    width: "100%",
+    height: 140,
+    backgroundColor: "#F8FAFC",
   },
   image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   imageLoader: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   imagePlaceholder: {
-    width: '100%',
-    height: 150,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    height: 140,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderText: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginTop: 8,
+    fontFamily: "Tajawal-Regular",
   },
   likeButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  conditionBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  newBadge: {
+    backgroundColor: "#DCFCE7",
+  },
+  usedBadge: {
+    backgroundColor: "#DBEAFE",
+  },
+  needs_repairBadge: {
+    backgroundColor: "#FEE2E2",
+  },
+  conditionText: {
+    fontSize: 11,
+    fontFamily: "Tajawal-Bold",
+  },
+  newText: {
+    color: "#166534",
+  },
+  usedText: {
+    color: "#1E40AF",
+  },
+  needs_repairText: {
+    color: "#DC2626",
   },
   content: {
     padding: 12,
   },
   title: {
-    fontSize: 14,
-    fontFamily: 'Tajawal-Bold',
-    color: '#1E293B',
+    fontSize: 15,
+    fontFamily: "Tajawal-Bold",
+    color: "#1E293B",
     marginBottom: 8,
-    textAlign: 'right',
+    textAlign: "right",
+    lineHeight: 20,
   },
-  details: {
-    gap: 8,
+  priceSection: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
   priceContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row-reverse",
+    alignItems: "baseline",
+    gap: 4,
   },
   price: {
-    fontSize: 16,
-    fontFamily: 'Tajawal-Bold',
-    color: '#16A34A',
+    fontSize: 18,
+    fontFamily: "Tajawal-Bold",
+    color: "#16A34A",
   },
-  negotiable: {
-    fontSize: 12,
-    fontFamily: 'Tajawal-Medium',
-    color: '#64748B',
+  currency: {
+    fontSize: 14,
+    fontFamily: "Tajawal-Medium",
+    color: "#16A34A",
+  },
+  negotiableBadge: {
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  negotiableText: {
+    fontSize: 11,
+    fontFamily: "Tajawal-Medium",
+    color: "#D97706",
   },
   locationContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 4,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
   },
   location: {
-    fontSize: 12,
-    fontFamily: 'Tajawal-Regular',
-    color: '#64748B',
+    fontSize: 13,
+    fontFamily: "Tajawal-Regular",
+    color: "#64748B",
     flex: 1,
-    textAlign: 'right',
+    textAlign: "right",
   },
-  badgeContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 8,
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  newBadge: {
-    backgroundColor: '#ECFDF5',
-  },
-  usedBadge: {
-    backgroundColor: '#EFF6FF',
-  },
-  needs_repairBadge: {
-    backgroundColor: '#FEF2F2',
-  },
-  badgeText: {
-    fontSize: 12,
-    fontFamily: 'Tajawal-Medium',
-  },
-  newText: {
-    color: '#10B981',
-  },
-  usedText: {
-    color: '#3B82F6',
-  },
-  needs_repairText: {
-    color: '#EF4444',
+  bottomSection: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   verifiedBadge: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
+    flexDirection: "row-reverse",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: "#ECFDF5",
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 8,
   },
   verifiedText: {
-    fontSize: 12,
-    fontFamily: 'Tajawal-Medium',
-    color: '#10B981',
+    fontSize: 11,
+    fontFamily: "Tajawal-Medium",
+    color: "#10B981",
+  },
+  spacer: {
+    flex: 1,
+  },
+  typeBadge: {
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  typeText: {
+    fontSize: 11,
+    fontFamily: "Tajawal-Medium",
+    color: "#475569",
   },
 });
 

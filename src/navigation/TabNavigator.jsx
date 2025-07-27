@@ -75,6 +75,7 @@ export default function TabNavigator() {
         component={MarketplaceScreen}
         options={{
           title: t("MARKETPLACE.TITLE"),
+          tabBarLabel: "الرئيسية",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "home" : "home-outline"}
@@ -91,6 +92,7 @@ export default function TabNavigator() {
         component={SolarCalculator}
         options={{
           title: t("CALCULATOR.TITLE"),
+          tabBarLabel: "الحاسبة",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "calculator" : "calculator-outline"}
@@ -137,6 +139,7 @@ export default function TabNavigator() {
         component={AdsScreen}
         options={{
           title: t("OFFERS.TITLE"),
+          tabBarLabel: "العروض",
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="tag" size={scaleSize(24)} color={color} />
           ),
@@ -162,6 +165,7 @@ export default function TabNavigator() {
         })}
         options={{
           title: t("PROFILE.TITLE"),
+          tabBarLabel: "الملف",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "person" : "person-outline"}

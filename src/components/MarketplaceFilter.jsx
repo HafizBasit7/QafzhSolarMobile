@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,20 +7,25 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
-} from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { governoratesAPI } from '../services/api';
-import { showToast } from './common/Toast';
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { governoratesAPI } from "../services/api";
+import { showToast } from "./common/Toast";
 
-const MarketplaceFilter = ({ visible, onClose, onApply, initialFilters = {} }) => {
+const MarketplaceFilter = ({
+  visible,
+  onClose,
+  onApply,
+  initialFilters = {},
+}) => {
   const { t } = useTranslation();
   const [filters, setFilters] = useState({
-    productType: initialFilters.productType || '',
-    condition: initialFilters.condition || '',
+    productType: initialFilters.productType || "",
+    condition: initialFilters.condition || "",
     priceRange: initialFilters.priceRange || [0, 1000000],
-    governorate: initialFilters.governorate || '',
-    sortBy: initialFilters.sortBy || 'newest',
+    governorate: initialFilters.governorate || "",
+    sortBy: initialFilters.sortBy || "newest",
   });
 
   const [governorates, setGovernorates] = useState([]);
@@ -31,52 +36,51 @@ const MarketplaceFilter = ({ visible, onClose, onApply, initialFilters = {} }) =
   }, []);
 
   const loadGovernorates = async () => {
-  try {
-    setLoading(true);
-    const response = await governoratesAPI.getGovernorates();
+    try {
+      setLoading(true);
+      const response = await governoratesAPI.getGovernorates();
 
-    // response = { success, message, data: [...] }
-    const data = response?.data || [];
+      // response = { success, message, data: [...] }
+      const data = response?.data || [];
 
-    if (!Array.isArray(data)) {
-      throw new Error('Governorates data is not an array');
+      if (!Array.isArray(data)) {
+        throw new Error("Governorates data is not an array");
+      }
+
+      setGovernorates(data);
+    } catch (error) {
+      showToast("error", "Error", "Failed to load governorates");
+    } finally {
+      setLoading(false);
     }
-
-    setGovernorates(data);
-  } catch (error) {
-    showToast('error', 'Error', 'Failed to load governorates');
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const productTypes = [
-    { id: 'panel', label: t('PRODUCT_TYPES.PANEL') },
-    { id: 'inverter', label: t('PRODUCT_TYPES.INVERTER') },
-    { id: 'battery', label: t('PRODUCT_TYPES.BATTERY') },
-    { id: 'accessory', label: t('PRODUCT_TYPES.ACCESSORY') },
+    { id: "panel", label: "ألواح شمسية" },
+    { id: "inverter", label: "محولات" },
+    { id: "battery", label: "بطاريات" },
+    { id: "accessory", label: "ملحقات" },
   ];
 
   const conditions = [
-    { id: 'new', label: t('CONDITIONS.NEW') },
-    { id: 'used', label: t('CONDITIONS.USED') },
-    { id: 'needs_repair', label: t('CONDITIONS.NEEDS_REPAIR') },
+    { id: "new", label: "جديد" },
+    { id: "used", label: "مستعمل" },
+    { id: "needs_repair", label: "يحتاج إصلاح" },
   ];
 
   const sortOptions = [
-    { id: 'newest', label: t('SORT.NEWEST') },
-    { id: 'price_asc', label: t('SORT.PRICE_LOW_HIGH') },
-    { id: 'price_desc', label: t('SORT.PRICE_HIGH_LOW') },
+    { id: "newest", label: "الأحدث" },
+    { id: "price_asc", label: "السعر: من الأقل إلى الأعلى" },
+    { id: "price_desc", label: "السعر: من الأعلى إلى الأقل" },
   ];
 
   const handleReset = () => {
     setFilters({
-      productType: '',
-      condition: '',
+      productType: "",
+      condition: "",
       priceRange: [0, 1000000],
-      governorate: '',
-      sortBy: 'newest',
+      governorate: "",
+      sortBy: "newest",
     });
   };
 
@@ -126,17 +130,20 @@ const MarketplaceFilter = ({ visible, onClose, onApply, initialFilters = {} }) =
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <MaterialIcons name="close" size={24} color="#64748B" />
             </TouchableOpacity>
-            <Text style={styles.title}>{t('COMMON.FILTERS')}</Text>
+            <Text style={styles.title}>الفلاتر</Text>
             <TouchableOpacity onPress={handleReset}>
-              <Text style={styles.resetText}>{t('COMMON.RESET')}</Text>
+              <Text style={styles.resetText}>إعادة تعيين</Text>
             </TouchableOpacity>
           </View>
 
           {/* Filter Content */}
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.content}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Product Type */}
             {renderFilterSection(
-              t('PRODUCT_FORM.PRODUCT_TYPE'),
+              "نوع المنتج",
               productTypes,
               filters.productType,
               (value) => setFilters({ ...filters, productType: value })
@@ -144,7 +151,7 @@ const MarketplaceFilter = ({ visible, onClose, onApply, initialFilters = {} }) =
 
             {/* Condition */}
             {renderFilterSection(
-              t('PRODUCT_FORM.CONDITION'),
+              "الحالة",
               conditions,
               filters.condition,
               (value) => setFilters({ ...filters, condition: value })
@@ -152,15 +159,15 @@ const MarketplaceFilter = ({ visible, onClose, onApply, initialFilters = {} }) =
 
             {/* Governorate */}
             {renderFilterSection(
-              t('PRODUCT_FORM.GOVERNORATE'),
-              governorates.map(g => ({ id: g.name, label: g.name })),
+              "المحافظة",
+              governorates.map((g) => ({ id: g.name, label: g.name })),
               filters.governorate,
               (value) => setFilters({ ...filters, governorate: value })
             )}
 
             {/* Sort By */}
             {renderFilterSection(
-              t('COMMON.SORT_BY'),
+              "ترتيب حسب",
               sortOptions,
               filters.sortBy,
               (value) => setFilters({ ...filters, sortBy: value })
@@ -170,7 +177,7 @@ const MarketplaceFilter = ({ visible, onClose, onApply, initialFilters = {} }) =
           {/* Apply Button */}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-              <Text style={styles.applyButtonText}>{t('COMMON.APPLY')}</Text>
+              <Text style={styles.applyButtonText}>تطبيق</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -182,36 +189,36 @@ const MarketplaceFilter = ({ visible, onClose, onApply, initialFilters = {} }) =
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    height: '90%',
-    paddingTop: Platform.OS === 'ios' ? 8 : 0,
+    height: "90%",
+    paddingTop: Platform.OS === "ios" ? 8 : 0,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: "#E2E8F0",
   },
   closeButton: {
     padding: 4,
   },
   title: {
     fontSize: 18,
-    fontFamily: 'Tajawal-Bold',
-    color: '#1E293B',
+    fontFamily: "Tajawal-Bold",
+    color: "#1E293B",
   },
   resetText: {
     fontSize: 14,
-    fontFamily: 'Tajawal-Medium',
-    color: '#16A34A',
+    fontFamily: "Tajawal-Medium",
+    color: "#16A34A",
   },
   content: {
     flex: 1,
@@ -222,51 +229,51 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontFamily: 'Tajawal-Bold',
-    color: '#1E293B',
+    fontFamily: "Tajawal-Bold",
+    color: "#1E293B",
     marginBottom: 12,
-    textAlign: 'right',
+    textAlign: "right",
   },
   optionsContainer: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
     gap: 8,
   },
   optionButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: "#F1F5F9",
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: "#E2E8F0",
   },
   selectedOption: {
-    backgroundColor: '#16A34A',
-    borderColor: '#16A34A',
+    backgroundColor: "#16A34A",
+    borderColor: "#16A34A",
   },
   optionText: {
     fontSize: 14,
-    fontFamily: 'Tajawal-Medium',
-    color: '#64748B',
+    fontFamily: "Tajawal-Medium",
+    color: "#64748B",
   },
   selectedOptionText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   footer: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: "#E2E8F0",
   },
   applyButton: {
-    backgroundColor: '#16A34A',
+    backgroundColor: "#16A34A",
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   applyButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: 'Tajawal-Bold',
+    fontFamily: "Tajawal-Bold",
   },
 });
 

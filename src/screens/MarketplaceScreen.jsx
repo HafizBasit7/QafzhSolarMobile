@@ -12,6 +12,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Image,
+  TextInput,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import ProductCard from "../components/ProductCard";
@@ -30,21 +31,15 @@ import {
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 
-// Responsive dimensions
+// Mobile dimensions
 const { width } = Dimensions.get("window");
-const isSmallDevice = width < 375;
-const isTablet = width >= 768;
-
-const scaleSize = (size) =>
-  isTablet ? size * 1.2 : isSmallDevice ? size * 0.9 : size;
-const scaleFont = (size) =>
-  isTablet ? size * 1.15 : isSmallDevice ? size * 0.95 : size;
 
 export default function MarketplaceScreen() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const [filters, setFilters] = useState({
@@ -204,43 +199,47 @@ export default function MarketplaceScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       >
-        <SafeAreaView edges={["top"]}>
-          <View style={styles.header}>
-            <View style={styles.headerTop}>
-              <View style={styles.headerLeft}>
-                <Text style={styles.title}>{t("MARKETPLACE.TITLE")}</Text>
-                <Text style={styles.subtitle}>{t("MARKETPLACE.SUBTITLE")}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.searchButton}
-                onPress={() => navigate("Search")}
-                accessibilityLabel={t("COMMON.SEARCH")}
-              >
-                <MaterialIcons name="search" size={24} color="#16A34A" />
-              </TouchableOpacity>
+        <View style={styles.header}>
+          {/* Top Row - Title and Location */}
+          <View style={styles.headerTop}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.title}>{t("MARKETPLACE.TITLE")}</Text>
+              <Text style={styles.subtitle}>{t("MARKETPLACE.SUBTITLE")}</Text>
             </View>
-
-            <View style={styles.actionsRow}>
-              <TouchableOpacity
-                style={styles.filterButton}
-                onPress={() => setShowFilters(true)}
-                accessibilityLabel={t("COMMON.FILTERS")}
-              >
-                <FontAwesome name="sliders" size={16} color="#FFFFFF" />
-                <Text style={styles.filterButtonText}>
-                  {t("COMMON.FILTERS")}
-                </Text>
-              </TouchableOpacity>
-
-              <View style={styles.locationTag}>
-                <Ionicons name="location-sharp" size={14} color="#FFFFFF" />
-                <Text style={styles.locationText}>
-                  {t("GOVERNORATES.SANAA")}, {t("CITIES.NEW")}
-                </Text>
-              </View>
+            <View style={styles.locationTag}>
+              <Ionicons name="location-sharp" size={10} color="#FFFFFF" />
+              <Text style={styles.locationText} numberOfLines={1}>
+                صنعاء
+              </Text>
             </View>
           </View>
-        </SafeAreaView>
+
+          {/* Bottom Row - Search and Filter */}
+          <View style={styles.actionsRow}>
+            <View style={styles.searchContainer}>
+              <View style={styles.searchInput}>
+                <MaterialIcons name="search" size={20} color="#64748B" />
+                <TextInput
+                  style={styles.searchTextInput}
+                  placeholder="ابحث عن منتج أو ماركة..."
+                  placeholderTextColor="#94A3B8"
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  textAlign="right"
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={() => setShowFilters(true)}
+              accessibilityLabel="الفلاتر"
+            >
+              <FontAwesome name="sliders" size={16} color="#FFFFFF" />
+              <Text style={styles.filterButtonText}>الفلاتر</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </LinearGradient>
     </View>
   );
@@ -331,7 +330,7 @@ export default function MarketplaceScreen() {
 
     const typeConfig = {
       products: {
-        numColumns: isTablet ? 3 : 2,
+        numColumns: 2,
         cardStyle: styles.productCard,
         detailKey: "product",
 
@@ -356,8 +355,8 @@ export default function MarketplaceScreen() {
         }),
       },
       shops: {
-        numColumns: isTablet ? 2 : 1,
-        cardStyle: isTablet ? styles.tabletCard : styles.fullWidthCard,
+        numColumns: 1,
+        cardStyle: styles.fullWidthCard,
         detailKey: "shop",
       },
       engineers: {
@@ -463,7 +462,11 @@ export default function MarketplaceScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["left", "right"]}>
-      <StatusBar barStyle="light-content" backgroundColor="#16A34A" />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="#16A34A"
+        translucent={false}
+      />
       <View style={styles.container}>
         <FlatList
           data={[]}
@@ -510,110 +513,135 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerContainer: {
-    marginBottom: scaleSize(10),
+    marginBottom: 10,
+    paddingTop: 0,
   },
   headerGradient: {
-    paddingBottom: scaleSize(15),
+    paddingTop: 25,
+    paddingBottom: 15,
   },
   header: {
-    paddingHorizontal: scaleSize(15),
+    paddingHorizontal: 15,
   },
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: scaleSize(15),
+    alignItems: "flex-start",
+    marginBottom: 15,
   },
   headerLeft: {
     flex: 1,
+    marginRight: 10,
   },
   title: {
-    fontSize: scaleFont(24),
+    fontSize: 24,
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: scaleSize(2),
+    marginBottom: 2,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: scaleFont(14),
+    fontSize: 14,
     color: "rgba(255,255,255,0.8)",
     textAlign: "center",
   },
-  searchButton: {
-    backgroundColor: "#FFFFFF",
-    width: scaleSize(40),
-    height: scaleSize(40),
-    borderRadius: scaleSize(20),
-    justifyContent: "center",
+  searchContainer: {
+    flex: 1,
+  },
+  searchInput: {
+    flexDirection: "row",
     alignItems: "center",
-    marginLeft: scaleSize(10),
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  searchTextInput: {
+    fontSize: 14,
+    color: "#1E293B",
+    marginLeft: 8,
+    fontFamily: "Tajawal-Regular",
+    flex: 1,
+    padding: 0,
   },
   actionsRow: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
   },
   filterButton: {
     flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingVertical: scaleSize(6),
-    paddingHorizontal: scaleSize(12),
-    borderRadius: scaleSize(20),
+    backgroundColor: "rgba(255,255,255,0.1)",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
     alignItems: "center",
-    marginRight: scaleSize(10),
   },
   filterButtonText: {
     color: "#FFFFFF",
-    fontSize: scaleFont(12),
-    marginLeft: scaleSize(5),
+    fontSize: 12,
+    marginLeft: 5,
   },
   locationTag: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 12,
+    maxWidth: 120,
   },
   locationText: {
     color: "#FFFFFF",
-    fontSize: scaleFont(12),
-    marginLeft: scaleSize(3),
+    fontSize: 12,
+    marginLeft: 3,
+    fontFamily: "Tajawal-Medium",
+    numberOfLines: 1,
   },
   tabsContainer: {
-    paddingVertical: scaleSize(10),
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
   tabsScrollContent: {
-    paddingHorizontal: scaleSize(15),
+    paddingHorizontal: 15,
   },
   categoryTab: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F0FDF4",
-    paddingHorizontal: scaleSize(12),
-    paddingVertical: scaleSize(8),
-    borderRadius: scaleSize(20),
-    marginRight: scaleSize(8),
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
   },
   activeCategoryTab: {
     backgroundColor: "#16A34A",
   },
   categoryTabText: {
-    fontSize: scaleFont(12),
+    fontSize: 12,
     color: "#16A34A",
-    marginHorizontal: scaleSize(5),
+    marginHorizontal: 5,
   },
   activeCategoryTabText: {
     color: "#FFFFFF",
   },
   categoryBadge: {
     backgroundColor: "#DCFCE7",
-    borderRadius: scaleSize(10),
-    paddingHorizontal: scaleSize(6),
-    paddingVertical: scaleSize(2),
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
   activeCategoryBadge: {
     backgroundColor: "rgba(255,255,255,0.2)",
   },
   categoryBadgeText: {
-    fontSize: scaleFont(10),
+    fontSize: 10,
     color: "#166534",
     fontWeight: "bold",
   },
@@ -621,82 +649,82 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   contentContainer: {
-    padding: scaleSize(15),
+    padding: 15,
   },
   section: {
-    marginBottom: scaleSize(20),
+    marginBottom: 20,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: scaleSize(15),
+    marginBottom: 15,
   },
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   sectionTitle: {
-    fontSize: scaleFont(18),
+    fontSize: 18,
     fontWeight: "bold",
     color: "#1F2937",
   },
   seeAllText: {
-    fontSize: scaleFont(12),
+    fontSize: 12,
     color: "#16A34A",
     fontWeight: "500",
   },
   productCard: {
     flex: 1,
-    margin: scaleSize(5),
-    maxWidth: isTablet ? "33.33%" : "50%",
+    margin: 5,
+    maxWidth: "50%",
   },
   fullWidthCard: {
-    marginBottom: scaleSize(10),
+    marginBottom: 10,
   },
   tabletCard: {
     flex: 1,
-    marginHorizontal: scaleSize(5),
+    marginHorizontal: 5,
   },
   columnWrapper: {
     justifyContent: "space-between",
   },
   footerLoader: {
-    paddingVertical: scaleSize(10),
+    paddingVertical: 10,
   },
   emptyState: {
-    paddingVertical: scaleSize(40),
+    paddingVertical: 40,
     alignItems: "center",
   },
   emptyText: {
-    fontSize: scaleFont(16),
+    fontSize: 16,
     color: "#6B7280",
   },
   errorContainer: {
-    paddingVertical: scaleSize(40),
+    paddingVertical: 40,
     alignItems: "center",
   },
   errorText: {
-    fontSize: scaleFont(16),
+    fontSize: 16,
     color: "#EF4444",
-    marginBottom: scaleSize(15),
+    marginBottom: 15,
     textAlign: "center",
   },
   retryButton: {
     backgroundColor: "#16A34A",
-    paddingHorizontal: scaleSize(20),
-    paddingVertical: scaleSize(10),
-    borderRadius: scaleSize(5),
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
   },
   retryButtonText: {
     color: "#FFFFFF",
     fontWeight: "bold",
   },
   bannerContainer: {
-    height: isTablet ? scaleSize(200) : scaleSize(150),
-    marginHorizontal: scaleSize(15),
-    marginBottom: scaleSize(15),
-    borderRadius: scaleSize(12),
+    height: 150,
+    marginHorizontal: 15,
+    marginBottom: 15,
+    borderRadius: 12,
     overflow: "hidden",
     elevation: 3,
     shadowColor: "#000",
@@ -714,30 +742,30 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
-    padding: scaleSize(20),
+    padding: 20,
   },
   bannerTitle: {
-    fontSize: scaleFont(isTablet ? 24 : 20),
+    fontSize: 20,
     fontWeight: "bold",
     color: "#FFFFFF",
     textAlign: "center",
-    marginBottom: scaleSize(5),
+    marginBottom: 5,
   },
   bannerSubtitle: {
-    fontSize: scaleFont(isTablet ? 16 : 14),
+    fontSize: 14,
     color: "rgba(255,255,255,0.9)",
     textAlign: "center",
-    marginBottom: scaleSize(15),
+    marginBottom: 15,
   },
   bannerButton: {
     backgroundColor: "#16A34A",
-    paddingHorizontal: scaleSize(20),
-    paddingVertical: scaleSize(10),
-    borderRadius: scaleSize(25),
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 25,
   },
   bannerButtonText: {
     color: "#FFFFFF",
     fontWeight: "bold",
-    fontSize: scaleFont(14),
+    fontSize: 14,
   },
 });
