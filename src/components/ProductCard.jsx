@@ -6,16 +6,29 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
+import PhoneLink from './PhoneLink';
+import { useNavigation } from "@react-navigation/native";
+
+const { width } = Dimensions.get('window');
+const cardWidth = (width - 48) / 2; // 2 cards per row with margins
 
 const ProductCard = ({ product }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const navigation = useNavigation();
+
+  if (!product) return null;
+
+  const handlePress = () => {
+    navigation.navigate('ProductDetail', { product });
+  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("ar-YE", {
@@ -69,65 +82,68 @@ const ProductCard = ({ product }) => {
     );
   };
 
+  const getConditionColor = (condition) => {
+    switch (condition?.toLowerCase()) {
+      case 'new': return '#10B981';
+      case 'used': return '#F59E0B';
+      case 'needs repair': return '#EF4444';
+      case 'refurbished': return '#8B5CF6';
+      default: return '#6B7280';
+    }
+  };
+
+  const getConditionText = (condition) => {
+    switch (condition?.toLowerCase()) {
+      case 'new': return t('MARKETPLACE.NEW');
+      case 'used': return t('MARKETPLACE.USED');
+      case 'needs repair': return t('MARKETPLACE.NEEDS_REPAIR');
+      case 'refurbished': return t('MARKETPLACE.REFURBISHED');
+      default: return condition || t('MARKETPLACE.CONDITION_UNKNOWN');
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={handlePress}>
       {renderImage()}
 
+      {/* Product Info */}
       <View style={styles.content}>
-        {/* Title - Single line with ellipsis */}
-        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-          {product.name}
+        <Text style={styles.title} numberOfLines={2}>
+          {product.name || t('MARKETPLACE.UNTITLED_PRODUCT')}
+        </Text>
+        
+        {product.brand && (
+          <Text style={styles.brand} numberOfLines={1}>
+            {product.brand}
+          </Text>
+        )}
+
+        <Text style={styles.price}>
+          {formatPrice(product.price)}
         </Text>
 
-        {/* Price Section */}
-        <View style={styles.priceSection}>
-          <View style={styles.priceContainer}>
-            <Text style={styles.price}>{formatPrice(product.price)}</Text>
-            <Text style={styles.currency}>{product.currency}</Text>
-          </View>
-          {product.isNegotiable && (
-            <View style={styles.negotiableBadge}>
-              <Text style={styles.negotiableText}>قابل للتفاوض</Text>
-            </View>
-          )}
-        </View>
-
         {/* Location */}
-        <View style={styles.locationContainer}>
-          <MaterialIcons name="location-on" size={14} color="#64748B" />
-          <Text style={styles.location} numberOfLines={1}>
-            {product.city}, {product.governorate}
-          </Text>
-        </View>
-
-        {/* Bottom Section */}
-        <View style={styles.bottomSection}>
-          {/* Verified Badge */}
-          {product.isVerified && (
-            <View style={styles.verifiedBadge}>
-              <MaterialIcons name="verified" size={14} color="#10B981" />
-              <Text style={styles.verifiedText}>موثوق</Text>
-            </View>
-          )}
-
-          {/* Spacer */}
-          <View style={styles.spacer} />
-
-          {/* Product Type */}
-          <View style={styles.typeBadge}>
-            <Text style={styles.typeText}>
-              {product.type === "Panel"
-                ? t("PRODUCT_TYPES.PANEL")
-                : product.type === "Inverter"
-                ? t("PRODUCT_TYPES.INVERTER")
-                : product.type === "Battery"
-                ? t("PRODUCT_TYPES.BATTERY")
-                : t("PRODUCT_TYPES.ACCESSORY")}
+        {(product.governorate || product.city) && (
+          <View style={styles.locationContainer}>
+            <Ionicons name="location-outline" size={12} color="#6B7280" />
+            <Text style={styles.location} numberOfLines={1}>
+              {[product.city, product.governorate].filter(Boolean).join(', ')}
             </Text>
           </View>
-        </View>
+        )}
+
+        {/* Contact Info */}
+        {product.phone && (
+          <PhoneLink
+            phoneNumber={product.phone}
+            style={styles.phoneContainer}
+            textStyle={styles.phoneText}
+            iconSize={12}
+            showIcon={true}
+          />
+        )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -143,6 +159,9 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderWidth: 1,
     borderColor: "#F1F5F9",
+    width: cardWidth, // Apply cardWidth to container
+    marginHorizontal: 8, // Add some horizontal margin
+    marginVertical: 8, // Add some vertical margin
   },
   imageContainer: {
     position: "relative",
@@ -298,6 +317,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Tajawal-Medium",
     color: "#475569",
+  },
+  // New styles for PhoneLink
+  phoneContainer: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+  },
+  phoneText: {
+    fontSize: 13,
+    fontFamily: 'Tajawal-Medium',
+    color: '#4B5563',
+  },
+  brand: {
+    fontSize: 13,
+    fontFamily: 'Tajawal-Regular',
+    color: '#6B7280',
+    marginBottom: 4,
   },
 });
 

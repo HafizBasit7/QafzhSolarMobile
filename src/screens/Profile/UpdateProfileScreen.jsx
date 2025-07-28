@@ -15,12 +15,13 @@ import { useAuth } from "../../hooks/useAuth";
 import * as ImagePicker from "expo-image-picker";
 import { showToast } from "../../components/common/Toast";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { uploadImage } from "../../../utils/upload";
 
 const UpdateProfileScreen = ({ navigation }) => {
   const { user, isLoadingUser, updateProfile, isUpdating } = useAuth();
   const [formData, setFormData] = useState({
-    name: user?.name || "",
-    profileImageUrl: user?.profileImageUrl || "",
+    name: user?.data?.user?.name || user?.name || "",
+    profileImageUrl: user?.data?.user?.profileImageUrl || user?.profileImageUrl || "",
   });
   const [isPickingImage, setIsPickingImage] = useState(false);
 
@@ -38,14 +39,27 @@ const UpdateProfileScreen = ({ navigation }) => {
         quality: 0.8,
       });
 
-      if (!result.canceled) {
+      if (!result.canceled && result.assets && result.assets[0]) {
+        // Upload image using utils/upload.js
+        const imageUrl = await uploadImage(result.assets[0], result.assets[0].fileName);
+        
+        // Update local form data
         setFormData((prev) => ({
           ...prev,
-          profileImageUrl: result.assets[0].uri,
+          profileImageUrl: imageUrl,
         }));
+        
+        // Immediately update the profile to reflect changes in auth state
+        await updateProfile({
+          name: formData.name,
+          profileImageUrl: imageUrl,
+        });
+        
+        showToast("success", "نجح", "تم تحديث الصورة");
       }
     } catch (error) {
-      showToast("error", "خطأ", "فشل في اختيار الصورة");
+      console.error('Image upload error:', error);
+      showToast("error", "خطأ", "فشل في تحميل الصورة");
     } finally {
       setIsPickingImage(false);
     }
@@ -64,6 +78,9 @@ const UpdateProfileScreen = ({ navigation }) => {
       showToast("error", "خطأ", error.message || "فشل في تحديث الملف الشخصي");
     }
   };
+
+  // Get current user data
+  const currentUser = user?.data?.user || user;
 
   return (
     <ScrollView style={styles.container}>
@@ -123,7 +140,7 @@ const UpdateProfileScreen = ({ navigation }) => {
           <Text style={styles.inputLabel}>رقم الهاتف</Text>
           <TextInput
             style={[styles.input, { color: "#a0aec0" }]}
-            value={user?.phone}
+            value={currentUser?.phone}
             editable={false}
           />
           <Text style={styles.helperText}>لا يمكن تغيير رقم الهاتف</Text>

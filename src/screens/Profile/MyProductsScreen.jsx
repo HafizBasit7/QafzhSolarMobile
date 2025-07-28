@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
@@ -22,8 +23,10 @@ const MyProductsScreen = () => {
   const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
 
+  // Use user_id filter to get only user's products
   const {
     products,
+    totalCount,
     isLoading,
     isError,
     error,
@@ -33,7 +36,7 @@ const MyProductsScreen = () => {
     refetch,
     deleteProduct,
     isDeleting,
-  } = useProducts({ user_id: user?._id });
+  } = useProducts({ user_id: user?.data?.user?._id || user?._id });
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -41,23 +44,55 @@ const MyProductsScreen = () => {
     setRefreshing(false);
   };
 
+  const handleProductPress = (product) => {
+    navigation.navigate('ProductDetail', { 
+      productId: product._id,
+      product: product 
+    });
+  };
+
   const handleDelete = (productId) => {
-    Alert.alert(t("COMMON.CONFIRM_DELETE"), t("PRODUCT.DELETE_CONFIRMATION"), [
-      {
-        text: t("COMMON.CANCEL"),
-        style: "cancel",
-      },
-      {
-        text: t("COMMON.DELETE"),
-        onPress: () => deleteProduct(productId),
-        style: "destructive",
-      },
-    ]);
+    Alert.alert(
+      "تأكيد الحذف", 
+      "هل أنت متأكد من حذف هذا المنتج؟", 
+      [
+        {
+          text: "إلغاء",
+          style: "cancel",
+        },
+        {
+          text: "حذف",
+          onPress: () => {
+            if (deleteProduct) {
+              deleteProduct(productId);
+            } else {
+              console.error('Delete function not available');
+            }
+          },
+          style: "destructive",
+        },
+      ]
+    );
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.productContainer}>
-      <View style={styles.cardHeader}>
+      <TouchableOpacity onPress={() => handleProductPress(item)}>
+        <ProductCard product={item} />
+      </TouchableOpacity>
+      
+      <View style={styles.cardOverlay}>
+        <View style={styles.statusContainer}>
+          <View style={[
+            styles.statusBadge, 
+            { backgroundColor: item.status === 'approved' ? '#10B981' : '#F59E0B' }
+          ]}>
+            <Text style={styles.statusText}>
+              {item.status === 'approved' ? 'مقبول' : 'قيد المراجعة'}
+            </Text>
+          </View>
+        </View>
+        
         <TouchableOpacity
           style={styles.deleteIcon}
           onPress={() => handleDelete(item._id)}
@@ -70,8 +105,6 @@ const MyProductsScreen = () => {
           )}
         </TouchableOpacity>
       </View>
-
-      <ProductCard product={item} />
     </View>
   );
 
@@ -98,21 +131,21 @@ const MyProductsScreen = () => {
     return (
       <EmptyState
         icon="error"
-        title={t("COMMON.ERROR")}
-        message={error?.message || t("COMMON.SOMETHING_WENT_WRONG")}
-        actionText={t("COMMON.RETRY")}
+        title="خطأ"
+        message={error?.message || "حدث خطأ أثناء تحميل المنتجات"}
+        actionText="إعادة المحاولة"
         onAction={refetch}
       />
     );
   }
 
-  if (products.length === 0) {
+  if (!products || products.length === 0) {
     return (
       <EmptyState
         icon="inventory"
-        title={t("PRODUCT.NO_PRODUCTS_TITLE")}
-        message={t("PRODUCT.NO_PRODUCTS_MESSAGE")}
-        actionText={t("PRODUCT.ADD_FIRST_PRODUCT")}
+        title="لا توجد منتجات"
+        message="لم تقم بنشر أي منتجات بعد. ابدأ بإضافة منتجك الأول!"
+        actionText="إضافة منتج"
         onAction={() => navigation.navigate("ProductSubmission")}
       />
     );
@@ -120,6 +153,10 @@ const MyProductsScreen = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>منتجاتي ({totalCount})</Text>
+      </View>
+      
       <FlatList
         data={products}
         renderItem={renderItem}
@@ -128,8 +165,15 @@ const MyProductsScreen = () => {
         onEndReached={() => hasNextPage && fetchNextPage()}
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={["#16A34A"]}
+            tintColor="#16A34A"
+          />
+        }
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
@@ -161,12 +205,31 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderWidth: 1,
     borderColor: "#F1F5F9",
+    position: "relative",
   },
-  cardHeader: {
+  cardOverlay: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    padding: 12,
     zIndex: 10,
+  },
+  statusContainer: {
+    // No absolute positioning needed now
+  },
+  statusBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   deleteIcon: {
     width: 36,
@@ -184,6 +247,17 @@ const styles = StyleSheet.create({
   footer: {
     padding: 16,
     alignItems: "center",
+  },
+  header: {
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
   },
 });
 

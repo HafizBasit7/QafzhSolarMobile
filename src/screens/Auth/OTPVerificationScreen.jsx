@@ -10,16 +10,19 @@ import {
   TextInput,
 } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
-import { showToast } from "../../components/common/Toast";
-import { useTranslation } from "react-i18next";
+import { useModal } from "../../hooks/useModal";
+import CustomModal from "../../components/common/CustomModal";
 
 const OTPVerificationScreen = ({ navigation, route }) => {
-  const { t } = useTranslation();
-  const { verifyOTP, isVerifying, requestOTP } = useAuth();
-  const { phone, returnData, isNewUser } = route.params;
+  const { verifyOTP, isVerifyingOTP, requestOTP, isRequestingOTP, currentUser } = useAuth();
+  const { modalState, hideModal, showSuccess, showError } = useModal();
+  const { phone, returnData, isNewUser } = route.params || {};
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(60);
   const inputRefs = useRef([]);
+
+  // Use phone from route params or current user
+  const phoneNumber = phone || currentUser?.phone;
 
   // Auto verify when default OTP (112233) is entered
   useEffect(() => {
@@ -43,44 +46,25 @@ const OTPVerificationScreen = ({ navigation, route }) => {
     const otpToVerify = enteredOTP || otp.join("");
 
     if (otpToVerify.length !== 6) {
-      showToast("error", "خطأ", "يرجى إدخال رمز التحقق كاملاً");
+      showError("خطأ", "يرجى إدخال رمز التحقق كاملاً");
       return;
     }
 
     try {
-      await verifyOTP({ phone, otp: otpToVerify });
-
-      showToast(
-        "success",
-        "نجاح",
-        isNewUser ? "تم التحقق من الحساب بنجاح!" : "تم تسجيل الدخول بنجاح!"
-      );
-
-      if (returnData) {
-        // If returning from product submission, navigate back and submit
-        if (
-          returnData.screen === "ProductSubmission" &&
-          returnData.productData
-        ) {
-          navigation.navigate("ProductSubmission", {
-            productData: returnData.productData,
-            shouldSubmit: true,
-          });
-        } else {
-          navigation.goBack();
-        }
-      } else {
+      await verifyOTP({ phone: phoneNumber, otp: otpToVerify });
+      
+      // Success message is handled by the mutation
+      // Navigate back to main app
+      setTimeout(() => {
         navigation.reset({
           index: 0,
           routes: [{ name: "MainStack" }],
         });
-      }
+      }, 1500); // Give time to see success message
+      
     } catch (error) {
-      showToast(
-        "error",
-        "خطأ",
-        error.response?.data?.message || "رمز التحقق غير صحيح"
-      );
+      // Error is handled by the mutation
+      console.error('OTP verification error:', error);
     }
   };
 
@@ -110,11 +94,12 @@ const OTPVerificationScreen = ({ navigation, route }) => {
     if (timer > 0) return;
 
     try {
-      await requestOTP(phone);
+      await requestOTP(phoneNumber);
       setTimer(60);
-      showToast("success", "نجاح", "تم إرسال رمز التحقق بنجاح");
+      // Success message is handled by the mutation
     } catch (error) {
-      showToast("error", "خطأ", "فشل في إرسال رمز التحقق");
+      // Error is handled by the mutation
+      console.error('Resend OTP error:', error);
     }
   };
 
@@ -131,8 +116,8 @@ const OTPVerificationScreen = ({ navigation, route }) => {
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>تحقق من رقم الهاتف</Text>
-        <Text style={styles.subtitle}>تم إرسال رمز التحقق إلى {phone}</Text>
+        <Text style={styles.title}>تأكيد رقم الهاتف</Text>
+        <Text style={styles.subtitle}>تم إرسال رمز التحقق إلى {phoneNumber}</Text>
         <Text style={styles.devNote}>
           ملاحظة للمطور: أدخل "112233" للتحقق التلقائي
         </Text>
@@ -149,40 +134,56 @@ const OTPVerificationScreen = ({ navigation, route }) => {
               keyboardType="number-pad"
               maxLength={1}
               selectTextOnFocus
-              editable={!isVerifying}
+              editable={!isVerifyingOTP}
             />
           ))}
         </View>
 
         <TouchableOpacity
-          style={[styles.button, isVerifying && styles.buttonDisabled]}
+          style={[styles.button, isVerifyingOTP && styles.buttonDisabled]}
           onPress={handleVerify}
-          disabled={isVerifying}
+          disabled={isVerifyingOTP}
         >
-          {isVerifying ? (
+          {isVerifyingOTP ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>تحقق</Text>
+            <Text style={styles.buttonText}>تأكيد</Text>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[
             styles.resendButton,
-            timer > 0 && styles.resendButtonDisabled,
+            (timer > 0 || isRequestingOTP) && styles.resendButtonDisabled,
           ]}
           onPress={handleResendOTP}
-          disabled={timer > 0}
+          disabled={timer > 0 || isRequestingOTP}
         >
-          <Text
-            style={[styles.resendText, timer > 0 && styles.resendTextDisabled]}
-          >
-            {timer > 0
-              ? `إعادة الإرسال خلال ${timer} ثانية`
-              : "إعادة إرسال الرمز"}
-          </Text>
+          {isRequestingOTP ? (
+            <ActivityIndicator size="small" color="#16A34A" />
+          ) : (
+            <Text
+              style={[styles.resendText, timer > 0 && styles.resendTextDisabled]}
+            >
+              {timer > 0
+                ? `إعادة الإرسال خلال ${timer} ثانية`
+                : "إعادة إرسال الرمز"}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
+
+      <CustomModal
+        visible={modalState.visible}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        onClose={hideModal}
+        actionText={modalState.actionText}
+        onAction={modalState.onAction}
+        autoClose={modalState.autoClose}
+        duration={modalState.duration}
+      />
     </KeyboardAvoidingView>
   );
 };

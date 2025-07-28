@@ -16,7 +16,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { showToast } from "../../components/common/Toast";
 import { useTranslation } from "react-i18next";
 import * as ImagePicker from "expo-image-picker";
-import { uploadImage } from "../../utils/imageUpload";
+import { uploadImage } from "../../../utils/upload";
 
 const RegisterScreen = ({ navigation, route }) => {
   const { t } = useTranslation();
@@ -42,7 +42,7 @@ const RegisterScreen = ({ navigation, route }) => {
 
       if (!result.canceled) {
         setIsUploading(true);
-        const imageUrl = await uploadImage(result.assets[0].uri);
+        const imageUrl = await uploadImage(result.assets[0], result.assets[0].fileName || 'profile_image.jpg');
         setFormData((prev) => ({ ...prev, profileImageUrl: imageUrl }));
         setIsUploading(false);
       }

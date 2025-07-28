@@ -20,7 +20,7 @@ import {
   FontAwesome,
 } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useEngineers } from "../hooks/useEngineers";
+import { useEngineers, useEngineer } from "../hooks/useEngineers";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import ImageViewerModal from "../components/ImageViewerModal";
 
@@ -29,7 +29,6 @@ const { width } = Dimensions.get("window");
 const EngineerDetailScreen = ({ navigation, route }) => {
   const { engineerId } = route.params;
   const { t } = useTranslation();
-  const { useEngineer } = useEngineers();
   const {
     data: engineerResponse,
     isLoading,

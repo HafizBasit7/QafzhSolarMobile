@@ -16,16 +16,14 @@ import { useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useShops } from "../hooks/useShops";
+import { useShops, useShop } from "../hooks/useShops";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import ImageViewerModal from "../components/ImageViewerModal";
 
-const ShopScreen = ({ navigation }) => {
-  const route = useRoute();
+const ShopScreen = ({ navigation, route }) => {
   const { shopId } = route.params;
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
-  const { useShop } = useShops();
   const { data: shopResponse, isLoading, isError, error } = useShop(shopId);
 
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
