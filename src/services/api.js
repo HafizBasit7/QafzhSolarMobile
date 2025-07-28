@@ -3,7 +3,7 @@ import { uploadAPI } from "../utils/imageUpload";
 import { showToast } from "../components/common/Toast";
 import storage from "../utils/storage";
 
-const BASE_URL = "http://192.168.100.33:5005/api/v1"; // OfficeIP
+const BASE_URL = "http://192.168.100.26:5005/api/v1"; // OfficeIP
 // const BASE_URL = 'http://192.168.1.6:5005/api/v1'; //HomeIP
 
 // Create axios instance
@@ -165,9 +165,23 @@ export const shopsAPI = {
 };
 
 // Ads API
-export const adsAPI = {
-  getAds: (params) => api.get("/marketplace/getAllAds", { params }),
-  searchAds: (params) => api.get("/marketplace/filters-ads", { params }),
+// export const adsAPI = {
+//   getAds: (params) => api.get("/marketplace/getAllAds", { params }),
+//   searchAds: (params) => api.get("/marketplace/filters-ads", { params }),
+// };
+
+export const getAllAds = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/marketplace/getAllAds`);
+    return {
+      data: response.data.data || [], // Access nested data property
+      total: response.data.total || 0,
+      message: response.data.message || '',
+      status: response.data.status || 200
+    };
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to fetch ads');
+  }
 };
 
 // Governorates API

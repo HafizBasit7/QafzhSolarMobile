@@ -137,13 +137,13 @@ const ProfileScreen = ({ navigation }) => {
 
       {/* Stats Section */}
       <View style={styles.statsContainer}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.statItem}
           onPress={() => navigation.navigate("MyProducts")}
         >
           <Text style={styles.statNumber}>{productCount}</Text>
           <Text style={styles.statLabel}>المنتجات</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>
@@ -155,13 +155,13 @@ const ProfileScreen = ({ navigation }) => {
 
       {/* Action Buttons */}
       <View style={styles.actionsContainer}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.actionButton}
           onPress={() => navigation.navigate("MyProducts")}
         >
           <AntDesign name="appstore-o" size={20} color="#22C55E" />
           <Text style={styles.actionButtonText}>منتجاتي</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           style={styles.actionButton}

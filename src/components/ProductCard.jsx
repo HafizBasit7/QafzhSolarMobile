@@ -69,7 +69,7 @@ const ProductCard = ({ product }) => {
         )}
 
         {/* Condition Badge */}
-        <View
+        {/* <View
           style={[styles.conditionBadge, styles[`${product.condition}Badge`]]}
         >
           <Text
@@ -77,7 +77,7 @@ const ProductCard = ({ product }) => {
           >
             {t(`CONDITIONS.${product.condition.toUpperCase()}`)}
           </Text>
-        </View>
+        </View> */}
       </View>
     );
   };
@@ -88,7 +88,7 @@ const ProductCard = ({ product }) => {
       case 'used': return '#F59E0B';
       case 'needs repair': return '#EF4444';
       case 'refurbished': return '#8B5CF6';
-      default: return '#6B7280';
+      default: return '#F59E0B';
     }
   };
 
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#ECFDF5",
+    backgroundColor: "#10B981",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,

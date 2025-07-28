@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
   },
   directionsButton: {
     flex: 1,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#10B981",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
   },
   workingDayText: {
     fontSize: 12,
-    color: "#1D4ED8",
+    color: "#16A34A",
     fontFamily: "Tajawal-Medium",
   },
 
@@ -610,7 +610,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 14,
-    color: "#1D4ED8",
+    color: "#16A34A",
     fontFamily: "Tajawal-Medium",
   },
   errorContainer: {

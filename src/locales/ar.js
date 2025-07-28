@@ -363,4 +363,27 @@ export default {
     SHARE: "مشاركة",
     REPORT: "الإبلاغ",
   },
+  "ADS": {
+    "TITLE": "الإعلانات",
+    "TOTAL": "إجمالي الإعلانات",
+    "ACTIVE": "الإعلانات النشطة",
+    "NONE_FOUND": "لا توجد إعلانات",
+    "STATUS": "الحالة",
+    "ACTIVE": "نشط",
+    "INACTIVE": "غير نشط",
+    "CALL": "اتصال",
+    "VISIT_LINK": "زيارة الرابط",
+    "DESCRIPTION": "الوصف",
+    "DATE_POSTED": "تاريخ النشر",
+    "PHONE": "الهاتف",
+    "LINK": "الرابط",
+    "VIEW_ALL": "عرض الكل",
+    "NEW_AD": "إعلان جديد",
+    "EDIT_AD": "تعديل الإعلان",
+    "DELETE_AD": "حذف الإعلان",
+    "CONFIRM_DELETE": "هل أنت متأكد من حذف هذا الإعلان؟",
+    "AD_DETAILS": "تفاصيل الإعلان",
+    "NO_PHONE": "لا يوجد رقم هاتف",
+    "NO_DESCRIPTION": "لا يوجد وصف"
+  }
 };

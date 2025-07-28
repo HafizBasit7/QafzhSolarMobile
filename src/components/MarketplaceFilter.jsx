@@ -166,12 +166,12 @@ const MarketplaceFilter = ({
             )}
 
             {/* Sort By */}
-            {renderFilterSection(
+            {/* {renderFilterSection(
               t("COMMON.SORT_BY"),
               sortOptions,
               filters.sortBy,
               (value) => setFilters({ ...filters, sortBy: value })
-            )}
+            )} */}
           </ScrollView>
 
           {/* Apply Button */}

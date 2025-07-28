@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row-reverse",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: "rgba(255, 255, 255, 0.15)", 
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
@@ -882,11 +882,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: "#6B7280",
+    color: "#FFFFFF",
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#9CA3AF",
+    color: "#FFFFFF",
     marginTop: 5,
   },
   errorContainer: {
