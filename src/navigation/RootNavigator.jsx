@@ -1,39 +1,18 @@
+import React from 'react';
+import { SafeAreaView, StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createRef, useEffect, useState } from 'react';
-import { StatusBar, SafeAreaView, ActivityIndicator } from 'react-native';
+import { useModal } from '../hooks/useModal';
+import CustomModal from '../components/common/CustomModal';
+
 import MainStack from './MainStack';
 import AuthStack from './AuthStack';
-import { useAuth } from '../hooks/useAuth';
+import { navigationRef } from './navigationHelper';
 
-export const navigationRef = createRef();
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
-  const { user, checkAuth } = useAuth();
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    const prepare = async () => {
-      try {
-        await checkAuth(); // This will verify auth state via cookies
-      } finally {
-        setIsReady(true);
-      }
-    };
-    prepare();
-  }, []);
-
-  if (!isReady) {
-    return (
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#16A34A" />
-      </SafeAreaView>
-    );
-  }
-
-  const isAuthenticated = !!user?.data?.user;
-  const isVerified = user?.data?.user?.isVerified;
+  const { modalState, hideModal } = useModal();
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -43,22 +22,37 @@ export default function RootNavigator() {
           StatusBar.setBarStyle('light-content');
         }}
       >
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {/* Main stack always accessible */}
+        <Stack.Navigator 
+          screenOptions={{ headerShown: false }}
+          initialRouteName="MainStack"
+        >
+          {/* Main app stack - always default */}
           <Stack.Screen name="MainStack" component={MainStack} />
           
-          {/* Auth stacks */}
-          <Stack.Group screenOptions={{ presentation: 'modal', animation: 'slide_from_bottom' }}>
-            {!isAuthenticated && (
-              <Stack.Screen name="AuthStack" component={AuthStack} />
-            )}
-            
-            {isAuthenticated && !isVerified && (
-              <Stack.Screen name="VerificationStack" component={AuthStack} />
-            )}
-          </Stack.Group>
+          {/* Auth stack - modal for when login is needed */}
+          <Stack.Screen 
+            name="AuthStack" 
+            component={AuthStack}
+            options={{
+              presentation: 'modal',
+              animation: 'slide_from_bottom'
+            }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
+
+      {/* Global Modal */}
+      <CustomModal
+        visible={modalState.visible}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        onClose={hideModal}
+        actionText={modalState.actionText}
+        onAction={modalState.onAction}
+        autoClose={modalState.autoClose}
+        duration={modalState.duration}
+      />
     </SafeAreaView>
   );
 }

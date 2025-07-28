@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,22 +11,23 @@ import {
   Platform,
   SafeAreaView,
   Image,
-} from 'react-native';
-import { useRoute } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from "@expo/vector-icons";
-import { useTranslation } from 'react-i18next';
-import { useShops } from '../hooks/useShops';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-// import AuthGuard from '../components/common/AuthGuard';
+} from "react-native";
+import { useRoute } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { useShops, useShop } from "../hooks/useShops";
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import ImageViewerModal from "../components/ImageViewerModal";
 
-const ShopScreen = ({ navigation }) => {
-  const route = useRoute();
+const ShopScreen = ({ navigation, route }) => {
   const { shopId } = route.params;
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
-  const { useShop } = useShops();
   const { data: shopResponse, isLoading, isError, error } = useShop(shopId);
+
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
 
   const shop = shopResponse?.data || shopResponse || {};
 
@@ -50,13 +51,13 @@ const ShopScreen = ({ navigation }) => {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>
-          {error?.message || 'Failed to load shop details'}
+          {error?.message || t("SHOP.loadError")}
         </Text>
         <TouchableOpacity
           style={styles.retryButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.retryButtonText}>Go Back</Text>
+          <Text style={styles.retryButtonText}>{t("COMMON.BACK")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -65,12 +66,12 @@ const ShopScreen = ({ navigation }) => {
   if (!shop) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Shop not found</Text>
+        <Text style={styles.errorText}>{t("SHOP.notFound")}</Text>
         <TouchableOpacity
           style={styles.retryButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.retryButtonText}>Go Back</Text>
+          <Text style={styles.retryButtonText}>{t("COMMON.BACK")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -78,14 +79,19 @@ const ShopScreen = ({ navigation }) => {
 
   const renderWorkingHours = () => {
     if (!shop.workingHours) return null;
-    
+
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('SHOP.workingHours')}</Text>
-        <View style={styles.workingHoursContainer}>
-          <Text style={styles.workingHoursText}>
-            {shop.workingHours.openTime} - {shop.workingHours.closeTime}
-          </Text>
+        <Text style={styles.sectionTitle}>{t("SHOP.workingHours")}</Text>
+        <View style={styles.infoCard}>
+          <View style={styles.detailRow}>
+            <MaterialIcons name="schedule" size={20} color="#16A34A" />
+            <View style={styles.detailTextContainer}>
+              <Text style={styles.detailText}>
+                {shop.workingHours.openTime} - {shop.workingHours.closeTime}
+              </Text>
+            </View>
+          </View>
           {shop.workingHours.workingDays?.length > 0 && (
             <View style={styles.workingDaysContainer}>
               {shop.workingHours.workingDays.map((day, index) => (
@@ -100,53 +106,40 @@ const ShopScreen = ({ navigation }) => {
     );
   };
 
-  const renderRating = () => {
-    if (!shop.rating) return null;
-    
-    return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('SHOP.rating')}</Text>
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={20} color="#F59E0B" />
-          <Text style={styles.ratingText}>
-            {shop.rating.average.toFixed(1)} ({shop.rating.count} {t('SHOP.reviews')})
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
   const renderSocialMedia = () => {
-    if (!shop.socialMedia) return null;
-    
+    if (!shop.socialMedia || Object.keys(shop.socialMedia).length === 0)
+      return null;
+
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('SHOP.socialMedia')}</Text>
-        <View style={styles.socialMediaContainer}>
-          {shop.socialMedia.facebook && (
-            <TouchableOpacity 
-              style={styles.socialMediaButton} 
-              onPress={() => handleSocialMedia(shop.socialMedia.facebook)}
-            >
-              <Ionicons name="logo-facebook" size={24} color="#3b5998" />
-            </TouchableOpacity>
-          )}
-          {shop.socialMedia.instagram && (
-            <TouchableOpacity 
-              style={styles.socialMediaButton} 
-              onPress={() => handleSocialMedia(shop.socialMedia.instagram)}
-            >
-              <Ionicons name="logo-instagram" size={24} color="#E1306C" />
-            </TouchableOpacity>
-          )}
-          {shop.socialMedia.twitter && (
-            <TouchableOpacity 
-              style={styles.socialMediaButton} 
-              onPress={() => handleSocialMedia(shop.socialMedia.twitter)}
-            >
-              <Ionicons name="logo-twitter" size={24} color="#1DA1F2" />
-            </TouchableOpacity>
-          )}
+        <Text style={styles.sectionTitle}>{t("SHOP.socialMedia")}</Text>
+        <View style={styles.infoCard}>
+          <View style={styles.socialMediaContainer}>
+            {shop.socialMedia.facebook && (
+              <TouchableOpacity
+                style={styles.socialMediaButton}
+                onPress={() => handleSocialMedia(shop.socialMedia.facebook)}
+              >
+                <Ionicons name="logo-facebook" size={24} color="#1877F2" />
+              </TouchableOpacity>
+            )}
+            {shop.socialMedia.instagram && (
+              <TouchableOpacity
+                style={styles.socialMediaButton}
+                onPress={() => handleSocialMedia(shop.socialMedia.instagram)}
+              >
+                <Ionicons name="logo-instagram" size={24} color="#E4405F" />
+              </TouchableOpacity>
+            )}
+            {shop.socialMedia.twitter && (
+              <TouchableOpacity
+                style={styles.socialMediaButton}
+                onPress={() => handleSocialMedia(shop.socialMedia.twitter)}
+              >
+                <Ionicons name="logo-twitter" size={24} color="#1DA1F2" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
     );
@@ -154,18 +147,29 @@ const ShopScreen = ({ navigation }) => {
 
   const renderImages = () => {
     if (!shop.images || shop.images.length === 0) return null;
-    
+
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('SHOP.gallery')}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <Text style={styles.sectionTitle}>{t("SHOP.gallery")}</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.imagesContainer}
+        >
           {shop.images.map((image, index) => (
-            <Image
+            <TouchableOpacity
               key={index}
-              source={{ uri: image }}
-              style={styles.galleryImage}
-              resizeMode="cover"
-            />
+              onPress={() => {
+                setSelectedImage(image);
+                setImageViewerVisible(true);
+              }}
+            >
+              <Image
+                source={{ uri: image }}
+                style={styles.galleryImage}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
@@ -174,33 +178,38 @@ const ShopScreen = ({ navigation }) => {
 
   const renderBrands = () => {
     if (!shop.brands || shop.brands.length === 0) return null;
-    
+
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('SHOP.brands')}</Text>
-        <View style={styles.brandsContainer}>
-          {shop.brands.map((brand, index) => (
-            <View key={index} style={styles.brandBadge}>
-              <Text style={styles.brandText}>{brand}</Text>
-            </View>
-          ))}
+        <Text style={styles.sectionTitle}>{t("SHOP.brands")}</Text>
+        <View style={styles.infoCard}>
+          <View style={styles.brandsContainer}>
+            {shop.brands.map((brand, index) => (
+              <View key={index} style={styles.brandBadge}>
+                <Text style={styles.brandText}>{brand}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
     );
   };
 
   const renderProductCategories = () => {
-    if (!shop.productCategories || shop.productCategories.length === 0) return null;
-    
+    if (!shop.productCategories || shop.productCategories.length === 0)
+      return null;
+
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('SHOP.productCategories')}</Text>
-        <View style={styles.categoriesContainer}>
-          {shop.productCategories.map((category, index) => (
-            <View key={index} style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{category}</Text>
-            </View>
-          ))}
+        <Text style={styles.sectionTitle}>{t("SHOP.productCategories")}</Text>
+        <View style={styles.infoCard}>
+          <View style={styles.categoriesContainer}>
+            {shop.productCategories.map((category, index) => (
+              <View key={index} style={styles.categoryBadge}>
+                <Text style={styles.categoryText}>{category}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
     );
@@ -209,474 +218,424 @@ const ShopScreen = ({ navigation }) => {
   const renderAdditionalInfo = () => {
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('SHOP.additionalInfo')}</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>{t('SHOP.establishedYear')}:</Text>
-          <Text style={styles.infoValue}>{shop.establishedYear}</Text>
+        <Text style={styles.sectionTitle}>{t("SHOP.additionalInfo")}</Text>
+        <View style={styles.infoCard}>
+          {shop.establishedYear && (
+            <View style={styles.detailRow}>
+              <MaterialIcons name="business" size={20} color="#16A34A" />
+              <View style={styles.detailTextContainer}>
+                <Text style={styles.detailText}>
+                  {t("SHOP.establishedYear")}: {shop.establishedYear}
+                </Text>
+              </View>
+            </View>
+          )}
+          {shop.licenseNumber && (
+            <View style={styles.detailRow}>
+              <MaterialIcons name="verified" size={20} color="#16A34A" />
+              <View style={styles.detailTextContainer}>
+                <Text style={styles.detailText}>
+                  {t("SHOP.licenseNumber")}: {shop.licenseNumber}
+                </Text>
+              </View>
+            </View>
+          )}
+          {shop.website && (
+            <View style={styles.detailRow}>
+              <MaterialIcons name="language" size={20} color="#16A34A" />
+              <View style={styles.detailTextContainer}>
+                <Text style={styles.detailText}>{shop.website}</Text>
+              </View>
+            </View>
+          )}
+          {shop.notes && (
+            <View style={styles.detailRow}>
+              <MaterialIcons name="notes" size={20} color="#16A34A" />
+              <View style={styles.detailTextContainer}>
+                <Text style={styles.detailText}>{shop.notes}</Text>
+              </View>
+            </View>
+          )}
         </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>{t('SHOP.licenseNumber')}:</Text>
-          <Text style={styles.infoValue}>{shop.licenseNumber}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>{t('SHOP.website')}:</Text>
-          <TouchableOpacity onPress={() => Linking.openURL(shop.website)}>
-            <Text style={[styles.infoValue, styles.linkText]}>{shop.website}</Text>
-          </TouchableOpacity>
-        </View>
-        {shop.notes && (
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{t('SHOP.notes')}:</Text>
-            <Text style={styles.infoValue}>{shop.notes}</Text>
-          </View>
-        )}
       </View>
     );
   };
 
-  const Content = () => (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Header with Image */}
-        <View style={[styles.headerContainer, { height: width * 0.75 }]}>
-          <ImageBackground
-            source={{ uri: shop.logoUrl || shop.images?.[0] || 'https://via.placeholder.com/400x200' }}
-            style={styles.headerImage}
+  return (
+    <View style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section */}
+        <View style={styles.header}>
+          <Image
+            source={{ uri: shop.logoUrl || "https://via.placeholder.com/150" }}
+            style={styles.shopLogo}
             resizeMode="cover"
-          >
-            <LinearGradient
-              colors={['rgba(0,0,0,0.6)', 'transparent']}
-              style={styles.gradient}
-            />
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation?.goBack?.()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#FFF" />
-            </TouchableOpacity>
-          </ImageBackground>
-        </View>
-
-        {/* Content */}
-        <ScrollView contentContainerStyle={{ paddingBottom: 90 }}>
-          <View style={styles.card}>
-            {/* Shop Info */}
+          />
+          <View style={styles.headerContent}>
             <View style={styles.nameRow}>
-          
-              <Text style={styles.shopName}>{shop.name}</Text>
+              <Text style={styles.name}>{shop.name}</Text>
               {shop.isVerified && (
                 <View style={styles.verifiedBadge}>
-                  <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                  <Text style={styles.verifiedText}>{t('SHOP.verifiedShop')}</Text>
+                  <MaterialIcons name="verified" size={16} color="#10B981" />
+                  <Text style={styles.verifiedText}>
+                    {t("COMMON.VERIFIED")}
+                  </Text>
                 </View>
               )}
             </View>
 
-            {/* Description */}
-            {shop.description && (
-              <Text style={styles.descriptionText}>{shop.description}</Text>
-            )}
-
-            {/* Location */}
-            <View style={styles.locationRow}>
-              <Ionicons name="location-outline" size={18} color="#10B981" />
-              <Text style={styles.locationText}>
-                {shop.address}, {shop.city}, {shop.governorate}
-              </Text>
-            </View>
-
-            {/* {renderRating()} */}
-            {renderWorkingHours()}
-
-            {/* Services */}
-            {shop.services?.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t('SHOP.servicesProvided')}</Text>
-                <View style={styles.servicesGrid}>
-                  {shop.services.map((service, index) => (
-                    <View key={index} style={styles.serviceBadge}>
-                      <Text style={styles.serviceText}>{service}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {renderProductCategories()}
-            {renderBrands()}
-
-            {/* Contact */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('SHOP.contactShop')}</Text>
-              <TouchableOpacity style={styles.contactRow} onPress={handleCall}>
-                <Ionicons name="call-outline" size={20} color="#10B981" />
-                <Text style={styles.contactText}>{shop.phone}</Text>
-              </TouchableOpacity>
-              {shop.whatsappPhone && (
-                <TouchableOpacity
-                  style={styles.contactRow}
-                  onPress={() => Linking.openURL(`whatsapp://send?phone=${shop.whatsappPhone}`)}
-                >
-                  <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
-                  <Text style={styles.contactText}>{t('SHOP.chatOnWhatsapp')}</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={styles.contactRow}
-                onPress={() => Linking.openURL(`mailto:${shop.email}`)}
-              >
-                <Ionicons name="mail-outline" size={20} color="#10B981" />
-                <Text style={styles.contactText}>{shop.email}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {renderSocialMedia()}
-            {renderImages()}
-            {renderAdditionalInfo()}
+            <Text style={styles.location}>
+              {shop.city}, {shop.governorate}
+            </Text>
           </View>
-        </ScrollView>
 
-        {/* Fixed Action Bar */}
-        <View style={styles.actionBar}>
-          <TouchableOpacity style={styles.secondaryButton} onPress={handleDirections}>
-            <Ionicons name="navigate-outline" size={20} color="#10B981" />
-            <Text style={styles.secondaryButtonText}>{t('SHOP.directions')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.primaryButton} onPress={handleCall}>
-            <Ionicons name="call-outline" size={20} color="#FFF" />
-            <Text style={styles.primaryButtonText}>{t('SHOP.call')}</Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
         </View>
-      </View>
-    </SafeAreaView>
-  );
 
-  return (
-    // <AuthGuard returnData={{ shopId }}>
-    //   <Content />
-    // </AuthGuard>
-    <Content />
+        {/* Contact Buttons */}
+        <View style={styles.contactButtons}>
+          <TouchableOpacity style={styles.callButton} onPress={handleCall}>
+            <Ionicons name="call-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.buttonText}>{t("COMMON.CALL")}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.directionsButton}
+            onPress={handleDirections}
+          >
+            <Ionicons name="location-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.buttonText}>{t("SHOP.directions")}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Services Section */}
+        {shop.services && shop.services.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              {t("SHOP.servicesProvided")}
+            </Text>
+            <View style={styles.infoCard}>
+              <View style={styles.servicesContainer}>
+                {shop.services.map((service, index) => (
+                  <View key={index} style={styles.serviceBadge}>
+                    <Text style={styles.serviceText}>{service}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Working Hours */}
+        {renderWorkingHours()}
+
+        {/* Social Media */}
+        {renderSocialMedia()}
+
+        {/* Images */}
+        {renderImages()}
+
+        {/* Brands */}
+        {renderBrands()}
+
+        {/* Product Categories */}
+        {renderProductCategories()}
+
+        {/* Additional Info */}
+        {renderAdditionalInfo()}
+      </ScrollView>
+
+      {/* Image Viewer Modal */}
+      <ImageViewerModal
+        visible={imageViewerVisible}
+        imageUrl={selectedImage}
+        onClose={() => setImageViewerVisible(false)}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: "#F8FAFC",
   },
   container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
+    paddingBottom: 20,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    fontFamily: 'Tajawal-Medium',
-    color: '#EF4444',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#16A34A',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontFamily: 'Tajawal-Medium',
-    fontSize: 14,
-  },
-  headerContainer: {
-    width: '100%',
-  },
-  headerImage: {
-    flex: 1,
-  },
-  gradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-  },
-  backButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 30,
-    left: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 8,
-    borderRadius: 20,
-  },
-  card: {
-    backgroundColor: '#FFF',
-    margin: 16,
-    padding: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
+  header: {
+    backgroundColor: "#FFFFFF",
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    position: "relative",
+  },
+  shopLogo: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  headerContent: {
+    alignItems: "center",
   },
   nameRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
-  shopName: {
-    fontSize: 22,
-    fontFamily: 'Tajawal-Bold',
-    color: '#1E293B',
-    flex: 1,
-    textAlign: 'right',
-  },
-  descriptionText: {
-    fontSize: 15,
-    fontFamily: 'Tajawal-Regular',
-    color: '#64748B',
-    marginBottom: 16,
-    textAlign: 'right',
-    lineHeight: 22,
-  },
-  verifiedBadge: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  name: {
+    fontSize: 24,
+    fontFamily: "Tajawal-Bold",
+    color: "#1E293B",
+    textAlign: "center",
     marginRight: 8,
   },
+  verifiedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ECFDF5",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
   verifiedText: {
-    fontSize: 13,
-    fontFamily: 'Tajawal-Medium',
-    color: '#10B981',
+    fontSize: 12,
+    fontFamily: "Tajawal-Medium",
+    color: "#10B981",
     marginRight: 4,
   },
-  locationRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    marginBottom: 16,
+  location: {
+    fontSize: 16,
+    fontFamily: "Tajawal-Regular",
+    color: "#64748B",
+    textAlign: "center",
   },
-  locationText: {
-    fontSize: 15,
-    fontFamily: 'Tajawal-Regular',
-    color: '#64748B',
-    marginRight: 6,
+  backButton: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  contactButtons: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  callButton: {
+    flex: 1,
+    backgroundColor: "#16A34A",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  directionsButton: {
+    flex: 1,
+    backgroundColor: "#10B981",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontFamily: "Tajawal-Bold",
+    fontSize: 14,
+    marginRight: 8,
   },
   section: {
     marginTop: 20,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Tajawal-Bold',
-    color: '#1E293B',
-    marginBottom: 12,
-    textAlign: 'right',
+    fontSize: 20,
+    fontFamily: "Tajawal-Bold",
+    color: "#1E293B",
+    marginBottom: 16,
+    textAlign: "right",
   },
-  servicesGrid: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
+  infoCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  detailTextContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
+  detailText: {
+    fontSize: 16,
+    fontFamily: "Tajawal-Regular",
+    color: "#374151",
+    textAlign: "right",
+  },
+  servicesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
   serviceBadge: {
-    backgroundColor: '#EFF6FF',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: "#F0FDF4",
+    borderColor: "#DCFCE7",
     borderWidth: 1,
-    borderColor: '#DBEAFE',
-    marginRight: 8,
-    marginBottom: 8,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   serviceText: {
     fontSize: 14,
-    fontFamily: 'Tajawal-Medium',
-    color: '#10B981',
-  },
-  contactRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  contactText: {
-    fontSize: 16,
-    fontFamily: 'Tajawal-Medium',
-    color: '#1E293B',
-    marginRight: 12,
-  },
-  actionBar: {
-    marginBottom: 15,
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#FFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  primaryButton: {
-    flex: 1,
-    backgroundColor: '#10B981',
-    flexDirection: 'row-reverse',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 14,
-    borderRadius: 12,
-    marginLeft: 8,
-    marginRight: 18,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontFamily: 'Tajawal-Bold',
-    fontSize: 16,
-    marginRight: 8,
-  },
-  secondaryButton: {
-    flex: 1,
-    backgroundColor: '#EFF6FF',
-    flexDirection: 'row-reverse',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-  },
-  secondaryButtonText: {
-    color: '#10B981',
-    fontFamily: 'Tajawal-Bold',
-    fontSize: 16,
-    marginRight: 8,
-  },
-  workingHoursContainer: {
-    backgroundColor: '#F8FAFC',
-    padding: 12,
-    borderRadius: 8,
-  },
-  workingHoursText: {
-    fontSize: 15,
-    fontFamily: 'Tajawal-Medium',
-    color: '#1E293B',
-    marginBottom: 8,
-    textAlign: 'right',
+    color: "#166534",
+    fontFamily: "Tajawal-Medium",
   },
   workingDaysContainer: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
   },
   workingDayBadge: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: "#EFF6FF",
+    borderColor: "#DBEAFE",
+    borderWidth: 1,
+    borderRadius: 16,
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    marginLeft: 8,
-    marginBottom: 8,
+    paddingHorizontal: 12,
   },
   workingDayText: {
-    fontSize: 13,
-    fontFamily: 'Tajawal-Medium',
-    color: '#3B82F6',
+    fontSize: 12,
+    color: "#16A34A",
+    fontFamily: "Tajawal-Medium",
   },
-  ratingContainer: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    backgroundColor: '#FFFBEB',
-    padding: 12,
-    borderRadius: 8,
-  },
-  ratingText: {
-    fontSize: 15,
-    fontFamily: 'Tajawal-Medium',
-    color: '#92400E',
-    marginRight: 8,
-  },
+
   socialMediaContainer: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'flex-start',
-    marginTop: 8,
+    flexDirection: "row",
+    gap: 16,
   },
   socialMediaButton: {
-    marginLeft: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#F8FAFC",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  imagesContainer: {
+    paddingRight: 20,
   },
   galleryImage: {
     width: 120,
     height: 120,
-    borderRadius: 8,
-    marginLeft: 12,
+    borderRadius: 12,
+    marginRight: 12,
   },
   brandsContainer: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
   brandBadge: {
-    backgroundColor: '#F3E8FF',
+    backgroundColor: "#FEF3C7",
+    borderColor: "#FDE68A",
+    borderWidth: 1,
+    borderRadius: 20,
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginLeft: 8,
-    marginBottom: 8,
+    paddingHorizontal: 16,
   },
   brandText: {
     fontSize: 14,
-    fontFamily: 'Tajawal-Medium',
-    color: '#7E22CE',
+    color: "#D97706",
+    fontFamily: "Tajawal-Medium",
   },
   categoriesContainer: {
-    flexDirection: 'row-reverse',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
   categoryBadge: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: "#EFF6FF",
+    borderColor: "#DBEAFE",
+    borderWidth: 1,
+    borderRadius: 20,
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginLeft: 8,
-    marginBottom: 8,
+    paddingHorizontal: 16,
   },
   categoryText: {
     fontSize: 14,
-    fontFamily: 'Tajawal-Medium',
-    color: '#059669',
+    color: "#16A34A",
+    fontFamily: "Tajawal-Medium",
   },
-  infoRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  infoLabel: {
-    fontSize: 15,
-    fontFamily: 'Tajawal-Medium',
-    color: '#64748B',
-  },
-  infoValue: {
-    fontSize: 15,
-    fontFamily: 'Tajawal-Medium',
-    color: '#1E293B',
-    textAlign: 'left',
+  errorContainer: {
     flex: 1,
-    marginLeft: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
-  linkText: {
-    color: '#3B82F6',
-    textDecorationLine: 'underline',
+  errorText: {
+    fontSize: 16,
+    fontFamily: "Tajawal-Regular",
+    color: "#64748B",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#16A34A",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontFamily: "Tajawal-Bold",
+    fontSize: 14,
   },
 });
 

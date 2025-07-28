@@ -1,134 +1,206 @@
-import React from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  FlatList, 
-  Image, 
-  Text, 
-  TouchableOpacity, 
-  useWindowDimensions,
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Linking,
+  StyleSheet,
   Platform,
-  SafeAreaView
+  SafeAreaView,
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { useWindowDimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { getAllAds } from '../services/api';
 
-// Mock offers data
-const mockOffers = [
-  {
-    id: '1',
-    title: 'خصم 25% على الألواح الشمسية',
-    description: 'عرض خاص لفترة محدودة على ألواح جينكو 450 واط',
-    image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    expiry: 'ينتهي في 15 ديسمبر',
-    discount: '25%',
-    isHot: true,
-    category: 'الطاقة الشمسية'
-  },
-  {
-    id: '2',
-    title: 'تركيب مجاني مع شراء النظام الكامل',
-    description: 'احصل على تركيب مجاني عند شراء نظام 5 كيلو واط أو أكثر',
-    image: 'https://images.unsplash.com/photo-1551269901-5c5e14c25df7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    expiry: 'عرض مستمر',
-    discount: 'تركيب مجاني',
-    isHot: false,
-    category: 'التركيبات'
-  },
-  {
-    id: '3',
-    title: 'عرض البطاريات الذكية',
-    description: 'خصم 15% على بطاريات الليثيوم مع ضمان 5 سنوات',
-    image: 'https://images.unsplash.com/photo-1605152276897-4f618f831968?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    expiry: 'ينتهي في 30 نوفمبر',
-    discount: '15%',
-    isHot: true,
-    category: 'البطاريات'
-  },
-  {
-    id: '4',
-    title: 'أنظمة الطاقة الهجينة',
-    description: 'حلول متكاملة للطاقة الشمسية مع مولدات احتياطية',
-    image: 'https://images.unsplash.com/photo-1521618755572-156ae0cdd74d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    expiry: 'ينتهي في 10 يناير',
-    discount: '10%',
-    isHot: false,
-    category: 'أنظمة متكاملة'
-  },
-];
+const AdsScreen = () => {
+  const navigation = useNavigation();
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 375;
+  const { t } = useTranslation();
+  const [adsData, setAdsData] = useState({
+    ads: [],
+    total: 0,
+    loading: true,
+    error: null,
+  });
+  const [refreshing, setRefreshing] = useState(false);
 
-export default function AdsScreen({ navigation }) {
-  const { width, height } = useWindowDimensions();
-  const isLandscape = width > height;
-  const cardHeight = isLandscape ? height * 0.6 : width * 0.6;
+  const fetchAds = useCallback(async () => {
+    try {
+      const response = await getAllAds();
+      setAdsData({
+        ads: response.data || [],
+        total: response.total || 0,
+        loading: false,
+        error: null,
+      });
+    } catch (err) {
+      setAdsData((prev) => ({
+        ...prev,
+        loading: false,
+        error: err.message || 'Failed to fetch ads',
+      }));
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
-  const renderOfferItem = ({ item }) => (
-    <TouchableOpacity 
-      style={[styles.card, { height: cardHeight }]}
-      onPress={() => navigation.navigate('OfferDetail', { offer: item })}
-      activeOpacity={0.9}
-    >
-      <Image 
-        source={{ uri: item.image }} 
-        style={styles.cardImage}
-        resizeMode="cover"
-      />
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
-        style={styles.gradient}
-      />
+  // Fetch ads when screen focuses
+  useFocusEffect(
+    useCallback(() => {
+      fetchAds();
       
-      <View style={styles.cardContent}>
-        <View style={styles.badgeContainer}>
-          {item.isHot && (
-            <View style={styles.hotBadge}>
-              <MaterialIcons name="local-fire-department" size={16} color="#FFF" />
-              <Text style={styles.hotText}>عرض حصري</Text>
-            </View>
-          )}
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>{item.category}</Text>
-          </View>
-        </View>
-        
-        <Text style={styles.discountBadge}>{item.discount}</Text>
-        
-        <View style={styles.textContainer}>
-          <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-          <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
-          <View style={styles.expiryContainer}>
-            <MaterialIcons name="access-time" size={14} color="#F59E0B" />
-            <Text style={styles.expiry}>{item.expiry}</Text>
-          </View>
-        </View>
+      // Optional: Set up polling for real-time updates
+      const interval = setInterval(fetchAds, 30000); // Refresh every 30 seconds
+      
+      return () => clearInterval(interval);
+    }, [fetchAds])
+  );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchAds();
+  }, [fetchAds]);
+
+  const handleAdPress = (link) => {
+    if (link) {
+      Linking.openURL(link).catch((err) =>
+        console.error('Failed to open URL:', err)
+      );
+    }
+  };
+
+  const handleCall = (phone) => {
+    if (phone) {
+      Linking.openURL(`tel:${phone}`);
+    }
+  };
+
+  if (adsData.loading && !refreshing) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#16A34A" />
       </View>
-    </TouchableOpacity>
+    );
+  }
+
+  if (adsData.error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>{adsData.error}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={fetchAds}
+        >
+          <Text style={styles.retryButtonText}>{t('ADS.RETRY')}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const renderAdItem = ({ item }) => (
+    <View style={styles.adContainer}>
+      <Image source={{ uri: item.imageUrl }} style={styles.adImage} />
+      <View style={styles.adDetails}>
+        <Text style={styles.adTitle}>{item.title}</Text>
+        
+        {item.description && (
+          <Text style={styles.adDescription} numberOfLines={2}>
+            {item.description}
+          </Text>
+        )}
+
+        <View style={styles.adMeta}>
+          <Text style={styles.adStatus}>
+            <Text style={styles.metaLabel}>{t('ADS.STATUS')}: </Text>
+            {item.active ? t('ADS.ACTIVE') : t('ADS.INACTIVE')}
+          </Text>
+          <Text style={styles.adDate}>
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
+
+        {item.phone && (
+          <TouchableOpacity
+            style={styles.callButton}
+            onPress={() => handleCall(item.phone)}
+          >
+            <Ionicons name="call-outline" size={16} color="#FFFFFF" />
+            <Text style={styles.callButtonText}>{t('ADS.CALL')}</Text>
+          </TouchableOpacity>
+        )}
+
+        {item.link && (
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => handleAdPress(item.link)}
+          >
+            <Text style={styles.linkButtonText}>{t('ADS.VISIT_LINK')}</Text>
+            <Ionicons name="open-outline" size={16} color="#16A34A" />
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>العروض والتخفيضات</Text>
-          {/* <TouchableOpacity style={styles.filterButton}>
-            <MaterialIcons name="filter-list" size={24} color="#3B82F6" />
-          </TouchableOpacity> */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <View style={styles.headerTitle}>
+            <Text style={styles.headerTitleText}>{t('ADS.TITLE')}</Text>
+          </View>
         </View>
-        
-        <FlatList
-          data={mockOffers}
-          renderItem={renderOfferItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContent}
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
-          ListHeaderComponent={<View style={styles.listHeader} />}
-          ListFooterComponent={<View style={styles.listFooter} />}
-          key={isLandscape ? 'landscape' : 'portrait'} // Force re-render on orientation change
-        />
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#16A34A']}
+              tintColor="#16A34A"
+            />
+          }
+        >
+          {/* Ads List */}
+          <FlatList
+            data={adsData.ads}
+            renderItem={renderAdItem}
+            keyExtractor={(item) => item._id}
+            scrollEnabled={false}
+            contentContainerStyle={styles.listContainer}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={48}
+                  color="#64748B"
+                />
+                <Text style={styles.emptyText}>{t('ADS.NONE_FOUND')}</Text>
+              </View>
+            }
+          />
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -140,157 +212,165 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   header: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#16A34A',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitleText: {
+    fontSize: 18,
     fontFamily: 'Tajawal-Bold',
-    fontSize: 22,
-    color: '#1F2937',
+    color: '#FFFFFF',
   },
-  filterButton: {
-    padding: 8,
-  },
-  listContent: {
-    paddingHorizontal: 16,
+  scrollContainer: {
     paddingBottom: 20,
   },
-  listHeader: {
-    height: 10,
+  statsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    margin: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  listFooter: {
-    height: 30,
+  statsText: {
+    fontSize: 14,
+    fontFamily: 'Tajawal-Medium',
+    color: '#1E293B',
   },
-  card: {
-    borderRadius: 16,
+  listContainer: {
+    paddingHorizontal: 16,
+  },
+  adContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 16,
     overflow: 'hidden',
-    marginBottom: 20,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  cardImage: {
+  adImage: {
     width: '100%',
-    height: '100%',
-    position: 'absolute',
+    height: 180,
+    resizeMode: 'cover',
   },
-  gradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '60%',
-  },
-  cardContent: {
-    flex: 1,
-    justifyContent: 'flex-end',
+  adDetails: {
     padding: 16,
   },
-  badgeContainer: {
-    flexDirection: 'row-reverse',
+  adTitle: {
+    fontSize: 18,
+    fontFamily: 'Tajawal-Bold',
+    color: '#1E293B',
+    marginBottom: 8,
+    textAlign: 'left',
+  },
+  adDescription: {
+    fontSize: 14,
+    fontFamily: 'Tajawal-Regular',
+    color: '#64748B',
+    marginBottom: 12,
+    textAlign: 'left',
+  },
+  adMeta: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  metaLabel: {
+    fontFamily: 'Tajawal-Medium',
+    color: '#64748B',
+  },
+  adStatus: {
+    fontSize: 13,
+    fontFamily: 'Tajawal-Regular',
+    color: '#1E293B',
+  },
+  adDate: {
+    fontSize: 13,
+    fontFamily: 'Tajawal-Regular',
+    color: '#64748B',
+  },
+  callButton: {
+    backgroundColor: '#16A34A',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
     marginBottom: 8,
   },
-  hotBadge: {
-    flexDirection: 'row-reverse',
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    alignItems: 'center',
-  },
-  categoryBadge: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  categoryText: {
-    fontFamily: 'Tajawal-Medium',
-    fontSize: 12,
-    color: '#FFF',
-  },
-  hotText: {
-    color: '#FFF',
-    fontFamily: 'Tajawal-Bold',
-    fontSize: 12,
-    marginRight: 5,
-  },
-  discountBadge: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    backgroundColor: '#16A34A',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+  callButtonText: {
+    color: '#FFFFFF',
     fontFamily: 'Tajawal-Bold',
     fontSize: 14,
-    color: '#FFF',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    marginLeft: 8,
   },
-  textContainer: {
-    marginTop: 8,
-  },
-  title: {
-    fontFamily: 'Tajawal-Bold',
-    fontSize: 20,
-    lineHeight: 28,
-    color: '#FFF',
-    textAlign: 'right',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  description: {
-    fontFamily: 'Tajawal-Regular',
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#E5E7EB',
-    textAlign: 'right',
-    marginVertical: 6,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  expiryContainer: {
-    flexDirection: 'row-reverse',
+  linkButton: {
+    borderWidth: 1,
+    borderColor: '#16A34A',
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 4,
+    padding: 12,
+    borderRadius: 8,
   },
-  expiry: {
+  linkButtonText: {
+    color: '#16A34A',
+    fontFamily: 'Tajawal-Bold',
+    fontSize: 14,
+    marginRight: 8,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
     fontFamily: 'Tajawal-Medium',
-    fontSize: 13,
-    color: '#F59E0B',
-    textAlign: 'right',
-    marginRight: 5,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    color: '#EF4444',
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: 'Tajawal-Medium',
+    color: '#64748B',
+    marginTop: 16,
   },
 });
+
+export default AdsScreen;

@@ -1,16 +1,16 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useTranslation } from 'react-i18next';
-import AuthGuard from '../components/common/AuthGuard';
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useTranslation } from "react-i18next";
+import AuthGuard from "../components/common/AuthGuard";
 
-import TabNavigator from './TabNavigator';
-import ProductSubmissionScreen from '../screens/ProductSubmissionScreen';
-import ShopScreen from '../screens/ShopScreen';
-import EngineerScreen from '../screens/EngineerDetailScreen';
-import ProductDetailScreen from '../screens/ProductDetailScreen';
+import TabNavigator from "./TabNavigator";
+import ProductSubmissionScreen from "../screens/ProductSubmissionScreen";
+import ShopScreen from "../screens/ShopScreen";
+import EngineerScreen from "../screens/EngineerDetailScreen";
+import ProductDetailScreen from "../screens/ProductDetailScreen";
 
-import AdBannerScreen from '../screens/AdBannerScreen';
-import OTPVerificationScreen from '../screens/Auth/OTPVerificationScreen';
-import SolarCalculator from '../screens/SolarCalculator';
+import AdBannerScreen from "../screens/AdBannerScreen";
+import OTPVerificationScreen from "../screens/Auth/OTPVerificationScreen";
+import SolarCalculator from "../screens/SolarCalculator";
 
 const Stack = createNativeStackNavigator();
 
@@ -22,12 +22,13 @@ export default function MainStack() {
       screenOptions={{
         headerBackTitleVisible: false,
         headerTitleStyle: {
-          fontFamily: 'Tajawal-Bold',
+          fontFamily: "Tajawal-Bold",
           fontSize: 18,
+          textAlign: "center",
         },
-        headerBackButtonTitle: t('COMMON.BACK'),
-        contentStyle: { backgroundColor: '#f5f5f5' },
-        animation: 'slide_from_right',
+        headerBackButtonTitle: t("COMMON.BACK"),
+        contentStyle: { backgroundColor: "#f5f5f5" },
+        animation: "slide_from_right",
       }}
     >
       <Stack.Screen
@@ -41,8 +42,8 @@ export default function MainStack() {
         name="ProductDetail"
         component={ProductDetailScreen}
         options={({ route }) => ({
-          title: route.params?.product?.name || t('MARKETPLACE.PRODUCT_DETAIL'),
-          headerBackTitle: t('MARKETPLACE.TITLE'),
+          title: route.params?.product?.name || t("MARKETPLACE.PRODUCT_DETAIL"),
+          headerBackTitle: t("MARKETPLACE.TITLE"),
           headerShown: false,
         })}
       />
@@ -59,14 +60,12 @@ export default function MainStack() {
         options={{ headerShown: false }}
       />
 
-   
-
       <Stack.Screen
         name="SolarCalculator"
         component={SolarCalculator}
         options={{
-          title: t('CALCULATOR.RESULTS'),
-          headerBackTitle: t('CALCULATOR.TITLE'),
+          title: t("CALCULATOR.TITLE"),
+          headerBackTitle: t("COMMON.BACK"),
         }}
       />
 
@@ -74,8 +73,8 @@ export default function MainStack() {
         name="AdBanner"
         component={AdBannerScreen}
         options={({ route }) => ({
-          title: route.params?.ad?.title || t('ADS.VIEW_AD'),
-          headerBackTitle: t('COMMON.BACK'),
+          title: route.params?.ad?.title || t("ADS.VIEW_AD"),
+          headerBackTitle: t("COMMON.BACK"),
         })}
       />
 
@@ -83,8 +82,8 @@ export default function MainStack() {
       <Stack.Screen
         name="ProductSubmission"
         options={{
-          title: t('MARKETPLACE.ADD_PRODUCT'),
-          headerBackTitle: t('MARKETPLACE.TITLE'),
+          title: t("MARKETPLACE.ADD_PRODUCT"),
+          headerBackTitle: t("MARKETPLACE.TITLE"),
         }}
       >
         {() => (
@@ -94,10 +93,7 @@ export default function MainStack() {
         )}
       </Stack.Screen>
 
-      <Stack.Screen 
-        name="OTPVerification" 
-        component={OTPVerificationScreen} 
-      />
+      <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
     </Stack.Navigator>
   );
 }

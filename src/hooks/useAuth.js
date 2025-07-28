@@ -1,11 +1,39 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authAPI } from '../services/api';
-import { showToast } from '../components/common/Toast';
+import storage from '../utils/storage';
+import { useModal } from './useModal';
+import { useEffect, useState } from 'react';
 
 export const useAuth = () => {
   const queryClient = useQueryClient();
+  const { showSuccess, showError } = useModal();
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Get user profile
+  // Initialize auth state from AsyncStorage
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = await storage.getToken();
+        const userData = await storage.getUserData();
+        
+        if (token && userData) {
+          // Set initial data in query cache
+          queryClient.setQueryData(['user'], {
+            data: { user: userData },
+            token
+          });
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  // Get user profile - disabled by default to prevent infinite refreshing
   const { 
     data: user, 
     isLoading: isLoadingUser,
@@ -16,23 +44,38 @@ export const useAuth = () => {
     queryFn: async () => {
       try {
         const response = await authAPI.getProfile();
+        
+        // Update AsyncStorage with fresh user data
+        if (response?.data?.user) {
+          await storage.setUserData(response.data.user);
+        }
+        
         return response;
       } catch (error) {
+        // If profile fetch fails, clear stored data
+        await storage.clearAuthData();
         throw error;
       }
     },
+    enabled: false, // Disabled by default - only refetch manually when needed
     retry: false,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 30 * 60 * 1000, // Cache for 30 minutes
+    cacheTime: 60 * 60 * 1000, // Keep in cache for 1 hour
   });
 
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: (data) => authAPI.register(data),
     onSuccess: () => {
-      showToast('success', 'Success', 'Registration successful. Please verify OTP.');
+      showSuccess('تم التسجيل بنجاح', 'تم إرسال رمز التحقق إلى هاتفك.');
     },
     onError: (error) => {
-      showToast('error', 'Error', error.response?.data?.message || 'Registration failed');
+      // Handle "user already exists" error specifically
+      if (error.message && error.message.includes('already exists')) {
+        showError('المستخدم موجود', 'هذا الرقم مسجل مسبقاً. يرجى تسجيل الدخول بدلاً من ذلك.');
+      } else {
+        showError('فشل التسجيل', error.message || 'حدث خطأ أثناء التسجيل');
+      }
     },
   });
 
@@ -40,78 +83,213 @@ export const useAuth = () => {
   const verifyOTPMutation = useMutation({
     mutationFn: async ({ phone, otp }) => {
       const response = await authAPI.verifyOTP(phone, otp);
+      
+      // Save token and user data immediately
+      if (response?.data?.token && response?.data?.user) {
+        await storage.setToken(response.data.token);
+        await storage.setUserData(response.data.user);
+        
+        // Update query cache with new data immediately
+        queryClient.setQueryData(['user'], {
+          data: { user: response.data.user },
+          token: response.data.token
+        });
+        
+        // Also invalidate and refetch to get fresh data
+        queryClient.invalidateQueries(['user']);
+      }
+      
       return response;
     },
-    onSuccess: async () => {
-      await refetchUser(); // Refresh user data after verification
-      showToast('success', 'Success', 'Phone verified successfully');
+    onSuccess: (response) => {
+      showSuccess('تم التحقق بنجاح', 'تم تأكيد رقم الهاتف بنجاح.');
+      
+      // Force immediate auth state update
+      if (response?.data?.user) {
+        queryClient.setQueryData(['user'], {
+          data: { user: response.data.user },
+          token: response.data.token
+        });
+      }
     },
     onError: (error) => {
-      showToast('error', 'Error', error.response?.data?.message || 'Invalid OTP');
+      const errorMessage = error?.message || error?.data?.message || 'رمز التحقق غير صحيح';
+      showError('فشل التحقق', errorMessage);
     },
   });
 
-  // Request new OTP mutation
+  // Request OTP mutation
   const requestOTPMutation = useMutation({
     mutationFn: (phone) => authAPI.requestOTP(phone),
     onSuccess: () => {
-      showToast('success', 'Success', 'New OTP sent successfully');
+      showSuccess('تم الإرسال', 'تم إرسال رمز التحقق إلى هاتفك.');
     },
     onError: (error) => {
-      showToast('error', 'Error', error.response?.data?.message || 'Failed to resend OTP');
+      showError('فشل الإرسال', error.message || 'فشل في إرسال رمز التحقق');
+    },
+  });
+
+  // Login mutation  
+  const loginMutation = useMutation({
+    mutationFn: async (credentials) => {
+      // Expecting { phone, password }
+      console.log('attempting login ', credentials);
+      const response = await authAPI.login(credentials);
+      console.log('login response', response);
+      
+      // Save token and user data immediately
+      if (response?.data?.token && response?.data?.user) {
+        await storage.setToken(response.data.token);
+        await storage.setUserData(response.data.user);
+        
+        // Update query cache with new data immediately
+        queryClient.setQueryData(['user'], {
+          data: { user: response.data.user },
+          token: response.data.token
+        });
+        
+        // Also invalidate and refetch to get fresh data
+        queryClient.invalidateQueries(['user']);
+      }
+      
+      return response;
+    },
+    onSuccess: (response) => {
+      console.log('Login mutation success:', response?.data?.user);
+      showSuccess('تم تسجيل الدخول', 'مرحباً بك مرة أخرى!');
+      
+      // Force immediate auth state update
+      if (response?.data?.user) {
+        queryClient.setQueryData(['user'], {
+          data: { user: response.data.user },
+          token: response.data.token
+        });
+        
+        // Force invalidate to trigger re-renders
+        queryClient.invalidateQueries(['user']);
+      }
+    },
+    onError: (error) => {
+      console.log('Login mutation error:', error);
+      const errorMessage = error?.message || error?.data?.message || 'بيانات الدخول غير صحيحة';
+      showError('فشل تسجيل الدخول', errorMessage);
     },
   });
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
-    mutationFn: authAPI.updateProfile,
-    onSuccess: (data) => {
-      queryClient.setQueryData(['user'], data);
-      showToast('success', 'Success', 'Profile updated successfully');
+    mutationFn: (data) => authAPI.updateProfile(data),
+    onSuccess: (response) => {
+      // Update stored user data immediately  
+      if (response?.data?.user) {
+        storage.setUserData(response.data.user);
+        
+        // Update query cache immediately
+        queryClient.setQueryData(['user'], (oldData) => ({
+          ...oldData,
+          data: { user: response.data.user }
+        }));
+        
+        // Also invalidate and refetch to get fresh data
+        queryClient.invalidateQueries(['user']);
+      }
+      
+      showSuccess('تم التحديث', 'تم تحديث ملفك الشخصي بنجاح.');
     },
     onError: (error) => {
-      showToast('error', 'Update Failed', error.response?.data?.message || 'Failed to update profile');
+      const errorMessage = error?.message || error?.data?.message || 'فشل في تحديث الملف الشخصي';
+      showError('فشل التحديث', errorMessage);
     },
   });
 
-  // Enhanced logout function
+  // Logout function
   const logout = async () => {
     try {
       await authAPI.logout();
-      queryClient.clear(); // Clear all queries
-      showToast('success', 'Logged out', 'You have been logged out successfully');
     } catch (error) {
-      showToast('error', 'Logout Failed', 'Failed to logout');
+      // Logout from frontend even if backend call fails
+      console.error('Logout error:', error);
+    } finally {
+      // Clear local storage and cache
+      await storage.clearAuthData();
+      queryClient.clear();
     }
   };
 
-  // Check auth status
+  // Check authentication status
   const checkAuth = async () => {
+    const token = await storage.getToken();
+    return !!token;
+  };
+
+  // Get current user data from cache or storage
+  const currentUser = user?.data?.user || null;
+
+  // Computed auth states with forced refresh capability
+  const isAuthenticated = !!currentUser;
+  const isVerified = currentUser?.isVerified || false;
+
+  // Manual refresh function to force auth state update
+  const refreshAuthState = async () => {
     try {
-      const response = await authAPI.getProfile();
-      queryClient.setQueryData(['user'], response);
-      return true;
+      const token = await storage.getToken();
+      const userData = await storage.getUserData();
+      
+      console.log('Refreshing auth state:', { token: !!token, userData: !!userData });
+      
+      if (token && userData) {
+        queryClient.setQueryData(['user'], {
+          data: { user: userData },
+          token
+        });
+        
+        // Force invalidate to trigger all dependent components
+        queryClient.invalidateQueries(['user']);
+        
+        console.log('Auth state refreshed successfully');
+        return true;
+      }
+      
+      console.log('No auth data found');
+      return false;
     } catch (error) {
+      console.error('Error refreshing auth state:', error);
       return false;
     }
   };
 
   return {
+    // User data
     user,
+    currentUser,
     isLoadingUser,
     isUserError,
-    isAuthenticated: !!user?.data?.user,
-    isVerified: user?.data?.user?.isVerified,
-    register: registerMutation.mutateAsync,
-    isRegistering: registerMutation.isLoading,
-    verifyOTP: verifyOTPMutation.mutateAsync,
-    isVerifying: verifyOTPMutation.isLoading,
-    requestOTP: requestOTPMutation.mutateAsync,
-    isRequestingOTP: requestOTPMutation.isLoading,
-    updateProfile: updateProfileMutation.mutate,
-    isUpdating: updateProfileMutation.isLoading,
-    logout,
+    isInitialized,
+    
+    // Auth states
+    isAuthenticated,
+    isVerified,
+    
+    // Functions
     checkAuth,
+    logout,
     refetchUser,
+    refreshAuthState, // Force auth state refresh
+    
+    // Mutations
+    register: registerMutation.mutate,
+    isRegistering: registerMutation.isPending,
+    
+    verifyOTP: verifyOTPMutation.mutate,
+    isVerifyingOTP: verifyOTPMutation.isPending,
+    
+    requestOTP: requestOTPMutation.mutate,
+    isRequestingOTP: requestOTPMutation.isPending,
+    
+    login: loginMutation.mutate,
+    isLoggingIn: loginMutation.isPending,
+    
+    updateProfile: updateProfileMutation.mutate,
+    isUpdatingProfile: updateProfileMutation.isPending,
   };
 };

@@ -1,11 +1,13 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { productsAPI } from '../services/api';
-import { showToast } from '../components/common/Toast';
+import { useModal } from './useModal';
 
 export const useProducts = (filters = {}) => {
   const queryClient = useQueryClient();
-  const shouldUseFilters = !!filters?.search_keyword?.trim();
-  const isUserProducts = !!filters?.user_id; // New flag for user products
+  const { showSuccess, showError } = useModal();
+  const { search_keyword, ...otherFilters } = filters;
+  const shouldUseSearch = !!search_keyword?.trim();
+  const isUserProducts = !!filters?.user_id; // Flag for user products
 
   const {
     data,
@@ -22,7 +24,7 @@ export const useProducts = (filters = {}) => {
       const params = { 
         page: pageParam, 
         limit: 10,
-        ...(shouldUseFilters && filters)
+        ...filters
       };
       
       // Determine which API endpoint to call based on filters
@@ -30,19 +32,19 @@ export const useProducts = (filters = {}) => {
       if (isUserProducts) {
         // Fetch only user's products
         response = await productsAPI.getUserProducts(filters.user_id, params);
-      } else if (shouldUseFilters) {
-        // Fetch filtered products
-        response = await productsAPI.filterProducts(params);
+      } else if (shouldUseSearch || Object.keys(otherFilters).length > 0) {
+        // Use enhanced search when there's a search keyword or other filters
+        response = await productsAPI.searchProducts(params);
       } else {
-        // Fetch all products
+        // Fetch all products when no filters
         response = await productsAPI.getProducts(params);
       }
       
       return {
-        data: response.data, // The array of products
-        currentPage: response.currentPage,
-        totalPages: response.totalPages,
-        total: response.total
+        data: response.data || [], // The array of products
+        currentPage: response.currentPage || pageParam,
+        totalPages: response.totalPages || 1,
+        total: response.total || 0
       };
     },
     getNextPageParam: (lastPage) => {
@@ -50,124 +52,63 @@ export const useProducts = (filters = {}) => {
       return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
     },
     keepPreviousData: true,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    cacheTime: 1000 * 60 * 30, // 30 minutes
   });
 
-  // Get single product
-  const useProduct = (id) =>
-    useQuery({
-      queryKey: ['product', id],
-      queryFn: async () => {
-        const response = await productsAPI.getProduct(id);
-        return response.data?.[0] || null; // Return first product or null
-      },
-      enabled: !!id,
-    });
+  // Flatten the data from infinite query
+  const products = data?.pages?.flatMap(page => page.data) || [];
+  const totalCount = data?.pages?.[0]?.total || 0;
 
-  // Create product
+  // Create product mutation
   const createProductMutation = useMutation({
     mutationFn: productsAPI.createProduct,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(['products']);
-      showToast('success', 'Success', 'Product created successfully');
+      showSuccess('تم النشر بنجاح!', 'تم نشر منتجك بنجاح وهو متاح الآن للمشاهدة');
     },
     onError: (error) => {
-      console.log('Full error:', error); // Debug
-      console.log('Error response:', error.response); // Debug
-      
-      let errorMessage = 'Failed to create product';
-      if (error.response) {
-        errorMessage = error.response.data?.message || 
-                     error.response.data?.error || 
-                     JSON.stringify(error.response.data);
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      showToast('error', 'Creation Failed', errorMessage);
+      showError('فشل النشر', error.message || 'فشل في نشر المنتج، تحقق من البيانات وأعد المحاولة');
     },
   });
 
-  // Update product
-  const updateProductMutation = useMutation({
-    mutationFn: ({ id, data }) => productsAPI.updateProduct(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries(['products']);
-      queryClient.invalidateQueries(['product', variables.id]);
-      showToast('success', 'Success', 'Product updated successfully');
-    },
-    onError: (error) => {
-      showToast('error', 'Update Failed', error.response?.data?.message || 'Failed to update product');
-    },
-  });
-
-  // Delete product
+  // Delete product mutation
   const deleteProductMutation = useMutation({
-    mutationFn: async (id) => {
-      const response = await productsAPI.deleteProduct(id);
-      return response.data;
-    },
+    mutationFn: productsAPI.deleteProduct,
     onSuccess: () => {
       queryClient.invalidateQueries(['products']);
-      showToast('success', 'Deleted', 'Product removed successfully');
-      navigation.goBack();
+      showSuccess('تم الحذف', 'تم حذف المنتج بنجاح');
     },
     onError: (error) => {
-      console.error('Delete error details:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        headers: error.response?.headers
-      });
-  
-      const serverMessage = error.response?.data?.msg;
-      const errorDetails = error.response?.data?.error;
-      
-      showToast(
-        'error', 
-        'Deletion Failed', 
-        serverMessage || errorDetails || error.message
-      );
-    }
-  });
-
-  // Like product
-  const likeProductMutation = useMutation({
-    mutationFn: productsAPI.likeProduct,
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries(['product', id]);
+      showError('فشل الحذف', error.message || 'فشل في حذف المنتج');
     },
   });
-
-  // Unlike product
-  const unlikeProductMutation = useMutation({
-    mutationFn: productsAPI.unlikeProduct,
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries(['product', id]);
-    },
-  });
-
-  // Flatten pages
-  const getAllProducts = () =>
-    data?.pages?.flatMap((page) => (Array.isArray(page.data) ? page.data : [])) || [];
 
   return {
-    products: getAllProducts(),
+    products,
+    totalCount,
     isLoading,
     isError,
     error,
-    fetchNextPage,
     hasNextPage,
+    fetchNextPage,
     isFetchingNextPage,
     refetch,
-    useProduct,
+    
+    // Mutations
     createProduct: createProductMutation.mutate,
     isCreating: createProductMutation.isLoading,
-    updateProduct: updateProductMutation.mutate,
-    isUpdating: updateProductMutation.isLoading,
     deleteProduct: deleteProductMutation.mutate,
     isDeleting: deleteProductMutation.isLoading,
-    likeProduct: likeProductMutation.mutate,
-    isLiking: likeProductMutation.isLoading,
-    unlikeProduct: unlikeProductMutation.mutate,
-    isUnliking: unlikeProductMutation.isLoading,
   };
+};
+
+// Hook for single product
+export const useProduct = (productId) => {
+  return useQuery({
+    queryKey: ['product', productId],
+    queryFn: () => productsAPI.getProductById(productId),
+    enabled: !!productId,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
 };

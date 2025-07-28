@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Image,
   Switch,
-  Alert
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Picker } from '@react-native-picker/picker';
@@ -16,7 +15,12 @@ import { AntDesign, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../hooks/useAuth';
 import { useProducts } from '../hooks/useProducts';
-import { governorates } from '../../data/governorates'
+import { useModal } from '../hooks/useModal';
+import { useFocusEffect } from '@react-navigation/native';
+import { governorates } from '../../data/governorates';
+import { uploadImage } from '../../utils/upload';
+import CustomModal from '../components/common/CustomModal';
+import EmptyState from '../components/EmptyState';
 
 const colors = {
   primary: '#2E7D32',
@@ -30,8 +34,12 @@ const colors = {
 
 const ProductSubmissionScreen = ({ navigation }) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const { createProduct } = useProducts();
+  const { currentUser, isAuthenticated, isVerified } = useAuth();
+  const { createProduct, isCreating } = useProducts();
+  const { modalState, hideModal, showSuccess, showError, showWarning, showInfo } = useModal();
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
+  
+  // ALL HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL RETURNS
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -41,7 +49,7 @@ const ProductSubmissionScreen = ({ navigation }) => {
     model: '',
     price: '',
     currency: 'USD',
-    phone: user?.phone || '',
+    phone: currentUser?.phone || '',
     whatsappPhone: '',
     governorate: "Sana'a",
     city: '',
@@ -53,45 +61,118 @@ const ProductSubmissionScreen = ({ navigation }) => {
       capacity: '',
       warranty: ''
     },
-    isNegotiable: true,
-    isActive: true,
-    featured: false,
-    status: 'pending'
+    isNegotiable: false
   });
+  
+  // Check auth when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setHasCheckedAuth(true);
+      
+      if (!isAuthenticated) {
+        // Not logged in - redirect to login
+        showInfo(
+          "تسجيل الدخول مطلوب",
+          "يجب تسجيل الدخول أولاً لنشر المنتجات",
+          {
+            actionText: "تسجيل الدخول",
+            onAction: () => {
+              navigation.navigate('AuthStack', {
+                screen: 'Login',
+              });
+            },
+            autoClose: false
+          }
+        );
+      } else if (isAuthenticated && !isVerified) {
+        // Logged in but not verified - redirect to verification
+        showInfo(
+          "تأكيد الهاتف مطلوب", 
+          "يجب تأكيد رقم هاتفك قبل نشر المنتجات",
+          {
+            actionText: "تأكيد الهاتف",
+            onAction: () => {
+              navigation.navigate('AuthStack', {
+                screen: 'OTPVerification',
+                params: {
+                  phone: currentUser?.phone,
+                },
+              });
+            },
+            autoClose: false
+          }
+        );
+      }
+    }, [isAuthenticated, isVerified, showInfo, navigation, currentUser])
+  );
 
-  const productTypes = ['Panel', 'Inverter', 'Battery', 'Accessory'];
-  const conditions = ['New', 'Used', 'Refurbished'];
-  const currencies = ['USD', 'YER', 'SAR'];
-  const governorates = ["Sana'a", 'Aden', 'Taiz', 'Hodeidah', 'Ibb'];
-  const cities = ["Crater", "Mualla", "Tawahi", "Sheikh Othman", "Mansoura", "Dar Saad", "Al Buraiqa", "Khour Maksar"]
+  // Product types and conditions data
+  const productTypes = [
+    { label: 'لوح شمسي', value: 'Panel' },
+    { label: 'انفرتر', value: 'Inverter' },
+    { label: 'بطارية', value: 'Battery' },
+    { label: 'اكسسوار', value: 'Accessory' },
+    { label: 'كابل', value: 'Cable' },
+    { label: 'متحكم', value: 'Controller' },
+    { label: 'شاشة مراقبة', value: 'Monitor' },
+    { label: 'أخرى', value: 'Other' }
+  ];
+
+  const conditions = [
+    { label: 'جديد', value: 'New' },
+    { label: 'مستعمل', value: 'Used' },
+    { label: 'يحتاج إصلاح', value: 'Needs Repair' },
+    { label: 'مُجدد', value: 'Refurbished' }
+  ];
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(t('common.permissionRequired'), t('productSubmission.photoPermission'));
-      return;
-    }
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        showWarning('إذن مطلوب', 'نحتاج إذن للوصول إلى الصور');
+        return;
+      }
 
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-      allowsMultipleSelection: true,
-    });
-
-    if (!result.canceled && result.assets) {
-      setFormData({
-        ...formData,
-        images: [...formData.images, ...result.assets.map(asset => asset.uri)]
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+        allowsMultipleSelection: false,
       });
+
+      if (!result.canceled && result.assets && Array.isArray(result.assets) && result.assets.length > 0) {
+        try {
+          const uploadPromises = result.assets.map(async (asset) => {
+            const imageUrl = await uploadImage(asset, asset.fileName || 'product_image.jpg');
+            return imageUrl;
+          });
+
+          const imageUrls = await Promise.all(uploadPromises);
+          
+          setFormData(prevData => ({
+            ...prevData,
+            images: [...(prevData.images || []), ...imageUrls]
+          }));
+
+          showSuccess('تم الرفع', 'تم رفع الصورة بنجاح');
+        } catch (error) {
+          showError('فشل الرفع', 'فشل في رفع الصورة، يرجى المحاولة مرة أخرى');
+          console.error('Image upload error:', error);
+        }
+      }
+    } catch (error) {
+      showError('خطأ', 'حدث خطأ أثناء اختيار الصورة');
+      console.error('Image picker error:', error);
     }
   };
 
   const removeImage = (index) => {
-    const newImages = [...formData.images];
-    newImages.splice(index, 1);
-    setFormData({ ...formData, images: newImages });
+    if (formData.images && Array.isArray(formData.images) && index >= 0 && index < formData.images.length) {
+      const newImages = [...formData.images];
+      newImages.splice(index, 1);
+      setFormData({ ...formData, images: newImages });
+    }
   };
 
   const handleSpecChange = (field, value) => {
@@ -106,17 +187,25 @@ const ProductSubmissionScreen = ({ navigation }) => {
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      Alert.alert(t('common.error'), t('productSubmission.nameRequired'));
+      showError('خطأ في البيانات', 'اسم المنتج مطلوب');
       return false;
     }
     if (!formData.price || isNaN(parseFloat(formData.price))) {
-      Alert.alert(t('common.error'), t('productSubmission.validPrice'));
+      showError('خطأ في البيانات', 'يرجى إدخال سعر صحيح');
       return false;
     }
-    // if (formData.images.length === 0) {
-    //   Alert.alert(t('common.error'), t('productSubmission.imageRequired'));
-    //   return false;
-    // }
+    if (!formData.phone.trim()) {
+      showError('خطأ في البيانات', 'رقم الهاتف مطلوب');
+      return false;
+    }
+    if (!formData.governorate.trim()) {
+      showError('خطأ في البيانات', 'المحافظة مطلوبة');
+      return false;
+    }
+    if (!formData.city.trim()) {
+      showError('خطأ في البيانات', 'المدينة مطلوبة');
+      return false;
+    }
     return true;
   };
 
@@ -127,337 +216,469 @@ const ProductSubmissionScreen = ({ navigation }) => {
       await createProduct({
         ...formData,
         price: parseFloat(formData.price),
-        userId: user._id
+        userId: currentUser.id || currentUser?._id
       });
       
-      // Success handled in the mutation's onSuccess callback
-      // navigation.goBack();
+      // Success is handled by the mutation's onSuccess callback
+      navigation.goBack();
     } catch (error) {
-      // Error handled in the mutation's onError callback
+      // Error is handled by the mutation's onError callback
       console.error('Submission error:', error);
     }
   };
 
+  // Show appropriate screen based on auth state
+  if (hasCheckedAuth && !isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          title="تسجيل الدخول مطلوب"
+          subtitle="يجب تسجيل الدخول أولاً لنشر المنتجات"
+          iconName="login"
+          actionText="تسجيل الدخول"
+          onAction={() => {
+            navigation.navigate('AuthStack', {
+              screen: 'Login',
+            });
+          }}
+        />
+        <CustomModal
+          visible={modalState.visible}
+          type={modalState.type}
+          title={modalState.title}
+          message={modalState.message}
+          onClose={hideModal}
+          actionText={modalState.actionText}
+          onAction={modalState.onAction}
+          autoClose={modalState.autoClose}
+          duration={modalState.duration}
+        />
+      </View>
+    );
+  }
+
+  if (hasCheckedAuth && isAuthenticated && !isVerified) {
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          title="تأكيد الهاتف مطلوب"
+          subtitle="يجب تأكيد رقم هاتفك قبل نشر المنتجات"
+          iconName="phone"
+          actionText="تأكيد الهاتف"
+          onAction={() => {
+            navigation.navigate('AuthStack', {
+              screen: 'OTPVerification',
+              params: {
+                phone: currentUser?.phone,
+              },
+            });
+          }}
+        />
+        <CustomModal
+          visible={modalState.visible}
+          type={modalState.type}
+          title={modalState.title}
+          message={modalState.message}
+          onClose={hideModal}
+          actionText={modalState.actionText}
+          onAction={modalState.onAction}
+          autoClose={modalState.autoClose}
+          duration={modalState.duration}
+        />
+      </View>
+    );
+  }
+
+  // Don't render form if auth check hasn't completed yet
+  if (!hasCheckedAuth) {
+    return null;
+  }
+  
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>{t('productSubmission.title')}</Text>
+      <Text style={styles.header}>نشر منتج جديد</Text>
       
       {/* Basic Information Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('productSubmission.basicInfo')}</Text>
+        <Text style={styles.sectionTitle}>المعلومات الأساسية</Text>
         
-        <InputField
-          label={`${t('productSubmission.name')} *`}
-          value={formData.name}
-          onChangeText={(text) => setFormData({...formData, name: text})}
-          placeholder={t('productSubmission.namePlaceholder')}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>اسم المنتج *</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.name}
+            onChangeText={(text) => setFormData({...formData, name: text})}
+            placeholder="أدخل اسم المنتج"
+            placeholderTextColor="#999"
+          />
+        </View>
         
-        <InputField
-          label={t('productSubmission.description')}
-          value={formData.description}
-          onChangeText={(text) => setFormData({...formData, description: text})}
-          placeholder={t('productSubmission.descriptionPlaceholder')}
-          multiline
-          numberOfLines={4}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>الوصف</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={formData.description}
+            onChangeText={(text) => setFormData({...formData, description: text})}
+            placeholder="وصف تفصيلي للمنتج"
+            placeholderTextColor="#999"
+            multiline
+            numberOfLines={4}
+          />
+        </View>
         
-        <DropdownField
-          label={t('productSubmission.type')}
-          selectedValue={formData.type}
-          onValueChange={(itemValue) => setFormData({...formData, type: itemValue})}
-          items={productTypes}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>نوع المنتج</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={formData.type}
+              onValueChange={(itemValue) => setFormData({...formData, type: itemValue})}
+              style={styles.picker}
+            >
+              {productTypes && productTypes.map((type) => (
+                <Picker.Item key={type.value} label={type.label} value={type.value} />
+              ))}
+            </Picker>
+          </View>
+        </View>
         
-        <DropdownField
-          label={t('productSubmission.condition')}
-          selectedValue={formData.condition}
-          onValueChange={(itemValue) => setFormData({...formData, condition: itemValue})}
-          items={conditions}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>الحالة</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={formData.condition}
+              onValueChange={(value) => setFormData({ ...formData, condition: value })}
+              style={styles.picker}
+            >
+              {conditions && conditions.map((condition) => (
+                <Picker.Item key={condition.value} label={condition.label} value={condition.value} />
+              ))}
+            </Picker>
+          </View>
+        </View>
         
-        <InputField
-          label={t('productSubmission.brand')}
-          value={formData.brand}
-          onChangeText={(text) => setFormData({...formData, brand: text})}
-          placeholder={t('productSubmission.brandPlaceholder')}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>الماركة</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.brand}
+            onChangeText={(text) => setFormData({...formData, brand: text})}
+            placeholder="ماركة المنتج"
+            placeholderTextColor="#999"
+          />
+        </View>
         
-        <InputField
-          label={t('productSubmission.model')}
-          value={formData.model}
-          onChangeText={(text) => setFormData({...formData, model: text})}
-          placeholder={t('productSubmission.modelPlaceholder')}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>الموديل</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.model}
+            onChangeText={(text) => setFormData({...formData, model: text})}
+            placeholder="موديل المنتج"
+            placeholderTextColor="#999"
+          />
+        </View>
       </View>
       
       {/* Pricing Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('productSubmission.pricing')}</Text>
+        <Text style={styles.sectionTitle}>التسعير</Text>
         
         <View style={styles.row}>
           <View style={{ flex: 0.7 }}>
-            <InputField
-              label={`${t('productSubmission.price')} *`}
+            <Text style={styles.label}>السعر *</Text>
+            <TextInput
+              style={styles.input}
               value={formData.price}
               onChangeText={(text) => setFormData({...formData, price: text})}
-              placeholder="0.00"
+              placeholder="0"
+              placeholderTextColor="#999"
               keyboardType="numeric"
             />
           </View>
-          <View style={{ flex: 0.3 }}>
-            <DropdownField
-              selectedValue={formData.currency}
-              onValueChange={(itemValue) => setFormData({...formData, currency: itemValue})}
-              items={currencies}
-            />
+          
+          <View style={{ flex: 0.3, marginLeft: 10 }}>
+            <Text style={styles.label}>العملة</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={formData.currency}
+                onValueChange={(itemValue) => setFormData({...formData, currency: itemValue})}
+                style={styles.picker}
+              >
+                <Picker.Item label="ريال يمني" value="YER" />
+                <Picker.Item label="دولار" value="USD" />
+                <Picker.Item label="ريال سعودي" value="SAR" />
+                <Picker.Item label="يورو" value="EUR" />
+              </Picker>
+            </View>
           </View>
         </View>
-        
-        <ToggleField
-          label={t('productSubmission.negotiable')}
-          value={formData.isNegotiable}
-          onValueChange={(value) => setFormData({...formData, isNegotiable: value})}
-        />
+
+        <View style={styles.switchContainer}>
+          <Text style={styles.label}>قابل للتفاوض</Text>
+          <Switch
+            value={formData.isNegotiable}
+            onValueChange={(value) => setFormData({...formData, isNegotiable: value})}
+            trackColor={{ false: "#E0E0E0", true: colors.primaryLight }}
+            thumbColor={formData.isNegotiable ? colors.primary : "#f4f3f4"}
+          />
+        </View>
       </View>
-      
+
       {/* Contact Information */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('productSubmission.contactInfo')}</Text>
+        <Text style={styles.sectionTitle}>معلومات التواصل</Text>
         
-        <InputField
-          label={t('productSubmission.phone')}
-          value={formData.phone}
-          onChangeText={(text) => setFormData({...formData, phone: text})}
-          placeholder={t('productSubmission.phonePlaceholder')}
-          keyboardType="phone-pad"
-        />
-        
-        <InputField
-          label={t('productSubmission.whatsapp')}
-          value={formData.whatsappPhone}
-          onChangeText={(text) => setFormData({...formData, whatsappPhone: text})}
-          placeholder={t('productSubmission.whatsappPlaceholder')}
-          keyboardType="phone-pad"
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>رقم الهاتف *</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.phone}
+            onChangeText={(text) => setFormData({...formData, phone: text})}
+            placeholder="+967xxxxxxxxx"
+            placeholderTextColor="#999"
+            keyboardType="phone-pad"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>رقم الواتساب</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.whatsappPhone}
+            onChangeText={(text) => setFormData({...formData, whatsappPhone: text})}
+            placeholder="+967xxxxxxxxx"
+            placeholderTextColor="#999"
+            keyboardType="phone-pad"
+          />
+        </View>
       </View>
-      
+
       {/* Location Information */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('productSubmission.location')}</Text>
+        <Text style={styles.sectionTitle}>الموقع</Text>
         
-        <DropdownField
-          label={t('productSubmission.governorate')}
-          selectedValue={formData.governorate}
-          onValueChange={(itemValue) => setFormData({...formData, governorate: itemValue})}
-          items={governorates}
-        />
-        
-        <DropdownField
-          label={t('productSubmission.city')}
-          selectedValue={formData.city}
-          onValueChange={(cities) => setFormData({...formData, city: cities})}
-          placeholder={t('productSubmission.cityPlaceholder')}
-          items={cities}
-        />
-        
-        <InputField
-          label={t('productSubmission.locationText')}
-          value={formData.locationText}
-          onChangeText={(text) => setFormData({...formData, locationText: text})}
-          placeholder={t('productSubmission.locationPlaceholder')}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>المحافظة *</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={formData.governorate}
+              onValueChange={(value) => setFormData({ ...formData, governorate: value })}
+              style={styles.picker}
+            >
+              {governorates && governorates.map((gov) => (
+                <Picker.Item key={gov} label={gov} value={gov} />
+              ))}
+            </Picker>
+          </View>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>المدينة *</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.city}
+            onChangeText={(text) => setFormData({...formData, city: text})}
+            placeholder="اسم المدينة"
+            placeholderTextColor="#999"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>تفاصيل الموقع</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.locationText}
+            onChangeText={(text) => setFormData({...formData, locationText: text})}
+            placeholder="تفاصيل إضافية عن الموقع"
+            placeholderTextColor="#999"
+          />
+        </View>
       </View>
-      
-      {/* Specifications */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('productSubmission.specifications')}</Text>
-        
-        <InputField
-          label={t('productSubmission.power')}
-          value={formData.specifications.power}
-          onChangeText={(text) => handleSpecChange('power', text)}
-          placeholder="550W"
-        />
-        
-        <InputField
-          label={t('productSubmission.voltage')}
-          value={formData.specifications.voltage}
-          onChangeText={(text) => handleSpecChange('voltage', text)}
-          placeholder="41V"
-        />
-        
-        <InputField
-          label={t('productSubmission.warranty')}
-          value={formData.specifications.warranty}
-          onChangeText={(text) => handleSpecChange('warranty', text)}
-          placeholder="12 Years"
-        />
-      </View>
-      
+
       {/* Images Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('productSubmission.images')}</Text>
-        <Text style={styles.hintText}>{t('productSubmission.imagesHint')}</Text>
+        <Text style={styles.sectionTitle}>الصور</Text>
         
-        <View style={styles.imageContainer}>
-          {formData.images.map((uri, index) => (
-            <View key={index} style={styles.imageWrapper}>
-              <Image source={{ uri }} style={styles.image} />
+        <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+          <AntDesign name="plus" size={20} color={colors.primary} />
+          <Text style={styles.imagePickerText}>إضافة صورة</Text>
+        </TouchableOpacity>
+
+        <View style={styles.imageGrid}>
+          {(formData.images && Array.isArray(formData.images)) ? formData.images.map((image, index) => (
+            <View key={index} style={styles.imageContainer}>
+              <Image source={{ uri: image }} style={styles.image} />
               <TouchableOpacity 
-                style={styles.removeImageButton}
+                style={styles.removeImageButton} 
                 onPress={() => removeImage(index)}
               >
                 <AntDesign name="close" size={16} color="white" />
               </TouchableOpacity>
             </View>
-          ))}
-          
-          {formData.images.length < 5 && (
-            <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
-              <Ionicons name="add" size={24} color={colors.primary} />
-              <Text style={styles.addImageText}>{t('productSubmission.addImage')}</Text>
-            </TouchableOpacity>
-          )}
+          )) : null}
         </View>
       </View>
-      
+
+      {/* Specifications Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>المواصفات التقنية</Text>
+        
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>القدرة (واط)</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.specifications.power}
+            onChangeText={(text) => handleSpecChange('power', text)}
+            placeholder="مثال: 300W"
+            placeholderTextColor="#999"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>الجهد (فولت)</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.specifications.voltage}
+            onChangeText={(text) => handleSpecChange('voltage', text)}
+            placeholder="مثال: 12V"
+            placeholderTextColor="#999"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>السعة</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.specifications.capacity}
+            onChangeText={(text) => handleSpecChange('capacity', text)}
+            placeholder="مثال: 100Ah"
+            placeholderTextColor="#999"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>الضمان</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.specifications.warranty}
+            onChangeText={(text) => handleSpecChange('warranty', text)}
+            placeholder="مثال: سنتان"
+            placeholderTextColor="#999"
+          />
+        </View>
+      </View>
+
       {/* Submit Button */}
       <TouchableOpacity 
-        style={styles.submitButton}
+        style={[styles.submitButton, isCreating && styles.submitButtonDisabled]}
         onPress={handleSubmit}
-        disabled={createProduct.isLoading}
+        disabled={isCreating}
       >
-        {createProduct.isLoading ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <Text style={styles.submitButtonText}>
-            {t('productSubmission.submit')}
-          </Text>
-        )}
+        <Text style={styles.submitButtonText}>
+          {isCreating ? 'جاري النشر...' : 'نشر المنتج'}
+        </Text>
       </TouchableOpacity>
+
+      {/* Custom Modal */}
+      <CustomModal
+        visible={modalState.visible}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        onClose={hideModal}
+        actionText={modalState.actionText}
+        onAction={modalState.onAction}
+        autoClose={modalState.autoClose}
+        duration={modalState.duration}
+      />
     </ScrollView>
   );
 };
 
-
-// Reusable components
-const InputField = ({ label, ...props }) => (
-  <View style={styles.inputContainer}>
-    <Text style={styles.label}>{label}</Text>
-    <TextInput style={styles.input} {...props} />
-  </View>
-);
-
-const DropdownField = ({ label, selectedValue, onValueChange, items }) => (
-  <View style={styles.inputContainer}>
-    <Text style={styles.label}>{label}</Text>
-    <View style={styles.pickerContainer}>
-      <Picker
-        selectedValue={selectedValue}
-        onValueChange={onValueChange}
-        style={styles.picker}
-        dropdownIconColor={colors.primary}
-      >
-        {items.map(item => (
-          <Picker.Item key={item} label={item} value={item} />
-        ))}
-      </Picker>
-    </View>
-  </View>
-);
-
-const ToggleField = ({ label, value, onValueChange }) => (
-  <View style={styles.toggleContainer}>
-    <Text style={styles.label}>{label}</Text>
-    <Switch
-      trackColor={{ false: colors.gray, true: colors.primaryLight }}
-      thumbColor={value ? colors.primary : colors.lightGray}
-      onValueChange={onValueChange}
-      value={value}
-    />
-  </View>
-);
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: colors.background,
+    padding: 16,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 24,
+    color: colors.textPrimary,
     textAlign: 'center',
+    marginBottom: 24,
+    fontFamily: 'Tajawal-Bold',
   },
   section: {
-    marginBottom: 24,
     backgroundColor: colors.white,
     borderRadius: 12,
     padding: 16,
-    shadowColor: colors.shadow,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: colors.primary,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
     marginBottom: 16,
+    textAlign: 'right',
+    fontFamily: 'Tajawal-Bold',
   },
-  inputContainer: {
+  inputGroup: {
     marginBottom: 16,
   },
   label: {
     fontSize: 14,
-    color: colors.textSecondary,
+    fontWeight: '600',
+    color: colors.textPrimary,
     marginBottom: 8,
+    textAlign: 'right',
+    fontFamily: 'Tajawal-Medium',
   },
   input: {
-    height: 48,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
+    paddingVertical: 12,
     fontSize: 16,
     color: colors.textPrimary,
+    textAlign: 'right',
     backgroundColor: colors.white,
+  },
+  textArea: {
+    height: 80,
+    paddingTop: 12,
   },
   pickerContainer: {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 8,
-    overflow: 'hidden',
+    backgroundColor: colors.white,
   },
   picker: {
-    height: 48,
-    color: colors.textPrimary,
+    height: 50,
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     gap: 12,
   },
-  toggleContainer: {
+  switchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginTop: 16,
   },
   imageContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  imageWrapper: {
     width: 100,
     height: 100,
     borderRadius: 8,
     overflow: 'hidden',
+    position: 'relative',
   },
   image: {
     width: '100%',
@@ -467,49 +688,49 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     right: 4,
-    backgroundColor: colors.error,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 12,
     width: 24,
     height: 24,
-    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  addImageButton: {
-    width: 100,
-    height: 100,
-    borderWidth: 1,
-    borderColor: colors.primaryLight,
+  imageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 12,
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryLight,
     borderRadius: 8,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addImageText: {
-    marginTop: 8,
-    color: colors.primary,
-    fontSize: 12,
-  },
-  hintText: {
-    fontSize: 12,
-    color: colors.textHint,
+    paddingVertical: 12,
     marginBottom: 12,
+  },
+  imagePickerText: {
+    marginLeft: 8,
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   submitButton: {
     backgroundColor: colors.primary,
-    height: 50,
+    paddingVertical: 16,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
+    marginTop: 24,
     marginBottom: 32,
   },
   submitButtonDisabled: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.border,
   },
   submitButtonText: {
     color: colors.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

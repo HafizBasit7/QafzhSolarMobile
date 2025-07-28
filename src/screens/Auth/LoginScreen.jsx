@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,35 +10,47 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { useMutation } from '@tanstack/react-query';
-import { authAPI } from '../../services/api';
-import { showToast } from '../../components/common/Toast';
-import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../hooks/useAuth';
+import { useModal } from '../../hooks/useModal';
+import CustomModal from '../../components/common/CustomModal';
 
 export default function LoginScreen({ navigation }) {
-  const { t } = useTranslation();
-  const [phoneNumber, setPhoneNumber] = useState('');
-
-  const requestOTPMutation = useMutation({
-    mutationFn: (phone) => authAPI.requestOTP(phone),
-    onSuccess: () => {
-      showToast('success', t('COMMON.SUCCESS'), t('AUTH.OTP_SENT'));
-      navigation.navigate('OtpVerif', { phone: phoneNumber });
-    },
-    onError: (error) => {
-      showToast('error', t('COMMON.ERROR'), error.response?.data?.message || t('AUTH.OTP_FAILED'));
-    },
+  const { login, isLoggingIn, isAuthenticated, refreshAuthState } = useAuth();
+  const { modalState, hideModal } = useModal();
+  const [formData, setFormData] = useState({
+    phone: '',
+    password: ''
   });
 
-  const handleNext = () => {
-    if (phoneNumber.trim()) {
-      requestOTPMutation.mutate(phoneNumber);
+  // Navigate back when successfully logged in
+  useEffect(() => {
+    console.log('LoginScreen - Auth state changed:', { isAuthenticated });
+    if (isAuthenticated) {
+      console.log('User is authenticated, navigating to MainStack');
+      // Force refresh auth state and navigate back
+      setTimeout(() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MainStack" }],
+        });
+      }, 1500); // Give time to see success message
+    }
+  }, [isAuthenticated, navigation]);
+
+  const handleLogin = () => {
+    if (formData.phone.trim() && formData.password.trim()) {
+      login({
+        phone: formData.phone.trim(),
+        password: formData.password.trim()
+      });
     }
   };
 
   const handleRegister = () => {
     navigation.navigate('Register');
   };
+
+  const isFormValid = formData.phone.trim() && formData.password.trim();
 
   return (
     <KeyboardAvoidingView
@@ -47,42 +59,65 @@ export default function LoginScreen({ navigation }) {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <Text style={styles.title}>{t('AUTH.WELCOME_BACK')}</Text>
-          <Text style={styles.subtitle}>{t('AUTH.ENTER_PHONE_PROMPT')}</Text>
+          <Text style={styles.title}>مرحباً بعودتك</Text>
+          <Text style={styles.subtitle}>سجل دخولك للمتابعة</Text>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>{t('AUTH.PHONE')}</Text>
+              <Text style={styles.label}>رقم الهاتف</Text>
               <TextInput
                 style={styles.input}
-                placeholder={t('AUTH.PHONE_PLACEHOLDER')}
+                placeholder="+967xxxxxxxxx"
                 keyboardType="phone-pad"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
+                value={formData.phone}
+                onChangeText={(text) => setFormData({...formData, phone: text})}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>كلمة المرور</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="أدخل كلمة المرور"
+                secureTextEntry
+                value={formData.password}
+                onChangeText={(text) => setFormData({...formData, password: text})}
               />
             </View>
 
             <TouchableOpacity
-              style={[styles.button, (!phoneNumber.trim() || requestOTPMutation.isPending) && styles.buttonDisabled]}
-              onPress={handleNext}
-              disabled={!phoneNumber.trim() || requestOTPMutation.isPending}
+              style={[styles.button, (!isFormValid || isLoggingIn) && styles.buttonDisabled]}
+              onPress={handleLogin}
+              disabled={!isFormValid || isLoggingIn}
             >
-              {requestOTPMutation.isPending ? (
+              {isLoggingIn ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>{t('COMMON.NEXT')}</Text>
+                <Text style={styles.buttonText}>تسجيل الدخول</Text>
               )}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleRegister} style={styles.registerLink}>
               <Text style={styles.registerText}>
-                {t('AUTH.NO_ACCOUNT')}{' '}
-                <Text style={styles.registerHighlight}>{t('COMMON.REGISTER')}</Text>
+                ليس لديك حساب؟{' '}
+                <Text style={styles.registerHighlight}>إنشاء حساب</Text>
               </Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
+
+      <CustomModal
+        visible={modalState.visible}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        onClose={hideModal}
+        actionText={modalState.actionText}
+        onAction={modalState.onAction}
+        autoClose={modalState.autoClose}
+        duration={modalState.duration}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -126,6 +161,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal-Medium',
     color: '#475569',
     marginBottom: 8,
+    textAlign: 'right',
   },
   input: {
     backgroundColor: '#FFFFFF',
@@ -136,6 +172,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Tajawal-Regular',
     color: '#1E293B',
+    textAlign: 'right',
   },
   button: {
     backgroundColor: '#16A34A',
